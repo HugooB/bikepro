@@ -12,6 +12,8 @@ npm run lint
 npm run format       # Prettier
 ```
 
+To get a sample race bike with all default parts, run `npm run db:seed` (add `-- --reset` to start over).
+
 Data lives in a SQLite file at `data/bikepro.db` (override with `DATABASE_PATH`). Migrations in `drizzle/` run automatically when the server starts.
 
 ### Changing the database schema

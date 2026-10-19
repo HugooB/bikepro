@@ -1,12 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { redirect } from "next/navigation";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getFirstBike } from "@/db/queries";
 
-const upcoming = [
-  "Your bikes and all their parts",
-  "Age and wear status for every part",
-  "Maintenance logs and service rounds",
-];
+export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
+  const bike = await getFirstBike();
+  if (bike) redirect(`/bikes/${bike.id}`);
+
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-2">
@@ -23,18 +24,12 @@ export default function Home() {
       <Card>
         <CardHeader>
           <CardTitle>Your garage is empty</CardTitle>
-          <CardDescription>Bikes will appear here once adding them is available.</CardDescription>
+          <CardDescription>
+            Adding bikes arrives with the bike wizard. For now, run{" "}
+            <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">npm run db:seed</code>{" "}
+            to create a sample race bike.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <ul className="flex flex-col gap-2 text-sm">
-            {upcoming.map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <span aria-hidden className="bg-brand size-1.5 rounded-full" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </CardContent>
       </Card>
     </div>
   );
