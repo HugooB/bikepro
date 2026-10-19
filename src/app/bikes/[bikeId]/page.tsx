@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { BikeHeader } from "@/components/BikeHeader";
 import { PartList } from "@/components/PartList";
-import { getActiveParts, getBike } from "@/db/queries";
+import { StatusSummary } from "@/components/StatusSummary";
+import { getActiveParts, getBike, getLastResets } from "@/db/queries";
+import { computeStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +15,18 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
   const bike = await getBike(id);
   if (!bike) notFound();
   const parts = await getActiveParts(bike.id);
+  const resets = getLastResets(bike.id);
+  const statuses = new Map(
+    parts.map((p) => [p.id, computeStatus(p, resets.get(p.id) ?? null, bike.odometerKm)]),
+  );
 
   return (
     <div className="flex flex-col gap-8">
       <BikeHeader bike={bike} />
-      <PartList parts={parts} odometerKm={bike.odometerKm} />
+      <div className="flex flex-col gap-4">
+        <StatusSummary statuses={[...statuses.values()]} />
+        <PartList parts={parts} statuses={statuses} odometerKm={bike.odometerKm} />
+      </div>
     </div>
   );
 }

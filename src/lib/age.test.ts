@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAge, formatKm, kmSince } from "./age";
+import { formatAge, formatDays, formatKm, kmSince } from "./age";
 
 const now = new Date(2026, 9, 19, 15, 0); // 19 Oct 2026, local time
 
@@ -36,5 +36,21 @@ describe("kmSince", () => {
 describe("formatKm", () => {
   it("adds thousands separators", () => {
     expect(formatKm(12345)).toBe("12,345 km");
+  });
+});
+
+describe("formatDays", () => {
+  it.each([
+    [0, "0 days"],
+    [1, "1 day"],
+    [13, "13 days"],
+    [14, "2 wk"],
+    [60, "8 wk"],
+    [61, "2 mo"],
+    [200, "6 mo"],
+    [365, "1y"],
+    [500, "1y 4m"],
+  ])("%i → %s", (days, expected) => {
+    expect(formatDays(days)).toBe(expected);
   });
 });

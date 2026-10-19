@@ -1,6 +1,6 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { db } from "./index";
-import { bikes, parts } from "./schema";
+import { bikes, partEvents, parts } from "./schema";
 
 export function getFirstBike() {
   return db.query.bikes.findFirst({
@@ -18,4 +18,36 @@ export function getActiveParts(bikeId: number) {
     where: and(eq(parts.bikeId, bikeId), eq(parts.status, "active")),
     orderBy: [asc(parts.sortOrder), asc(parts.id)],
   });
+}
+
+export function getPart(bikeId: number, partId: number) {
+  return db.query.parts.findFirst({
+    where: and(eq(parts.id, partId), eq(parts.bikeId, bikeId)),
+  });
+}
+
+export function getPartEvents(partId: number) {
+  return db.query.partEvents.findMany({
+    where: eq(partEvents.partId, partId),
+    orderBy: [desc(partEvents.date), desc(partEvents.id)],
+  });
+}
+
+export type ResetPoint = { date: string; odometerKm: number | null };
+
+/** Latest interval-resetting event per part of a bike, keyed by part id. */
+export function getLastResets(bikeId: number): Map<number, ResetPoint> {
+  const rows = db
+    .select({ partId: partEvents.partId, date: partEvents.date, odometerKm: partEvents.odometerKm })
+    .from(partEvents)
+    .innerJoin(parts, eq(parts.id, partEvents.partId))
+    .where(and(eq(parts.bikeId, bikeId), eq(partEvents.resetsInterval, true)))
+    .orderBy(desc(partEvents.date), desc(partEvents.id))
+    .all();
+
+  const latest = new Map<number, ResetPoint>();
+  for (const row of rows) {
+    if (!latest.has(row.partId)) latest.set(row.partId, row);
+  }
+  return latest;
 }

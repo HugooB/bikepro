@@ -15,6 +15,13 @@
       "when": 1792422191893,
       "tag": "0001_bikes_parts_events",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792422556058,
+      "tag": "0002_event_resets_interval",
+      "breakpoints": true
     }
   ]
 }

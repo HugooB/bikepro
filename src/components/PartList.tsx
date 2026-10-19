@@ -1,8 +1,11 @@
 import { partCategories, type Part } from "@/db/schema";
 import { categoryLabels } from "@/lib/default-parts";
+import type { PartStatus } from "@/lib/status";
 import { PartRow } from "./PartRow";
 
-export function PartList({ parts, odometerKm }: { parts: Part[]; odometerKm: number }) {
+type Props = { parts: Part[]; statuses: Map<number, PartStatus>; odometerKm: number };
+
+export function PartList({ parts, statuses, odometerKm }: Props) {
   return (
     <div className="flex flex-col gap-6">
       {partCategories.map((category) => {
@@ -23,7 +26,12 @@ export function PartList({ parts, odometerKm }: { parts: Part[]; odometerKm: num
             </h2>
             <ul className="bg-card divide-y overflow-hidden rounded-xl border">
               {items.map((part) => (
-                <PartRow key={part.id} part={part} odometerKm={odometerKm} />
+                <PartRow
+                  key={part.id}
+                  part={part}
+                  status={statuses.get(part.id)!}
+                  odometerKm={odometerKm}
+                />
               ))}
             </ul>
           </section>

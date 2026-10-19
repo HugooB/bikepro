@@ -59,6 +59,7 @@ db.transaction((tx) => {
         date: installedAt,
         odometerKm: installedKm,
         type: "installed",
+        resetsInterval: true,
         description: swap ? `New ${template.name.toLowerCase()} fitted` : "Came with the bike",
       })
       .run();

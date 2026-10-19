@@ -5,8 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { bikes } from "@/db/schema";
-
-export type ActionState = { ok: boolean; error?: string };
+import type { ActionState } from "@/lib/action-state";
 
 const odometerSchema = z.object({
   bikeId: z.coerce.number().int().positive(),
@@ -26,5 +25,5 @@ export async function updateOdometer(_prev: ActionState, formData: FormData): Pr
   const { bikeId, odometerKm } = parsed.data;
   db.update(bikes).set({ odometerKm }).where(eq(bikes.id, bikeId)).run();
   revalidatePath(`/bikes/${bikeId}`);
-  return { ok: true };
+  return { ok: true, savedAt: Date.now() };
 }

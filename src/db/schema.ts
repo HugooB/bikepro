@@ -79,6 +79,8 @@ export const partEvents = sqliteTable(
     type: text("type", { enum: partEventTypes }).notNull(),
     description: text("description"),
     cost: real("cost"),
+    /** Whether this event restarts the part's service interval (e.g. serviced, replaced). */
+    resetsInterval: integer("resets_interval", { mode: "boolean" }).notNull().default(false),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
