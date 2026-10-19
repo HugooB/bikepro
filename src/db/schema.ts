@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // Run `npm run db:generate` after changing this file to create a migration.
@@ -67,6 +67,25 @@ export const parts = sqliteTable(
   (t) => [index("parts_bike_idx").on(t.bikeId, t.status)],
 );
 
+export const serviceRounds = sqliteTable(
+  "service_rounds",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    bikeId: integer("bike_id")
+      .notNull()
+      .references(() => bikes.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    shop: text("shop"),
+    odometerKm: real("odometer_km").notNull(),
+    totalCost: real("total_cost"),
+    notes: text("notes"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [index("service_rounds_bike_idx").on(t.bikeId, t.date)],
+);
+
 export const partEvents = sqliteTable(
   "part_events",
   {
@@ -81,6 +100,10 @@ export const partEvents = sqliteTable(
     cost: real("cost"),
     /** Whether this event restarts the part's service interval (e.g. serviced, replaced). */
     resetsInterval: integer("resets_interval", { mode: "boolean" }).notNull().default(false),
+    /** Set when the event was logged as part of a service round; the round links its parts. */
+    serviceRoundId: integer("service_round_id").references(() => serviceRounds.id, {
+      onDelete: "cascade",
+    }),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
@@ -88,6 +111,23 @@ export const partEvents = sqliteTable(
   (t) => [index("part_events_part_idx").on(t.partId, t.date)],
 );
 
+export const serviceRoundsRelations = relations(serviceRounds, ({ many }) => ({
+  events: many(partEvents),
+}));
+
+export const partEventsRelations = relations(partEvents, ({ one }) => ({
+  part: one(parts, { fields: [partEvents.partId], references: [parts.id] }),
+  serviceRound: one(serviceRounds, {
+    fields: [partEvents.serviceRoundId],
+    references: [serviceRounds.id],
+  }),
+}));
+
+export const partsRelations = relations(parts, ({ many }) => ({
+  events: many(partEvents),
+}));
+
 export type Bike = typeof bikes.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type PartEvent = typeof partEvents.$inferSelect;
+export type ServiceRound = typeof serviceRounds.$inferSelect;

@@ -5,5 +5,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // Database tests get a fresh in-memory SQLite database per test file.
+    env: { DATABASE_PATH: ":memory:" },
   },
 });

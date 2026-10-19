@@ -8,7 +8,8 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import type { PartEvent, PartEventType } from "@/db/schema";
+import type { PartEventWithRound } from "@/db/queries";
+import type { PartEventType } from "@/db/schema";
 import { formatKm } from "@/lib/age";
 import { eventTypeLabels } from "@/lib/event-types";
 import { formatCost } from "@/lib/format";
@@ -23,7 +24,7 @@ const icons: Record<PartEventType, LucideIcon> = {
   note: NotebookPen,
 };
 
-export function EventTimeline({ events }: { events: PartEvent[] }) {
+export function EventTimeline({ events }: { events: PartEventWithRound[] }) {
   if (events.length === 0) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
@@ -63,10 +64,17 @@ export function EventTimeline({ events }: { events: PartEvent[] }) {
                   </span>
                 )}
               </p>
+              {event.serviceRound && (
+                <p className="text-brand text-sm">
+                  Service round{event.serviceRound.shop && ` at ${event.serviceRound.shop}`}
+                </p>
+              )}
               {event.description && <p className="text-sm">{event.description}</p>}
               <p className="text-muted-foreground text-sm tabular-nums">{meta.join(" · ")}</p>
             </div>
-            {event.type !== "installed" && <DeleteEventButton eventId={event.id} />}
+            {event.type !== "installed" && !event.serviceRound && (
+              <DeleteEventButton eventId={event.id} />
+            )}
           </li>
         );
       })}

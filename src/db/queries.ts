@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "./index";
-import { bikes, partEvents, parts } from "./schema";
+import { bikes, partEvents, parts, serviceRounds } from "./schema";
 
 export function getFirstBike() {
   return db.query.bikes.findFirst({
@@ -30,7 +30,28 @@ export function getPartEvents(partId: number) {
   return db.query.partEvents.findMany({
     where: eq(partEvents.partId, partId),
     orderBy: [desc(partEvents.date), desc(partEvents.id)],
+    with: { serviceRound: { columns: { id: true, shop: true } } },
   });
+}
+
+export type PartEventWithRound = Awaited<ReturnType<typeof getPartEvents>>[number];
+
+export function getLastServiceRound(bikeId: number) {
+  return db.query.serviceRounds.findFirst({
+    where: eq(serviceRounds.bikeId, bikeId),
+    orderBy: [desc(serviceRounds.date), desc(serviceRounds.id)],
+  });
+}
+
+/** Shop names used before on this bike, most recent first, for autocomplete. */
+export function getKnownShops(bikeId: number): string[] {
+  const rows = db
+    .selectDistinct({ shop: serviceRounds.shop })
+    .from(serviceRounds)
+    .where(and(eq(serviceRounds.bikeId, bikeId), isNotNull(serviceRounds.shop)))
+    .orderBy(desc(serviceRounds.date))
+    .all();
+  return rows.map((r) => r.shop!);
 }
 
 export type ResetPoint = { date: string; odometerKm: number | null };

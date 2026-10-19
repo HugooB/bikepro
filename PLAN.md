@@ -25,7 +25,7 @@ The project directory (`/Users/hugobijmans/Documents/git/bikepro`) is empty, so 
 - `parts`: id, bikeId, category (drivetrain/wheels/brakes/contact), kind (`chain`, `tire_rear`, ...), name/brand/model, svgZone, installedAt, installedKm, intervalKm?, intervalDays?, cost?, status (`active` | `retired`), retiredAt?, retiredKm?, replacedByPartId?
 - `part_events`: id, partId, date, odometerKm, type (`serviced` | `adjusted` | `cleaned` | `note` | `installed` | `replaced`), description ("New tire fitted"), cost?
 - `service_rounds`: id, bikeId, date, shop, odometerKm, totalCost?, notes
-- `service_round_parts`: serviceRoundId, partId, action note. Each one also creates a `part_events` row, so the part's "last serviced" updates.
+- Each part a service round covers gets a `part_events` row with `serviceRoundId` set (action + note), so the round links its parts and each part's "last serviced" updates. (This replaced a separate `service_round_parts` table.)
 
 **Derived values:** part age = now − installedAt. Part km = bike odometer − installedKm. Status takes the _last serviced_ or _installed_ point (whichever is later) for services that reset an interval; otherwise it uses installation. Status ratio = max(km / intervalKm, days / intervalDays): green below 0.75, orange from 0.75 to 1, red at 1 and above.
 
@@ -134,7 +134,7 @@ Each milestone leaves the app working and usable, so the build can stop after an
 
 ### M3: Service rounds (FAB)
 
-- Schema: `service_rounds`, `service_round_parts`
+- Schema: `service_rounds`, plus `part_events.serviceRoundId` linking each covered part
 - Floating "+ Service round" button and sheet: date, shop, odometer, cost, notes, multi-select of parts with an optional action note per part
 - Saving creates one `part_events` row per selected part
 - **Done when:** a service round covering 3 parts shows up in each part's timeline and resets their status where relevant

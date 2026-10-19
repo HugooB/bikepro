@@ -29,3 +29,7 @@ export const descriptionPlaceholders: Record<LoggableEventType, string> = {
   replaced: "e.g. New chain fitted, Shimano CN-M8100",
   note: "e.g. Slight creak when climbing",
 };
+
+/** Actions a shop can perform on a part during a service round. */
+export const serviceActions = ["serviced", "cleaned", "adjusted", "replaced"] as const;
+export type ServiceAction = (typeof serviceActions)[number];

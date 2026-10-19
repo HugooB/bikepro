@@ -4,7 +4,8 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { bikes, partEvents, parts } from "@/db/schema";
+import { bumpOdometer, recordPartEvent } from "@/db/part-events";
+import { partEvents, parts } from "@/db/schema";
 import type { ActionState } from "@/lib/action-state";
 import { loggableEventTypes } from "@/lib/event-types";
 import { monthsToDays } from "@/lib/format";
@@ -51,35 +52,16 @@ export async function addPartEvent(_prev: ActionState, formData: FormData): Prom
   const part = db.query.parts.findFirst({ where: eq(parts.id, input.partId) }).sync();
   if (!part) return { ok: false, error: "Part not found" };
 
-  // A replacement always restarts the interval.
-  const resetsInterval = input.type === "replaced" || input.resetsInterval;
-
   db.transaction((tx) => {
-    tx.insert(partEvents)
-      .values({
-        partId: part.id,
-        type: input.type,
-        description: input.description ?? null,
-        date: input.date,
-        odometerKm: input.odometerKm,
-        cost: input.cost ?? null,
-        resetsInterval,
-      })
-      .run();
-
-    // A newer replacement makes the part "new" again, so its age counts from here.
-    if (input.type === "replaced" && input.date >= part.installedAt) {
-      tx.update(parts)
-        .set({ installedAt: input.date, installedKm: input.odometerKm })
-        .where(eq(parts.id, part.id))
-        .run();
-    }
-
-    // Logging a higher odometer reading than the bike's moves the bike's odometer forward.
-    const bike = tx.select().from(bikes).where(eq(bikes.id, part.bikeId)).get();
-    if (bike && input.odometerKm > bike.odometerKm) {
-      tx.update(bikes).set({ odometerKm: input.odometerKm }).where(eq(bikes.id, bike.id)).run();
-    }
+    recordPartEvent(tx, part, {
+      type: input.type,
+      description: input.description,
+      date: input.date,
+      odometerKm: input.odometerKm,
+      cost: input.cost,
+      resetsInterval: input.resetsInterval,
+    });
+    bumpOdometer(tx, part.bikeId, input.odometerKm);
   });
 
   revalidateBike(part.bikeId, part.id);
@@ -91,8 +73,8 @@ export async function deletePartEvent(formData: FormData) {
   if (!Number.isInteger(id)) return;
 
   const event = db.query.partEvents.findFirst({ where: eq(partEvents.id, id) }).sync();
-  // The "installed" event is the part's origin and is kept.
-  if (!event || event.type === "installed") return;
+  // The "installed" event is the part's origin and is kept; service round events go with their round.
+  if (!event || event.type === "installed" || event.serviceRoundId !== null) return;
 
   const part = db.query.parts.findFirst({ where: eq(parts.id, event.partId) }).sync();
   db.delete(partEvents).where(eq(partEvents.id, id)).run();
