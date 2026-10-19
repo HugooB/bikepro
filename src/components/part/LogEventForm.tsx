@@ -15,16 +15,26 @@ import {
 } from "@/lib/event-types";
 import { cn } from "@/lib/utils";
 
-type Props = { partId: number; partName: string; odometerKm: number; today: string };
+type Props = {
+  partId: number;
+  partName: string;
+  odometerKm: number;
+  today: string;
+  /** Pre-selected action, e.g. "replaced" when arriving from the "Replace part" button. */
+  initialType?: LoggableEventType;
+};
 
-export function LogEventForm({ partId, partName, odometerKm, today }: Props) {
+export function LogEventForm({ partId, partName, odometerKm, today, initialType }: Props) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     addPartEvent,
     initialActionState,
   );
-  const [type, setType] = useState<LoggableEventType>("serviced");
-  const [resets, setResets] = useState(resetsByDefault.serviced);
+  const startType = initialType ?? "serviced";
+  const [type, setType] = useState<LoggableEventType>(startType);
+  const [resets, setResets] = useState(resetsByDefault[startType]);
   const [formKey, setFormKey] = useState(0);
+  const replacing = type === "replaced";
+  const lowerName = partName.toLowerCase();
 
   // After a successful save, clear the form for the next entry.
   useEffect(() => {
@@ -75,6 +85,25 @@ export function LogEventForm({ partId, partName, odometerKm, today }: Props) {
         </div>
       </fieldset>
 
+      {replacing && (
+        <div className="bg-muted/60 flex flex-col gap-3 rounded-lg p-3">
+          <p className="text-sm">
+            The current {lowerName} moves to <span className="font-medium">History</span> and a new
+            one takes its place with the same service interval.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="newBrand">New brand</Label>
+              <Input id="newBrand" name="newBrand" maxLength={60} placeholder="e.g. Continental" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="newModel">New model</Label>
+              <Input id="newModel" name="newModel" maxLength={80} placeholder="e.g. GP5000" />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="description">Details (optional)</Label>
         <Input
@@ -104,31 +133,31 @@ export function LogEventForm({ partId, partName, odometerKm, today }: Props) {
           />
         </div>
         <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-1">
-          <Label htmlFor="cost">Cost € (optional)</Label>
+          <Label htmlFor="cost">{replacing ? "Price of new part €" : "Cost € (optional)"}</Label>
           <Input id="cost" name="cost" type="number" inputMode="decimal" min={0} step="0.01" />
         </div>
       </div>
 
-      <label className="flex items-start gap-3 text-sm">
-        <input
-          type="checkbox"
-          name="resetsInterval"
-          checked={type === "replaced" || resets}
-          disabled={type === "replaced"}
-          onChange={(e) => setResets(e.target.checked)}
-          className="accent-brand mt-0.5 size-4"
-        />
-        <span>
-          <span className="font-medium">Restart the service interval</span>
-          <span className="text-muted-foreground block">
-            {type === "replaced"
-              ? `A new ${partName.toLowerCase()} starts fresh: its age and km reset.`
-              : "Count the next service from this date and odometer reading."}
+      {replacing ? (
+        // A replacement always starts a fresh interval.
+        <input type="hidden" name="resetsInterval" value="on" />
+      ) : (
+        <label className="flex items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            name="resetsInterval"
+            checked={resets}
+            onChange={(e) => setResets(e.target.checked)}
+            className="accent-brand mt-0.5 size-4"
+          />
+          <span>
+            <span className="font-medium">Restart the service interval</span>
+            <span className="text-muted-foreground block">
+              Count the next service from this date and odometer reading.
+            </span>
           </span>
-        </span>
-      </label>
-      {/* Disabled inputs aren't submitted, so send the value for replacements explicitly. */}
-      {type === "replaced" && <input type="hidden" name="resetsInterval" value="on" />}
+        </label>
+      )}
 
       {state.error && (
         <p role="alert" className="text-destructive text-sm">
@@ -137,7 +166,7 @@ export function LogEventForm({ partId, partName, odometerKm, today }: Props) {
       )}
 
       <Button type="submit" disabled={pending} className="w-full sm:w-fit">
-        {pending ? "Saving…" : "Add to history"}
+        {pending ? "Saving…" : replacing ? `Replace ${lowerName}` : "Add to history"}
       </Button>
     </form>
   );

@@ -24,7 +24,9 @@ const icons: Record<PartEventType, LucideIcon> = {
   note: NotebookPen,
 };
 
-export function EventTimeline({ events }: { events: PartEventWithRound[] }) {
+type Props = { events: PartEventWithRound[]; readOnly?: boolean };
+
+export function EventTimeline({ events, readOnly = false }: Props) {
   if (events.length === 0) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
@@ -72,7 +74,7 @@ export function EventTimeline({ events }: { events: PartEventWithRound[] }) {
               {event.description && <p className="text-sm">{event.description}</p>}
               <p className="text-muted-foreground text-sm tabular-nums">{meta.join(" · ")}</p>
             </div>
-            {event.type !== "installed" && !event.serviceRound && (
+            {!readOnly && event.type !== "installed" && !event.serviceRound && (
               <DeleteEventButton eventId={event.id} />
             )}
           </li>

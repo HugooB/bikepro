@@ -43,6 +43,7 @@ export function createServiceRound(input: NewServiceRound) {
     for (const item of input.parts) {
       const part = byId.get(item.partId);
       if (!part) throw new Error(`Part ${item.partId} does not belong to bike ${input.bikeId}`);
+      // A replacement retires the part and installs a new one (see replacePart).
       recordPartEvent(tx, part, {
         type: item.type,
         description: item.note ?? null,

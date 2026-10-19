@@ -87,9 +87,17 @@ describe("createServiceRound", () => {
     expect(eventsFor(partIds.saddle)).toHaveLength(0);
   });
 
-  it("makes replaced parts new again and moves the odometer forward", () => {
-    const chain = db.select().from(parts).where(eq(parts.id, partIds.chain)).get();
-    expect(chain).toMatchObject({ installedAt: "2026-10-10", installedKm: 5400 });
+  it("retires replaced parts in favour of a new one and moves the odometer forward", () => {
+    const oldChain = db.select().from(parts).where(eq(parts.id, partIds.chain)).get()!;
+    expect(oldChain).toMatchObject({ status: "retired", retiredAt: "2026-10-10", retiredKm: 5400 });
+    const newChain = db.select().from(parts).where(eq(parts.id, oldChain.replacedByPartId!)).get();
+    expect(newChain).toMatchObject({
+      status: "active",
+      installedAt: "2026-10-10",
+      installedKm: 5400,
+    });
+    // The new part's "installed" event isn't linked to the round, so the round lists the chain once.
+    expect(eventsFor(newChain!.id)).toMatchObject([{ type: "installed", serviceRoundId: null }]);
     expect(db.select().from(bikes).where(eq(bikes.id, bikeId)).get()?.odometerKm).toBe(5400);
   });
 

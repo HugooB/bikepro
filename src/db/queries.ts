@@ -72,3 +72,27 @@ export function getLastResets(bikeId: number): Map<number, ResetPoint> {
   }
   return latest;
 }
+
+/** Parts that were replaced, most recently retired first. */
+export function getRetiredParts(bikeId: number) {
+  return db.query.parts.findMany({
+    where: and(eq(parts.bikeId, bikeId), eq(parts.status, "retired")),
+    orderBy: [desc(parts.retiredAt), desc(parts.id)],
+  });
+}
+
+/** Service rounds with the parts they covered, newest first. */
+export function getServiceRounds(bikeId: number) {
+  return db.query.serviceRounds.findMany({
+    where: eq(serviceRounds.bikeId, bikeId),
+    orderBy: [desc(serviceRounds.date), desc(serviceRounds.id)],
+    with: {
+      events: {
+        columns: { id: true, type: true, description: true },
+        with: { part: { columns: { id: true, name: true, sortOrder: true } } },
+      },
+    },
+  });
+}
+
+export type ServiceRoundWithParts = Awaited<ReturnType<typeof getServiceRounds>>[number];

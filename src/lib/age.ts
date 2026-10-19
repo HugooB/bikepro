@@ -45,3 +45,19 @@ export function formatDays(days: number): string {
   const rest = months % 12;
   return rest === 0 ? `${years}y` : `${years}y ${rest}m`;
 }
+
+type RetiredPart = {
+  installedAt: string;
+  installedKm: number;
+  retiredAt: string | null;
+  retiredKm: number | null;
+};
+
+/** How long (days) and how far (km) a replaced part lasted. */
+export function partLifetime(part: RetiredPart) {
+  const end = part.retiredAt ?? part.installedAt;
+  return {
+    days: Math.max(0, differenceInCalendarDays(parseISO(end), parseISO(part.installedAt))),
+    km: Math.max(0, Math.round((part.retiredKm ?? part.installedKm) - part.installedKm)),
+  };
+}

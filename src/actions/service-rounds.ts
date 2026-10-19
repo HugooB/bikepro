@@ -1,7 +1,11 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { db } from "@/db";
+import { PartEventError } from "@/db/part-events";
+import { serviceRounds } from "@/db/schema";
 import { createServiceRound } from "@/db/service-rounds";
 import type { ActionState } from "@/lib/action-state";
 import { serviceActions } from "@/lib/event-types";
@@ -60,10 +64,23 @@ export async function saveServiceRound(
 
   try {
     createServiceRound(input);
-  } catch {
+  } catch (e) {
+    if (e instanceof PartEventError) return { ok: false, error: e.message };
     return { ok: false, error: "Couldn't save the service round. Please try again." };
   }
 
   revalidatePath(`/bikes/${input.bikeId}`, "layout");
   return { ok: true, savedAt: Date.now() };
+}
+
+/** Deletes a service round and the part events it logged. Replaced parts stay replaced. */
+export async function deleteServiceRound(formData: FormData) {
+  const id = Number(formData.get("serviceRoundId"));
+  if (!Number.isInteger(id)) return;
+
+  const round = db.query.serviceRounds.findFirst({ where: eq(serviceRounds.id, id) }).sync();
+  if (!round) return;
+
+  db.delete(serviceRounds).where(eq(serviceRounds.id, id)).run();
+  revalidatePath(`/bikes/${round.bikeId}`, "layout");
 }

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { BikeHeader } from "@/components/BikeHeader";
+import { BikeNav } from "@/components/BikeNav";
 import { PartList } from "@/components/PartList";
 import { ServiceRoundSheet } from "@/components/ServiceRoundSheet";
 import { StatusSummary } from "@/components/StatusSummary";
@@ -34,8 +35,9 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
     <div className="flex flex-col gap-8">
       <BikeHeader bike={bike} lastRound={lastRound} />
       <div className="flex flex-col gap-4">
+        <BikeNav bikeId={bike.id} />
         <StatusSummary statuses={[...statuses.values()]} />
-        <PartList parts={parts} statuses={statuses} odometerKm={bike.odometerKm} />
+        <PartList bikeId={bike.id} parts={parts} statuses={statuses} odometerKm={bike.odometerKm} />
       </div>
       <ServiceRoundSheet
         bikeId={bike.id}

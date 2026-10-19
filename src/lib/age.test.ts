@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAge, formatDays, formatKm, kmSince } from "./age";
+import { formatAge, formatDays, formatKm, kmSince, partLifetime } from "./age";
 
 const now = new Date(2026, 9, 19, 15, 0); // 19 Oct 2026, local time
 
@@ -52,5 +52,18 @@ describe("formatDays", () => {
     [500, "1y 4m"],
   ])("%i → %s", (days, expected) => {
     expect(formatDays(days)).toBe(expected);
+  });
+});
+
+describe("partLifetime", () => {
+  it("measures days and km between install and retirement", () => {
+    expect(
+      partLifetime({
+        installedAt: "2025-04-01",
+        installedKm: 1200,
+        retiredAt: "2026-04-01",
+        retiredKm: 6450.4,
+      }),
+    ).toEqual({ days: 365, km: 5250 });
   });
 });
