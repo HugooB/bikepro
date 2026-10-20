@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import type { Bike, ServiceRound } from "@/db/schema";
 import { formatAge } from "@/lib/age";
@@ -10,6 +11,14 @@ export function BikeHeader({ bike, lastRound }: { bike: Bike; lastRound?: Servic
 
   return (
     <header className="flex flex-col gap-1.5">
+      {bike.archivedAt && (
+        <p className="bg-muted text-muted-foreground mb-1 self-start rounded-full px-3 py-1 text-xs font-medium">
+          Archived ·{" "}
+          <Link href="/settings" className="text-foreground underline underline-offset-2">
+            restore in Settings
+          </Link>
+        </p>
+      )}
       <h1 className="font-display text-4xl leading-none sm:text-5xl">{bike.name}</h1>
       {(makeModel || owned) && (
         <p className="text-muted-foreground">

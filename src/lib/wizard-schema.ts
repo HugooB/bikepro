@@ -1,0 +1,296 @@
+import { differenceInCalendarDays, parseISO } from "date-fns";
+import { z } from "zod";
+import { bikeTypes, type BikeType, type PartCategory } from "@/db/schema";
+import { defaultPartsFor, type PartTemplate } from "./default-parts";
+import { daysToMonths, monthsToDays } from "./format";
+
+// The add-bike wizard collects a draft over five steps; nothing is saved until the last one.
+// Each step validates its own slice of the draft, and the server re-validates the whole thing.
+
+export const wizardSteps = ["basics", "odometer", "purchase", "parts", "review"] as const;
+export type WizardStep = (typeof wizardSteps)[number];
+
+export type PartChoice = {
+  kind: string;
+  included: boolean;
+  /** Fitted since the bike was bought, so it is younger than the bike. */
+  replaced: boolean;
+  replacedAt: string;
+  /** Odometer when it was fitted; empty means "estimate it". */
+  replacedKm: string;
+  intervalKm: string;
+  intervalMonths: string;
+};
+
+export type WizardDraft = {
+  name: string;
+  type: BikeType;
+  brand: string;
+  model: string;
+  /** Frame colour for the drawing; empty uses the brand colour. */
+  color: string;
+  odometerKm: string;
+  purchasedAt: string;
+  condition: "new" | "used";
+  /** Odometer when a used bike was bought. */
+  purchaseKm: string;
+  parts: PartChoice[];
+};
+
+/** Template parts as wizard choices: everything ticked, default intervals. */
+export function partChoicesFor(type: BikeType): PartChoice[] {
+  return defaultPartsFor(type).map((t) => ({
+    kind: t.kind,
+    included: true,
+    replaced: false,
+    replacedAt: "",
+    replacedKm: "",
+    intervalKm: t.intervalKm ? String(t.intervalKm) : "",
+    intervalMonths: t.intervalDays ? String(daysToMonths(t.intervalDays)) : "",
+  }));
+}
+
+export function emptyDraft(today: string): WizardDraft {
+  return {
+    name: "",
+    type: "road",
+    brand: "",
+    model: "",
+    color: "",
+    odometerKm: "0",
+    purchasedAt: today,
+    condition: "new",
+    purchaseKm: "0",
+    parts: partChoicesFor("road"),
+  };
+}
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date");
+const km = (label: string) =>
+  z.coerce
+    .number({ error: `Enter ${label}` })
+    .min(0, "Kilometres can't be negative")
+    .max(1_000_000, "That's a lot of kilometres");
+const optionalWhole = (label: string) =>
+  z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z.coerce
+      .number({ error: `${label} must be a number` })
+      .int(`${label} must be a whole number`)
+      .positive(`${label} must be more than 0`)
+      .optional(),
+  );
+
+export const basicsSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Give your bike a name")
+    .max(40, "Keep the name under 40 characters"),
+  type: z.enum(bikeTypes, { error: "Choose a bike type" }),
+  brand: z.string().trim().max(60),
+  model: z.string().trim().max(80),
+  color: z.union([z.literal(""), z.string().regex(/^#[0-9a-f]{6}$/i, "Pick a colour")]),
+});
+
+export const odometerSchema = z.object({ odometerKm: km("the odometer in km") });
+
+export const purchaseSchema = (today: string) =>
+  z
+    .object({
+      purchasedAt: isoDate.refine((d) => d <= today, "The purchase date can't be in the future"),
+      condition: z.enum(["new", "used"]),
+      purchaseKm: km("the km it had when you bought it"),
+      odometerKm: km("the odometer in km"),
+    })
+    .refine((d) => d.condition === "new" || d.purchaseKm <= d.odometerKm, {
+      message: "That's more than the bike's odometer now",
+      path: ["purchaseKm"],
+    });
+
+const partChoiceSchema = z.object({
+  kind: z.string(),
+  included: z.boolean(),
+  replaced: z.boolean(),
+  replacedAt: z.string(),
+  replacedKm: z.string(),
+  intervalKm: optionalWhole("Interval km"),
+  intervalMonths: optionalWhole("Interval months"),
+});
+
+export const partsSchema = (
+  today: string,
+  purchasedAt: string,
+  startKm: number,
+  odometerKm: number,
+) =>
+  z.object({
+    parts: z
+      .array(partChoiceSchema)
+      .refine((parts) => parts.some((p) => p.included), "Keep at least one part")
+      .superRefine((parts, ctx) => {
+        parts.forEach((p, i) => {
+          if (!p.included || !p.replaced) return;
+          const at = isoDate.safeParse(p.replacedAt);
+          if (!at.success) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Pick when it was replaced",
+              path: [i, "replacedAt"],
+            });
+          } else if (p.replacedAt < purchasedAt || p.replacedAt > today) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Pick a date between buying the bike and today",
+              path: [i, "replacedAt"],
+            });
+          }
+          if (p.replacedKm === "") return;
+          const kmAt = Number(p.replacedKm);
+          if (!Number.isFinite(kmAt) || kmAt < startKm || kmAt > odometerKm) {
+            ctx.addIssue({
+              code: "custom",
+              message: `Enter km between ${Math.round(startKm)} and ${Math.round(odometerKm)}`,
+              path: [i, "replacedKm"],
+            });
+          }
+        });
+      }),
+  });
+
+/** Odometer km the bike had when it was bought. */
+export function startKm(draft: Pick<WizardDraft, "condition" | "purchaseKm">): number {
+  return draft.condition === "used" ? Number(draft.purchaseKm) || 0 : 0;
+}
+
+/** Validates one step; returns field errors keyed by path ("name", "parts.3.replacedAt"). */
+export function validateStep(step: WizardStep, draft: WizardDraft, today: string) {
+  const result = stepSchema(step, draft, today).safeParse(draft);
+  if (result.success) return null;
+  const errors: Record<string, string> = {};
+  for (const issue of result.error.issues) {
+    const key = issue.path.join(".") || step;
+    errors[key] ??= issue.message;
+  }
+  return errors;
+}
+
+function stepSchema(step: WizardStep, draft: WizardDraft, today: string): z.ZodType {
+  switch (step) {
+    case "basics":
+      return basicsSchema;
+    case "odometer":
+      return odometerSchema;
+    case "purchase":
+      return purchaseSchema(today);
+    case "parts":
+      return partsSchema(today, draft.purchasedAt, startKm(draft), Number(draft.odometerKm) || 0);
+    case "review":
+      return z.any();
+  }
+}
+
+export type PlannedPart = PartTemplate & {
+  installedAt: string;
+  installedKm: number;
+  intervalKm: number | undefined;
+  intervalDays: number | undefined;
+  sortOrder: number;
+  replaced: boolean;
+};
+
+export type BikePlan = {
+  bike: {
+    name: string;
+    type: BikeType;
+    brand: string | null;
+    model: string | null;
+    color: string | null;
+    purchasedAt: string;
+    odometerKm: number;
+  };
+  parts: PlannedPart[];
+};
+
+/** Thrown when a draft doesn't pass validation; `step` is where the user can fix it. */
+export class WizardDraftError extends Error {
+  constructor(
+    readonly step: WizardStep,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Validates a complete draft and turns it into the bike and part rows to create. Parts start
+ * at the purchase date and km, except parts replaced since then, which start when they were
+ * fitted. A replacement without km gets an estimate from the average riding since purchase.
+ */
+export function planBike(draft: WizardDraft, today: string): BikePlan {
+  for (const step of wizardSteps) {
+    const errors = validateStep(step, draft, today);
+    if (errors) throw new WizardDraftError(step, Object.values(errors)[0]);
+  }
+
+  const basics = basicsSchema.parse(draft);
+  const odometerKm = Number(draft.odometerKm);
+  const fromKm = startKm(draft);
+  const choices = new Map(draft.parts.map((p) => [p.kind, p]));
+
+  const parts = defaultPartsFor(basics.type).flatMap((template, i): PlannedPart[] => {
+    const choice = choices.get(template.kind);
+    if (!choice?.included) return [];
+    const { intervalKm, intervalMonths } = partChoiceSchema.parse(choice);
+    const replaced = choice.replaced;
+    return [
+      {
+        ...template,
+        installedAt: replaced ? choice.replacedAt : draft.purchasedAt,
+        installedKm: replaced
+          ? choice.replacedKm === ""
+            ? estimateKm(draft.purchasedAt, fromKm, today, odometerKm, choice.replacedAt)
+            : Number(choice.replacedKm)
+          : fromKm,
+        intervalKm,
+        intervalDays: intervalMonths ? monthsToDays(intervalMonths) : undefined,
+        sortOrder: i,
+        replaced,
+      },
+    ];
+  });
+
+  return {
+    bike: {
+      name: basics.name,
+      type: basics.type,
+      brand: basics.brand || null,
+      model: basics.model || null,
+      color: basics.color || null,
+      purchasedAt: draft.purchasedAt,
+      odometerKm,
+    },
+    parts,
+  };
+}
+
+/** Odometer on `date`, assuming the km since purchase were ridden at an even pace. */
+export function estimateKm(
+  fromDate: string,
+  fromKm: number,
+  toDate: string,
+  toKm: number,
+  date: string,
+): number {
+  const span = differenceInCalendarDays(parseISO(toDate), parseISO(fromDate));
+  if (span <= 0) return toKm;
+  const share = differenceInCalendarDays(parseISO(date), parseISO(fromDate)) / span;
+  return Math.round(fromKm + (toKm - fromKm) * Math.min(1, Math.max(0, share)));
+}
+
+export function partsByCategory(type: BikeType): [PartCategory, PartTemplate[]][] {
+  const groups = new Map<PartCategory, PartTemplate[]>();
+  for (const t of defaultPartsFor(type))
+    groups.set(t.category, [...(groups.get(t.category) ?? []), t]);
+  return [...groups];
+}

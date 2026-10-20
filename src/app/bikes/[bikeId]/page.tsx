@@ -6,6 +6,7 @@ import { BikeHeader } from "@/components/BikeHeader";
 import { BikeNav } from "@/components/BikeNav";
 import { OdometerForm } from "@/components/OdometerForm";
 import { PartList } from "@/components/PartList";
+import { RememberBike } from "@/components/RememberBike";
 import { ServiceRoundSheet } from "@/components/ServiceRoundSheet";
 import { StatusSummary } from "@/components/StatusSummary";
 import {
@@ -44,6 +45,7 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
 
   return (
     <ZoneProvider>
+      <RememberBike bikeId={bike.id} />
       {/* Mobile: one column. Desktop: the bike stays in view on the left while the list scrolls. */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,11fr)_minmax(0,10fr)] lg:gap-12">
         <aside className="flex flex-col gap-6 lg:sticky lg:top-20 lg:self-start">

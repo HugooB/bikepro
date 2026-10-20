@@ -9,6 +9,14 @@ export function getFirstBike() {
   });
 }
 
+/** Bikes for the switcher and settings; archived bikes are left out unless asked for. */
+export function getBikes({ includeArchived = false } = {}) {
+  return db.query.bikes.findMany({
+    where: includeArchived ? undefined : isNull(bikes.archivedAt),
+    orderBy: [asc(bikes.createdAt), asc(bikes.id)],
+  });
+}
+
 export function getBike(id: number) {
   return db.query.bikes.findFirst({ where: eq(bikes.id, id) });
 }

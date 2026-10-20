@@ -1,9 +1,15 @@
 // Dev-only: creates a sample "Race bike" with all default parts. Usage: npm run db:seed [-- --reset]
+// Real bikes are added with the add-bike wizard at /bikes/new.
 import { format, subMonths } from "date-fns";
 import { defaultPartsFor } from "../lib/default-parts";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
 import { bikes, partEvents, parts } from "./schema";
+
+if (process.env.NODE_ENV === "production") {
+  console.error("The seed script is for development only; add bikes with the wizard instead.");
+  process.exit(1);
+}
 
 runMigrations();
 

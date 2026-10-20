@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { getBikes } from "@/db/queries";
+import { BikeSwitcher } from "./BikeSwitcher";
 
-export function AppHeader() {
+export async function AppHeader() {
+  const bikes = await getBikes();
+
   return (
     <header className="border-border/60 bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
@@ -23,6 +27,7 @@ export function AppHeader() {
           </span>
           BikePro
         </Link>
+        <BikeSwitcher bikes={bikes.map(({ id, name, color }) => ({ id, name, color }))} />
       </div>
     </header>
   );
