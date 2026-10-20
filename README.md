@@ -37,3 +37,15 @@ The app runs on port 3000. The database is stored in the `bikepro-data` volume, 
 - After that, registration is closed. To let someone else sign up, set `ALLOW_REGISTRATION=true` in `.env`, restart, and remove it again once they're in.
 - Passwords are hashed with scrypt. Sessions live in the database, so signing out (or "Sign out everywhere" in Settings) ends them immediately; unused sessions expire after 30 days.
 - Behind HTTPS (recommended whenever the app is reachable outside your home network), set `APP_URL=https://…` so the sign-in cookie is only ever sent over HTTPS.
+
+### Strava
+
+Bikes linked to Strava take their kilometres from Strava's total for that bike, updated when you open BikePro (at most once an hour) or with "Sync now" in Settings. BikePro only reads your bikes and their distance, never your rides.
+
+1. Create an API application at [strava.com/settings/api](https://www.strava.com/settings/api). Set **Authorization Callback Domain** to the host BikePro runs on, without `http://` or a port: `localhost` for development, or e.g. `bikes.example.com`.
+2. Put its **Client ID** and **Client Secret** in `.env` as `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET`, and set `APP_URL` to the address you open BikePro on. Restart.
+3. In BikePro, go to Settings → Strava → **Connect with Strava**, then pick which Strava bike belongs to each BikePro bike. New bikes can be linked in the add-bike wizard.
+
+When linking a bike whose odometer differs from Strava's total, you choose: keep your reading and add new Strava km on top of it, or jump to Strava's total (every part then counts the difference as ridden). Correcting the odometer by hand later works the same way, and syncs keep adding to it.
+
+Strava tokens are stored encrypted with a key derived from `STRAVA_CLIENT_SECRET`. If you change the secret, connect Strava again.

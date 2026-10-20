@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { PartEventType } from "./schema";
+import { setOdometer } from "./bikes";
 import { bikes, partEvents, parts, type Part } from "./schema";
 import type { db } from "./index";
 
@@ -131,7 +132,5 @@ export function replacePart(tx: Tx, part: Part, r: Replacement): Part {
 /** Moves the bike's odometer forward when a higher reading is logged; never backwards. */
 export function bumpOdometer(tx: Tx, bikeId: number, odometerKm: number) {
   const bike = tx.select().from(bikes).where(eq(bikes.id, bikeId)).get();
-  if (bike && odometerKm > bike.odometerKm) {
-    tx.update(bikes).set({ odometerKm }).where(eq(bikes.id, bikeId)).run();
-  }
+  if (bike && odometerKm > bike.odometerKm) setOdometer(tx, bike, odometerKm);
 }

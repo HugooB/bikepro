@@ -8,12 +8,22 @@ import { ZoneProvider } from "@/components/bike/zone-context";
 import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
 import { Button } from "@/components/ui/button";
 import { formatAge, formatKm } from "@/lib/age";
-import { bikeTypeLabels, frameColors, stravaEnabled } from "@/lib/bikes";
+import { bikeTypeLabels, frameColors } from "@/lib/bikes";
 import { categoryLabels, defaultPartsFor } from "@/lib/default-parts";
 import { cn } from "@/lib/utils";
 import { partsByCategory, startKm, type WizardDraft, type WizardStep } from "@/lib/wizard-schema";
 import { ChoiceChip, StepHeading, WizardField } from "./fields";
 import type { WizardAction } from "./wizard-state";
+
+/** What the wizard knows about the user's Strava account. */
+export type WizardStrava = {
+  configured: boolean;
+  connected: boolean;
+  /** Strava bikes not linked to a BikePro bike yet. */
+  bikes: { id: string; name: string; distanceKm: number }[];
+  /** ?strava= outcome after coming back from connecting. */
+  outcome?: string;
+};
 
 export type StepProps = {
   draft: WizardDraft;
@@ -21,6 +31,7 @@ export type StepProps = {
   dispatch: React.Dispatch<WizardAction>;
   today: string;
   headingRef: React.Ref<HTMLHeadingElement>;
+  strava: WizardStrava;
 };
 
 export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
@@ -76,16 +87,51 @@ export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
   );
 }
 
-/** Kilometres step. Linking Strava instead of typing km arrives in M8 behind `stravaEnabled`. */
-export function StepStrava({ draft, errors, dispatch, headingRef }: StepProps) {
+/** Kilometres step: pick a Strava bike to take them from, or type the odometer reading. */
+export function StepStrava({ draft, errors, dispatch, headingRef, strava }: StepProps) {
+  const patch = (p: Partial<WizardDraft>) => dispatch({ type: "patch", patch: p });
+  const offerStrava = strava.connected && strava.bikes.length > 0;
+  const fromStrava = strava.bikes.some((b) => b.id === draft.stravaGearId);
+  const connectFailed = strava.outcome && strava.outcome !== "connected";
+
   return (
     <>
       <StepHeading
         headingRef={headingRef}
         title="How far has it been ridden?"
-        intro="Enter the odometer reading. Part wear is counted from this, and you can update it any time."
+        intro={
+          offerStrava
+            ? "Take the kilometres from Strava and they stay up to date, or enter the odometer yourself."
+            : "Enter the odometer reading. Part wear is counted from this, and you can update it any time."
+        }
       />
-      {stravaEnabled ? null : (
+      {offerStrava && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-sm font-medium">Kilometres from</legend>
+          <div className="grid gap-2">
+            {strava.bikes.map((b) => (
+              <ChoiceChip
+                key={b.id}
+                name="km-source"
+                checked={draft.stravaGearId === b.id}
+                onChange={() =>
+                  patch({ stravaGearId: b.id, odometerKm: String(Math.round(b.distanceKm)) })
+                }
+              >
+                {b.name} on Strava · {formatKm(b.distanceKm)}
+              </ChoiceChip>
+            ))}
+            <ChoiceChip
+              name="km-source"
+              checked={!fromStrava}
+              onChange={() => patch({ stravaGearId: "" })}
+            >
+              Enter it by hand
+            </ChoiceChip>
+          </div>
+        </fieldset>
+      )}
+      {!fromStrava && (
         <WizardField
           id="bike-odometer"
           label="Odometer (km)"
@@ -94,11 +140,29 @@ export function StepStrava({ draft, errors, dispatch, headingRef }: StepProps) {
           min={0}
           step="any"
           value={draft.odometerKm}
-          onChange={(e) => dispatch({ type: "patch", patch: { odometerKm: e.target.value } })}
+          onChange={(e) => patch({ odometerKm: e.target.value })}
           onFocus={(e) => e.target.select()}
           error={errors.odometerKm}
           hint="A brand-new bike starts at 0."
         />
+      )}
+      {connectFailed && (
+        <p role="alert" className="text-destructive text-sm">
+          Strava didn&apos;t connect. You can enter the kilometres by hand, or try again from
+          Settings.
+        </p>
+      )}
+      {strava.configured && !strava.connected && !connectFailed && (
+        <p className="text-muted-foreground text-sm">
+          Ride with Strava?{" "}
+          <a
+            href={`/api/strava/connect?next=${encodeURIComponent("/bikes/new")}`}
+            className="text-foreground font-medium underline"
+          >
+            Connect Strava
+          </a>{" "}
+          to fill this in and keep it up to date. Your answers so far are kept.
+        </p>
       )}
     </>
   );
@@ -370,8 +434,10 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
 export function StepReview({
   draft,
   headingRef,
+  strava,
   onEdit,
 }: StepProps & { onEdit: (step: WizardStep) => void }) {
+  const stravaBike = strava.bikes.find((b) => b.id === draft.stravaGearId);
   const templates = new Map(defaultPartsFor(draft.type).map((t) => [t.kind, t]));
   const chosen = draft.parts.filter((p) => p.included);
   const replaced = chosen.filter((p) => p.replaced).length;
@@ -397,7 +463,9 @@ export function StepReview({
     { label: "Frame colour", value: colorName, step: "basics" },
     {
       label: "Odometer",
-      value: `${formatKm(Number(draft.odometerKm) || 0)}, entered by hand`,
+      value: stravaBike
+        ? `${formatKm(stravaBike.distanceKm)}, from ${stravaBike.name} on Strava`
+        : `${formatKm(Number(draft.odometerKm) || 0)}, entered by hand`,
       step: "odometer",
     },
     {

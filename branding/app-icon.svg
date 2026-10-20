@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- BikePro app icon (e.g. for the Strava API application): a road bike, white on the brand blue. -->
+  <rect width="1024" height="1024" fill="#2f49d1"/>
+  <!-- Centred and kept clear of the edges, so a round crop doesn't cut the wheels. -->
+  <g transform="translate(512 512) scale(0.84) translate(-512 -558)">
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Wheels -->
+    <circle cx="282" cy="620" r="168" stroke-width="40"/>
+    <circle cx="742" cy="620" r="168" stroke-width="40"/>
+    <!-- Frame: chain stay, seat stay, seat tube, top tube, down tube, fork -->
+    <path stroke-width="38" d="M282 620 L486 620 L414 392 Z M414 392 L652 392 L486 620 M652 392 L742 620"/>
+    <!-- Seat post and saddle -->
+    <path stroke-width="34" d="M414 392 L398 340 M348 334 L452 334"/>
+    <!-- Stem and drop bar -->
+    <path stroke-width="34" d="M652 392 L638 336 L700 326 C744 320 750 382 712 398"/>
+  </g>
+  <!-- Crank -->
+  <circle cx="486" cy="620" r="30" fill="#ffffff"/>
+  </g>
+</svg>

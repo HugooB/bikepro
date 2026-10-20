@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Gauge, Pencil } from "lucide-react";
 import { updateOdometer } from "@/actions/bikes";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,18 @@ import { Label } from "@/components/ui/label";
 import type { ActionState } from "@/lib/action-state";
 import { formatKm } from "@/lib/age";
 
-export function OdometerForm({ bikeId, odometerKm }: { bikeId: number; odometerKm: number }) {
+/** Set when the bike takes its km from Strava. */
+export type OdometerStrava = { gearName: string | null; syncedAgo: string | null };
+
+export function OdometerForm({
+  bikeId,
+  odometerKm,
+  strava,
+}: {
+  bikeId: number;
+  odometerKm: number;
+  strava?: OdometerStrava | null;
+}) {
   const [editing, setEditing] = useState(false);
   const [state, formAction, pending] = useActionState<ActionState, FormData>(updateOdometer, {
     ok: false,
@@ -32,6 +44,7 @@ export function OdometerForm({ bikeId, odometerKm }: { bikeId: number; odometerK
           <div>
             <p className="text-muted-foreground text-xs">Odometer</p>
             <p className="text-lg font-semibold tabular-nums">{formatKm(odometerKm)}</p>
+            {strava && <StravaNote strava={strava} />}
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
@@ -68,6 +81,11 @@ export function OdometerForm({ bikeId, odometerKm }: { bikeId: number; odometerK
             {state.error}
           </p>
         )}
+        {strava && !state.error && (
+          <p className="text-muted-foreground text-xs">
+            New rides on Strava are added on top of this.
+          </p>
+        )}
       </div>
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>
@@ -78,5 +96,23 @@ export function OdometerForm({ bikeId, odometerKm }: { bikeId: number; odometerK
         </Button>
       </div>
     </form>
+  );
+}
+
+function StravaNote({ strava }: { strava: OdometerStrava }) {
+  if (!strava.gearName) {
+    return (
+      <p className="text-destructive text-xs">
+        Its Strava bike is gone.{" "}
+        <Link href="/settings" className="underline underline-offset-2">
+          Link it again
+        </Link>
+      </p>
+    );
+  }
+  return (
+    <p className="text-muted-foreground text-xs">
+      From Strava{strava.syncedAgo && `, synced ${strava.syncedAgo}`}
+    </p>
   );
 }

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
+import { format, formatDistanceToNowStrict } from "date-fns";
 import { BikeDrawing } from "@/components/bike/BikeDrawing";
 import { ZoneProvider } from "@/components/bike/zone-context";
 import { BikeHeader } from "@/components/BikeHeader";
@@ -16,6 +16,7 @@ import {
   getLastResets,
   getLastServiceRound,
 } from "@/db/queries";
+import { getStravaConnection } from "@/db/strava";
 import { computeStatus } from "@/lib/status";
 import { getCurrentUser, requireUser } from "@/lib/auth/session";
 
@@ -36,6 +37,13 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
     status: computeStatus(part, resets.get(part.id) ?? null, bike.odometerKm),
   }));
   const lastRound = await getLastServiceRound(bike.id);
+  const connection = bike.stravaGearId ? getStravaConnection(user.id) : undefined;
+  const strava = connection && {
+    gearName: connection.gear.find((g) => g.id === bike.stravaGearId)?.name ?? null,
+    syncedAgo: connection.syncedAt
+      ? formatDistanceToNowStrict(connection.syncedAt, { addSuffix: true })
+      : null,
+  };
   const summaryParts = rows.map(({ part, status }) => ({
     id: part.id,
     name: part.name,
@@ -54,7 +62,7 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
           <BikeHeader bike={bike} lastRound={lastRound} />
           <BikeDrawing parts={summaryParts} color={bike.color} className="-mx-2 sm:mx-0" />
           <div className="flex flex-col gap-3">
-            <OdometerForm bikeId={bike.id} odometerKm={bike.odometerKm} />
+            <OdometerForm bikeId={bike.id} odometerKm={bike.odometerKm} strava={strava} />
             <StatusSummary statuses={rows.map((r) => r.status)} />
           </div>
         </aside>

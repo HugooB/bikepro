@@ -42,13 +42,14 @@ New race bikes get these parts, each with a sensible default interval that the u
 
 Users can also add custom parts.
 
-## Strava integration (`src/lib/strava.ts`, `app/api/strava/*`)
+## Strava integration (`src/lib/strava/*`, `src/db/strava.ts`, `app/api/strava/*`)
 
-- Per-user OAuth (`read,profile:read_all` scope) at `/api/strava/connect` and `/api/strava/callback`. Tokens are stored and refreshed when they expire.
-- `GET /api/v3/athlete` returns `bikes[]` with `id` and total `distance` (in metres). A bike is mapped to a Strava gear id in the bike settings.
-- Sync runs on dashboard load if the last sync is more than 6 hours old, and from a "Sync now" button. It updates `bikes.odometerKm`.
+- Per-user OAuth (`read,profile:read_all` scope) at `/api/strava/connect` and `/api/strava/callback`, with a `state` cookie that also carries where to return to. Tokens are stored encrypted (AES-GCM, key derived from `STRAVA_CLIENT_SECRET`) in `strava_connections` and refreshed shortly before they expire. One Strava account connects to one BikePro account.
+- `GET /api/v3/athlete` returns `bikes[]` with `id` and total `distance` (in metres), cached on the connection. A bike links to one Strava gear id (unique), in Settings or in the wizard.
+- While linked, `odometerKm = Strava total + stravaOffsetKm`. Linking asks whether to keep the current reading (offset absorbs the difference) or jump to Strava's total; a manual odometer edit adjusts the offset, so syncs add to it.
+- Sync runs in the background when the app is opened if the last attempt is more than an hour old, and from "Sync now" in Settings. A revoked connection shows "Reconnect" in Settings. No webhooks, no activity import.
 - Fallback: without Strava, the user edits the odometer manually.
-- Env vars: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `AUTH_SECRET`, `APP_URL`
+- Env vars: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `APP_URL`
 
 ## Add-bike wizard (`/bikes/new`)
 

@@ -6,8 +6,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { getOwnedBike } from "@/db/access";
-import { createBike } from "@/db/bikes";
+import { createBike, setOdometer } from "@/db/bikes";
 import { bikes } from "@/db/schema";
+import { findLinkableGear, StravaLinkError } from "@/db/strava";
 import type { ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
@@ -36,8 +37,9 @@ export async function updateOdometer(_prev: ActionState, formData: FormData): Pr
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
   const { bikeId, odometerKm } = parsed.data;
-  if (!getOwnedBike(user.id, bikeId)) return { ok: false, error: "Bike not found" };
-  db.update(bikes).set({ odometerKm }).where(eq(bikes.id, bikeId)).run();
+  const bike = getOwnedBike(user.id, bikeId);
+  if (!bike) return { ok: false, error: "Bike not found" };
+  db.transaction((tx) => setOdometer(tx, bike, odometerKm));
   revalidatePath(`/bikes/${bikeId}`);
   return { ok: true, savedAt: Date.now() };
 }
@@ -48,15 +50,25 @@ export type CreateBikeResult =
 /** Last step of the add-bike wizard: creates the bike, its parts and their install events. */
 export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBikeResult> {
   const user = await requireUser();
-  let plan;
+  const today = format(new Date(), "yyyy-MM-dd");
+  let bike;
   try {
-    plan = planBike(draft, format(new Date(), "yyyy-MM-dd"));
+    bike = db.transaction((tx) => {
+      // A bike linked to Strava starts at its Strava total, whatever the browser sent.
+      const gear = draft.stravaGearId ? findLinkableGear(user.id, draft.stravaGearId) : null;
+      const plan = planBike(
+        gear ? { ...draft, odometerKm: String(gear.distanceKm) } : draft,
+        today,
+      );
+      if (gear)
+        plan.bike = { ...plan.bike, stravaGearId: gear.id, stravaDistanceKm: gear.distanceKm };
+      return createBike(tx, plan, user.id);
+    });
   } catch (e) {
     if (e instanceof WizardDraftError) return { ok: false, error: e.message, step: e.step };
+    if (e instanceof StravaLinkError) return { ok: false, error: e.message, step: "odometer" };
     throw e;
   }
-
-  const bike = db.transaction((tx) => createBike(tx, plan, user.id));
   // The header's bike switcher is part of the root layout.
   revalidatePath("/", "layout");
   return { ok: true, bikeId: bike.id };

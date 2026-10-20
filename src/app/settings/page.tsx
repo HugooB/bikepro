@@ -2,16 +2,24 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { logout, logoutEverywhere } from "@/actions/auth";
 import { BikeSettingsRow } from "@/components/settings/BikeSettingsRow";
+import { StravaSettings } from "@/components/settings/StravaSettings";
 import { Button } from "@/components/ui/button";
 import { getBikes } from "@/db/queries";
+import { getStravaConnection } from "@/db/strava";
 import { requireUser } from "@/lib/auth/session";
+import { stravaConfig } from "@/lib/strava/api";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Settings · BikePro" };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ strava?: string }>;
+}) {
   const user = await requireUser();
+  const { strava } = await searchParams;
   const bikes = await getBikes(user.id, { includeArchived: true });
   const active = bikes.filter((b) => !b.archivedAt);
   const archived = bikes.filter((b) => b.archivedAt);
@@ -66,6 +74,13 @@ export default async function SettingsPage() {
           </ul>
         )}
       </section>
+
+      <StravaSettings
+        configured={stravaConfig() !== null}
+        connection={getStravaConnection(user.id)}
+        bikes={bikes}
+        outcome={strava}
+      />
 
       {archived.length > 0 && (
         <section aria-labelledby="archived-heading" className="flex flex-col gap-3">

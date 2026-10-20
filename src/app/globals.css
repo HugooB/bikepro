@@ -11,6 +11,7 @@
   --font-heading: var(--font-archivo);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-strava: var(--strava);
   --color-status-ok: var(--status-ok);
   --color-status-due: var(--status-due);
   --color-status-overdue: var(--status-overdue);
@@ -56,6 +57,8 @@
   /* BikePro: cobalt "blueprint ink" accent on cool paper white; status colours stay distinct from it */
   --brand: #2f49d1;
   --brand-foreground: #ffffff;
+  /* Strava's orange, for its connect button only. */
+  --strava: #fc4c02;
   --status-ok: oklch(0.6 0.13 155);
   --status-due: oklch(0.74 0.15 70);
   --status-overdue: oklch(0.58 0.2 27);

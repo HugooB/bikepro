@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { getBikes } from "@/db/queries";
+import { getStravaConnection } from "@/db/strava";
 import { getCurrentUser } from "@/lib/auth/session";
+import { syncDue } from "@/lib/strava/sync";
 import { BikeSwitcher } from "./BikeSwitcher";
+import { StravaAutoSync } from "./StravaAutoSync";
 
 export async function AppHeader() {
   const user = await getCurrentUser();
   const bikes = user ? await getBikes(user.id) : [];
+  const strava = user && getStravaConnection(user.id);
 
   return (
     <header className="border-border/60 bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
@@ -29,6 +33,7 @@ export async function AppHeader() {
           </span>
           BikePro
         </Link>
+        {strava && syncDue(strava) && <StravaAutoSync />}
         {user && (
           <BikeSwitcher
             userName={user.name}

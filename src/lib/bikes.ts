@@ -18,6 +18,3 @@ export const frameColors = [
   { value: "#7a4fc4", name: "Purple" },
   { value: "#8a8f9c", name: "Raw carbon" },
 ] as const;
-
-/** Strava linking arrives in M8; until then the wizard only asks for km by hand. */
-export const stravaEnabled = false;

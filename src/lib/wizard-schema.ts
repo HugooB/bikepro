@@ -36,6 +36,8 @@ export type WizardDraft = {
   /** Odometer when a used bike was bought. */
   purchaseKm: string;
   parts: PartChoice[];
+  /** Strava bike to link; its total distance becomes the odometer. Empty when typed by hand. */
+  stravaGearId: string;
 };
 
 /** Template parts as wizard choices: everything ticked, default intervals. */
@@ -62,6 +64,8 @@ const savedDraftSchema = z.object({
   purchasedAt: z.string(),
   condition: z.enum(["new", "used"]),
   purchaseKm: z.string(),
+  // Drafts saved before Strava linking existed don't have it.
+  stravaGearId: z.string().default(""),
   parts: z.array(
     z.object({
       kind: z.string(),
@@ -99,6 +103,7 @@ export function emptyDraft(today: string): WizardDraft {
     condition: "new",
     purchaseKm: "0",
     parts: partChoicesFor("road"),
+    stravaGearId: "",
   };
 }
 
@@ -244,6 +249,8 @@ export type BikePlan = {
     color: string | null;
     purchasedAt: string;
     odometerKm: number;
+    stravaGearId?: string;
+    stravaDistanceKm?: number;
   };
   parts: PlannedPart[];
 };

@@ -7,7 +7,14 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { createBikeFromWizard } from "@/actions/bikes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { emptyDraft, validateStep, wizardSteps, type WizardStep } from "@/lib/wizard-schema";
+import {
+  emptyDraft,
+  partChoicesFor,
+  validateStep,
+  wizardSteps,
+  type WizardDraft,
+  type WizardStep,
+} from "@/lib/wizard-schema";
 import { ProgressBar } from "./ProgressBar";
 import {
   StepBasics,
@@ -16,6 +23,7 @@ import {
   StepReview,
   StepStrava,
   type StepProps,
+  type WizardStrava,
 } from "./steps";
 import {
   clearSavedWizard,
@@ -33,13 +41,27 @@ const stepLabels: Record<WizardStep, string> = {
   review: "Review",
 };
 
-export function Wizard({ today, cancelHref }: { today: string; cancelHref: string | null }) {
+export function Wizard({
+  today,
+  cancelHref,
+  strava,
+  prefill,
+}: {
+  today: string;
+  cancelHref: string | null;
+  strava: WizardStrava;
+  /** A Strava bike to start from (Settings → "Add to BikePro"); replaces any saved draft. */
+  prefill?: Partial<WizardDraft>;
+}) {
   const router = useRouter();
-  const [state, dispatch] = useReducer(wizardReducer, undefined, () => ({
-    step: "basics" as WizardStep,
-    draft: emptyDraft(today),
-    errors: {},
-  }));
+  const [state, dispatch] = useReducer(wizardReducer, undefined, () => {
+    const draft = { ...emptyDraft(today), ...prefill };
+    return {
+      step: "basics" as WizardStep,
+      draft: { ...draft, parts: partChoicesFor(draft.type) },
+      errors: {},
+    };
+  });
   const [restored, setRestored] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: number; name: string } | null>(null);
@@ -49,9 +71,16 @@ export function Wizard({ today, cancelHref }: { today: string; cancelHref: strin
 
   // Pick up a draft from earlier in this browser tab (refresh, or coming back from Strava).
   useEffect(() => {
-    const saved = loadSavedWizard();
-    if (saved) dispatch({ type: "restore", state: saved });
+    const saved = prefill ? null : loadSavedWizard();
+    if (saved) {
+      // The Strava bike may have been linked elsewhere since the draft was saved.
+      const linkable = strava.bikes.some((b) => b.id === saved.draft.stravaGearId);
+      if (!linkable) saved.draft.stravaGearId = "";
+      dispatch({ type: "restore", state: saved });
+    }
     setRestored(true);
+    // Only on first load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -108,6 +137,7 @@ export function Wizard({ today, cancelHref }: { today: string; cancelHref: strin
     dispatch,
     today,
     headingRef,
+    strava,
   };
 
   return (

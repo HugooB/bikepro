@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Run `npm run db:generate` after changing this file to create a migration.
 // Calendar dates (purchase, install, event dates) are stored as "YYYY-MM-DD" text.
@@ -60,14 +60,56 @@ export const bikes = sqliteTable(
     color: text("color"),
     purchasedAt: text("purchased_at"),
     odometerKm: real("odometer_km").notNull().default(0),
+    /** Linked Strava bike ("b1234567"). While linked, syncs set odometerKm = Strava km + offset. */
     stravaGearId: text("strava_gear_id"),
+    /** The linked Strava bike's total distance at the last sync. */
+    stravaDistanceKm: real("strava_distance_km"),
+    /** Kept between Strava's total and the odometer, e.g. when the user keeps their own reading. */
+    stravaOffsetKm: real("strava_offset_km").notNull().default(0),
     archivedAt: integer("archived_at", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
   },
-  (t) => [index("bikes_user_idx").on(t.userId)],
+  (t) => [
+    index("bikes_user_idx").on(t.userId),
+    // One Strava bike counts towards one BikePro bike only.
+    uniqueIndex("bikes_strava_gear_unique").on(t.stravaGearId),
+  ],
 );
+
+/** A bike in the user's Strava account, as cached at the last sync. */
+export type StravaGear = {
+  id: string;
+  name: string;
+  distanceKm: number;
+  primary: boolean;
+  retired: boolean;
+};
+
+export const stravaConnections = sqliteTable("strava_connections", {
+  userId: integer("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  /** A Strava account connects to one BikePro account only. */
+  athleteId: integer("athlete_id").notNull().unique(),
+  athleteName: text("athlete_name").notNull(),
+  /** Tokens are encrypted (see lib/strava/crypto), so a copy of the database can't use them. */
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  scope: text("scope").notNull(),
+  gear: text("gear", { mode: "json" }).$type<StravaGear[]>().notNull().default([]),
+  /** Last successful sync. */
+  syncedAt: integer("synced_at", { mode: "timestamp" }),
+  /** Last sync attempt, successful or not; spaces out automatic syncs. */
+  syncAttemptAt: integer("sync_attempt_at", { mode: "timestamp" }),
+  /** Why the last sync failed: "revoked" needs a reconnect, "failed" is worth a retry. */
+  syncError: text("sync_error", { enum: ["revoked", "failed"] }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
 
 export const parts = sqliteTable(
   "parts",
@@ -163,3 +205,4 @@ export type Bike = typeof bikes.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type PartEvent = typeof partEvents.$inferSelect;
 export type ServiceRound = typeof serviceRounds.$inferSelect;
+export type StravaConnection = typeof stravaConnections.$inferSelect;
