@@ -2,23 +2,21 @@ import { and, asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "./index";
 import { bikes, partEvents, parts, serviceRounds } from "./schema";
 
-export function getFirstBike() {
-  return db.query.bikes.findFirst({
-    where: isNull(bikes.archivedAt),
-    orderBy: asc(bikes.createdAt),
-  });
-}
+// Bike lookups take the signed-in user's id, so nobody sees another user's bikes. Queries
+// below that take a bike id are only called with a bike that came from one of these.
 
-/** Bikes for the switcher and settings; archived bikes are left out unless asked for. */
-export function getBikes({ includeArchived = false } = {}) {
+/** The user's bikes for the switcher and settings; archived bikes only when asked for. */
+export function getBikes(userId: number, { includeArchived = false } = {}) {
   return db.query.bikes.findMany({
-    where: includeArchived ? undefined : isNull(bikes.archivedAt),
+    where: and(eq(bikes.userId, userId), includeArchived ? undefined : isNull(bikes.archivedAt)),
     orderBy: [asc(bikes.createdAt), asc(bikes.id)],
   });
 }
 
-export function getBike(id: number) {
-  return db.query.bikes.findFirst({ where: eq(bikes.id, id) });
+/** One of the user's bikes; undefined if it doesn't exist or belongs to someone else. */
+export function getBike(userId: number, id: number) {
+  if (!Number.isInteger(id)) return Promise.resolve(undefined);
+  return db.query.bikes.findFirst({ where: and(eq(bikes.id, id), eq(bikes.userId, userId)) });
 }
 
 export function getActiveParts(bikeId: number) {

@@ -2,9 +2,13 @@ import type { BikePlan } from "@/lib/wizard-schema";
 import type { Tx } from "./part-events";
 import { bikes, partEvents, parts, type Bike } from "./schema";
 
-/** Creates a bike with its parts, each starting with an "installed" event. */
-export function createBike(tx: Tx, plan: BikePlan): Bike {
-  const bike = tx.insert(bikes).values(plan.bike).returning().get();
+/** Creates a bike for `userId` with its parts, each starting with an "installed" event. */
+export function createBike(tx: Tx, plan: BikePlan, userId: number): Bike {
+  const bike = tx
+    .insert(bikes)
+    .values({ ...plan.bike, userId })
+    .returning()
+    .get();
 
   for (const p of plan.parts) {
     const part = tx

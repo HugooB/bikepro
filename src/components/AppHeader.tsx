@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { getBikes } from "@/db/queries";
+import { getCurrentUser } from "@/lib/auth/session";
 import { BikeSwitcher } from "./BikeSwitcher";
 
 export async function AppHeader() {
-  const bikes = await getBikes();
+  const user = await getCurrentUser();
+  const bikes = user ? await getBikes(user.id) : [];
 
   return (
     <header className="border-border/60 bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
@@ -27,7 +29,12 @@ export async function AppHeader() {
           </span>
           BikePro
         </Link>
-        <BikeSwitcher bikes={bikes.map(({ id, name, color }) => ({ id, name, color }))} />
+        {user && (
+          <BikeSwitcher
+            userName={user.name}
+            bikes={bikes.map(({ id, name, color }) => ({ id, name, color }))}
+          />
+        )}
       </div>
     </header>
   );

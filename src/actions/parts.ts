@@ -5,9 +5,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
+import { getOwnedBike, getOwnedEvent, getOwnedPart } from "@/db/access";
 import { bumpOdometer, PartEventError, recordPartEvent } from "@/db/part-events";
 import { partCategories, partEvents, parts } from "@/db/schema";
 import type { ActionState } from "@/lib/action-state";
+import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import { loggableEventTypes } from "@/lib/event-types";
 import { monthsToDays } from "@/lib/format";
@@ -48,11 +50,12 @@ const eventSchema = z.object({
 });
 
 export async function addPartEvent(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
   const parsed = eventSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   const input = parsed.data;
 
-  const part = db.query.parts.findFirst({ where: eq(parts.id, input.partId) }).sync();
+  const part = getOwnedPart(user.id, input.partId);
   if (!part) return { ok: false, error: "Part not found" };
 
   const replacing = input.type === "replaced";
@@ -84,12 +87,12 @@ export async function addPartEvent(_prev: ActionState, formData: FormData): Prom
 }
 
 export async function deletePartEvent(formData: FormData) {
+  const user = await requireUser();
   const id = Number(formData.get("eventId"));
   if (!Number.isInteger(id)) return;
 
-  const event = db.query.partEvents
-    .findFirst({ where: eq(partEvents.id, id), with: { part: true } })
-    .sync();
+  const owned = getOwnedEvent(user.id, id);
+  const event = owned && { ...owned.event, part: owned.part };
   // Kept: the "installed" origin, entries that belong to a service round, and the history
   // of retired parts.
   if (
@@ -132,11 +135,12 @@ function partValues(input: z.infer<z.ZodObject<typeof partFields>>) {
 const updatePartSchema = z.object({ partId: z.coerce.number().int().positive(), ...partFields });
 
 export async function updatePart(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
   const parsed = updatePartSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   const input = parsed.data;
 
-  const part = db.query.parts.findFirst({ where: eq(parts.id, input.partId) }).sync();
+  const part = getOwnedPart(user.id, input.partId);
   if (!part) return { ok: false, error: "Part not found" };
 
   db.update(parts).set(partValues(input)).where(eq(parts.id, part.id)).run();
@@ -152,11 +156,12 @@ const createPartSchema = z.object({
 });
 
 export async function createPart(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
   const parsed = createPartSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   const input = parsed.data;
 
-  const bike = db.query.bikes.findFirst({ where: (b, { eq }) => eq(b.id, input.bikeId) }).sync();
+  const bike = getOwnedBike(user.id, input.bikeId);
   if (!bike) return { ok: false, error: "Bike not found" };
 
   const part = db.transaction((tx) => {
@@ -198,10 +203,11 @@ export async function createPart(_prev: ActionState, formData: FormData): Promis
 
 /** Permanently removes a part and its history, e.g. one the bike doesn't actually have. */
 export async function deletePart(formData: FormData) {
+  const user = await requireUser();
   const id = Number(formData.get("partId"));
   if (!Number.isInteger(id)) return;
 
-  const part = db.query.parts.findFirst({ where: eq(parts.id, id) }).sync();
+  const part = getOwnedPart(user.id, id);
   if (!part) return;
 
   db.transaction((tx) => {

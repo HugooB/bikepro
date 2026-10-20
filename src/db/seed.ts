@@ -4,7 +4,7 @@ import { format, subMonths } from "date-fns";
 import { defaultPartsFor } from "../lib/default-parts";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
-import { bikes, partEvents, parts } from "./schema";
+import { bikes, partEvents, parts, users } from "./schema";
 
 if (process.env.NODE_ENV === "production") {
   console.error("The seed script is for development only; add bikes with the wizard instead.");
@@ -34,10 +34,15 @@ const replaced: Record<string, { monthsAgo: number; km: number }> = {
   bar_tape: { monthsAgo: 11, km: 3100 },
 };
 
+// Belongs to the first account; before anyone signs up it has no owner, and the first
+// account to register takes it over.
+const owner = db.select({ id: users.id }).from(users).orderBy(users.id).get();
+
 db.transaction((tx) => {
   const bike = tx
     .insert(bikes)
     .values({
+      userId: owner?.id ?? null,
       name: "Race bike",
       type: "road",
       brand: "Canyon",

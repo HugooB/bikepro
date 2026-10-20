@@ -4,11 +4,13 @@ import { format } from "date-fns";
 import { ChevronLeft } from "lucide-react";
 import { AddPartForm } from "@/components/part/AddPartForm";
 import { getBike } from "@/db/queries";
+import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewPartPage({ params }: { params: Promise<{ bikeId: string }> }) {
-  const bike = await getBike(Number((await params).bikeId));
+  const user = await requireUser();
+  const bike = await getBike(user.id, Number((await params).bikeId));
   if (!bike) notFound();
 
   return (

@@ -1,9 +1,11 @@
 "use client";
 
+import { startTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronsUpDown, Plus, Settings } from "lucide-react";
+import { Check, ChevronsUpDown, LogOut, Plus, Settings } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
+import { logout } from "@/actions/auth";
 import { cn } from "@/lib/utils";
 
 export type SwitcherBike = { id: number; name: string; color: string | null };
@@ -22,7 +24,7 @@ function Swatch({ color }: { color: string | null }) {
 }
 
 /** Header dropdown to jump between bikes, add one, or open settings. */
-export function BikeSwitcher({ bikes }: { bikes: SwitcherBike[] }) {
+export function BikeSwitcher({ bikes, userName }: { bikes: SwitcherBike[]; userName: string }) {
   const pathname = usePathname();
   const currentId = Number(pathname.match(/^\/bikes\/(\d+)/)?.[1]);
   const current = bikes.find((b) => b.id === currentId);
@@ -72,6 +74,14 @@ export function BikeSwitcher({ bikes }: { bikes: SwitcherBike[] }) {
               <Settings aria-hidden className="text-muted-foreground size-4" />
               Settings
             </Link>
+          </DropdownMenu.Item>
+          <DropdownMenu.Separator className="bg-border my-1 h-px" />
+          {/* Selecting an item closes (unmounts) the menu, so a <form> in here would vanish
+              before it submits; call the action directly instead. */}
+          <DropdownMenu.Item className={itemClass} onSelect={() => startTransition(logout)}>
+            <LogOut aria-hidden className="text-muted-foreground size-4" />
+            <span className="flex-1 truncate">Sign out</span>
+            <span className="text-muted-foreground max-w-28 truncate text-xs">{userName}</span>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

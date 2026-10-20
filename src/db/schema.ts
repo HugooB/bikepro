@@ -20,23 +20,54 @@ export const partEventTypes = [
 ] as const;
 export type PartEventType = (typeof partEventTypes)[number];
 
-export const bikes = sqliteTable("bikes", {
+export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  // Nullable until accounts arrive in M7.
-  userId: integer("user_id"),
+  /** Stored lowercased, so sign-in ignores case. */
+  email: text("email").notNull().unique(),
   name: text("name").notNull(),
-  type: text("type", { enum: bikeTypes }).notNull().default("road"),
-  brand: text("brand"),
-  model: text("model"),
-  color: text("color"),
-  purchasedAt: text("purchased_at"),
-  odometerKm: real("odometer_km").notNull().default(0),
-  stravaGearId: text("strava_gear_id"),
-  archivedAt: integer("archived_at", { mode: "timestamp" }),
+  passwordHash: text("password_hash").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    /** SHA-256 of the session token; the token itself only lives in the user's cookie. */
+    id: text("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [index("sessions_user_idx").on(t.userId)],
+);
+
+export const bikes = sqliteTable(
+  "bikes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Owner. Bikes from before accounts existed have none until the first user signs up. */
+    userId: integer("user_id"),
+    name: text("name").notNull(),
+    type: text("type", { enum: bikeTypes }).notNull().default("road"),
+    brand: text("brand"),
+    model: text("model"),
+    color: text("color"),
+    purchasedAt: text("purchased_at"),
+    odometerKm: real("odometer_km").notNull().default(0),
+    stravaGearId: text("strava_gear_id"),
+    archivedAt: integer("archived_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [index("bikes_user_idx").on(t.userId)],
+);
 
 export const parts = sqliteTable(
   "parts",
@@ -127,6 +158,7 @@ export const partsRelations = relations(parts, ({ many }) => ({
   events: many(partEvents),
 }));
 
+export type User = typeof users.$inferSelect;
 export type Bike = typeof bikes.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type PartEvent = typeof partEvents.$inferSelect;

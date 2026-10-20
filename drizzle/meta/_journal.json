@@ -29,6 +29,13 @@
       "when": 1792423274437,
       "tag": "0003_service_rounds",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792502270351,
+      "tag": "0004_accounts",
+      "breakpoints": true
     }
   ]
 }

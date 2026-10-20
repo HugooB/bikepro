@@ -28,7 +28,7 @@ describe("createBike", () => {
       "2026-10-20",
     );
 
-    const bike = db.transaction((tx) => createBike(tx, plan));
+    const bike = db.transaction((tx) => createBike(tx, plan, 1));
 
     const rows = db.select().from(parts).where(eq(parts.bikeId, bike.id)).all();
     expect(bike).toMatchObject({ name: "Gravel", type: "gravel", odometerKm: 2600 });

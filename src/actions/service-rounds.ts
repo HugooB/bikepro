@@ -4,10 +4,12 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
+import { getOwnedBike, getOwnedServiceRound } from "@/db/access";
 import { PartEventError } from "@/db/part-events";
 import { serviceRounds } from "@/db/schema";
 import { createServiceRound } from "@/db/service-rounds";
 import type { ActionState } from "@/lib/action-state";
+import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import { serviceActions } from "@/lib/event-types";
 
@@ -42,6 +44,7 @@ export async function saveServiceRound(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const user = await requireUser();
   const partIds = formData.getAll("partId").map(String);
   const parsed = roundSchema.safeParse({
     bikeId: formData.get("bikeId"),
@@ -59,6 +62,7 @@ export async function saveServiceRound(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message };
 
   const input = parsed.data;
+  if (!getOwnedBike(user.id, input.bikeId)) return { ok: false, error: "Bike not found" };
   if (input.parts.length === 0 && !input.notes && !input.shop) {
     return { ok: false, error: "Select the parts that were serviced, or add a note" };
   }
@@ -76,10 +80,11 @@ export async function saveServiceRound(
 
 /** Deletes a service round and the part events it logged. Replaced parts stay replaced. */
 export async function deleteServiceRound(formData: FormData) {
+  const user = await requireUser();
   const id = Number(formData.get("serviceRoundId"));
   if (!Number.isInteger(id)) return;
 
-  const round = db.query.serviceRounds.findFirst({ where: eq(serviceRounds.id, id) }).sync();
+  const round = getOwnedServiceRound(user.id, id);
   if (!round) return;
 
   db.delete(serviceRounds).where(eq(serviceRounds.id, id)).run();

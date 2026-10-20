@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { getBike, getLastResets, getPart, getPartEvents } from "@/db/queries";
 import { computeStatus } from "@/lib/status";
+import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,8 @@ type SearchParams = Promise<{ log?: string; replaced?: string }>;
 
 async function load(params: Params) {
   const { bikeId, partId } = await params;
-  const bike = await getBike(Number(bikeId));
+  const user = await requireUser();
+  const bike = await getBike(user.id, Number(bikeId));
   const part = bike ? await getPart(bike.id, Number(partId)) : undefined;
   return bike && part ? { bike, part } : null;
 }

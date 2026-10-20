@@ -3,13 +3,15 @@ import { BikeNav } from "@/components/BikeNav";
 import { RetiredPartsList } from "@/components/history/RetiredPartsList";
 import { ServiceRoundList } from "@/components/history/ServiceRoundList";
 import { getBike, getRetiredParts, getServiceRounds } from "@/db/queries";
+import { getCurrentUser, requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ bikeId: string }>;
 
 export default async function HistoryPage({ params }: { params: Params }) {
-  const bike = await getBike(Number((await params).bikeId));
+  const user = await requireUser();
+  const bike = await getBike(user.id, Number((await params).bikeId));
   if (!bike) notFound();
 
   const [rounds, retired] = await Promise.all([
@@ -47,6 +49,7 @@ export default async function HistoryPage({ params }: { params: Params }) {
 }
 
 export async function generateMetadata({ params }: { params: Params }) {
-  const bike = await getBike(Number((await params).bikeId));
+  const user = await getCurrentUser();
+  const bike = user && (await getBike(user.id, Number((await params).bikeId)));
   return { title: bike ? `History · ${bike.name} · BikePro` : "BikePro" };
 }

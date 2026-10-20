@@ -17,6 +17,7 @@ import {
   getLastServiceRound,
 } from "@/db/queries";
 import { computeStatus } from "@/lib/status";
+import { getCurrentUser, requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,8 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
   const id = Number(bikeId);
   if (!Number.isInteger(id)) notFound();
 
-  const bike = await getBike(id);
+  const user = await requireUser();
+  const bike = await getBike(user.id, id);
   if (!bike) notFound();
   const parts = await getActiveParts(bike.id);
   const resets = getLastResets(bike.id);
@@ -73,6 +75,7 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ bikeId: string }> }) {
-  const bike = await getBike(Number((await params).bikeId));
+  const user = await getCurrentUser();
+  const bike = user && (await getBike(user.id, Number((await params).bikeId)));
   return { title: bike ? `${bike.name} · BikePro` : "BikePro" };
 }

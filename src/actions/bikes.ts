@@ -1,13 +1,15 @@
 "use server";
 
 import { format } from "date-fns";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
+import { getOwnedBike } from "@/db/access";
 import { createBike } from "@/db/bikes";
 import { bikes } from "@/db/schema";
 import type { ActionState } from "@/lib/action-state";
+import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import {
   basicsSchema,
@@ -26,6 +28,7 @@ const odometerSchema = z.object({
 });
 
 export async function updateOdometer(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
   const parsed = odometerSchema.safeParse({
     bikeId: formData.get("bikeId"),
     odometerKm: formData.get("odometerKm"),
@@ -33,6 +36,7 @@ export async function updateOdometer(_prev: ActionState, formData: FormData): Pr
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
   const { bikeId, odometerKm } = parsed.data;
+  if (!getOwnedBike(user.id, bikeId)) return { ok: false, error: "Bike not found" };
   db.update(bikes).set({ odometerKm }).where(eq(bikes.id, bikeId)).run();
   revalidatePath(`/bikes/${bikeId}`);
   return { ok: true, savedAt: Date.now() };
@@ -43,6 +47,7 @@ export type CreateBikeResult =
 
 /** Last step of the add-bike wizard: creates the bike, its parts and their install events. */
 export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBikeResult> {
+  const user = await requireUser();
   let plan;
   try {
     plan = planBike(draft, format(new Date(), "yyyy-MM-dd"));
@@ -51,7 +56,7 @@ export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBi
     throw e;
   }
 
-  const bike = db.transaction((tx) => createBike(tx, plan));
+  const bike = db.transaction((tx) => createBike(tx, plan, user.id));
   // The header's bike switcher is part of the root layout.
   revalidatePath("/", "layout");
   return { ok: true, bikeId: bike.id };
@@ -63,10 +68,12 @@ const bikeSchema = basicsSchema.extend({
 });
 
 export async function updateBike(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
   const parsed = bikeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
   const { bikeId, name, type, brand, model, color, purchasedAt } = parsed.data;
+  if (!getOwnedBike(user.id, bikeId)) return { ok: false, error: "Bike not found" };
   db.update(bikes)
     .set({
       name,
@@ -84,13 +91,14 @@ export async function updateBike(_prev: ActionState, formData: FormData): Promis
 
 /** Archived bikes keep their data but leave the switcher; they can be restored in Settings. */
 export async function setBikeArchived(formData: FormData) {
+  const user = await requireUser();
   const id = Number(formData.get("bikeId"));
   if (!Number.isInteger(id)) return;
   const archived = formData.get("archived") === "true";
 
   db.update(bikes)
     .set({ archivedAt: archived ? new Date() : null })
-    .where(eq(bikes.id, id))
+    .where(and(eq(bikes.id, id), eq(bikes.userId, user.id)))
     .run();
   revalidatePath("/", "layout");
 }

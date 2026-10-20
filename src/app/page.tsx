@@ -5,11 +5,13 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getBikes } from "@/db/queries";
 import { lastBikeCookie } from "@/lib/last-bike";
+import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const bikes = await getBikes();
+  const user = await requireUser();
+  const bikes = await getBikes(user.id);
   const lastId = Number((await cookies()).get(lastBikeCookie)?.value);
   const bike = bikes.find((b) => b.id === lastId) ?? bikes[0];
   if (bike) redirect(`/bikes/${bike.id}`);
