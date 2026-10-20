@@ -4,6 +4,7 @@ import { BikeDrawing } from "@/components/bike/BikeDrawing";
 import { ZoneProvider } from "@/components/bike/zone-context";
 import { BikeHeader } from "@/components/BikeHeader";
 import { BikeNav } from "@/components/BikeNav";
+import { CostTotalCard } from "@/components/CostTotalCard";
 import { OdometerForm } from "@/components/OdometerForm";
 import { PartList } from "@/components/PartList";
 import { RememberBike } from "@/components/RememberBike";
@@ -12,11 +13,13 @@ import { StatusSummary } from "@/components/StatusSummary";
 import {
   getActiveParts,
   getBike,
+  getCostEntries,
   getKnownShops,
   getLastResets,
   getLastServiceRound,
 } from "@/db/queries";
 import { getStravaConnection } from "@/db/strava";
+import { summarizeCosts } from "@/lib/costs";
 import { computeStatus } from "@/lib/status";
 import { getCurrentUser, requireUser } from "@/lib/auth/session";
 
@@ -63,6 +66,10 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
           <BikeDrawing parts={summaryParts} color={bike.color} className="-mx-2 sm:mx-0" />
           <div className="flex flex-col gap-3">
             <OdometerForm bikeId={bike.id} odometerKm={bike.odometerKm} strava={strava} />
+            <CostTotalCard
+              bikeId={bike.id}
+              summary={summarizeCosts(getCostEntries(bike), new Date().getFullYear())}
+            />
             <StatusSummary statuses={rows.map((r) => r.status)} />
           </div>
         </aside>

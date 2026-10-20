@@ -86,7 +86,7 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
           Changing the type doesn&apos;t change its parts.
         </p>
       </fieldset>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={id("brand")}>Brand</Label>
           <Input id={id("brand")} name="brand" defaultValue={bike.brand ?? ""} maxLength={60} />
@@ -102,6 +102,18 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
             name="purchasedAt"
             type="date"
             defaultValue={bike.purchasedAt ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={id("price")}>Price you paid €</Label>
+          <Input
+            id={id("price")}
+            name="purchasePrice"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="0.01"
+            defaultValue={bike.purchasePrice ?? ""}
           />
         </div>
       </div>

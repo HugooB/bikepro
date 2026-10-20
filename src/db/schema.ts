@@ -59,6 +59,8 @@ export const bikes = sqliteTable(
     model: text("model"),
     color: text("color"),
     purchasedAt: text("purchased_at"),
+    /** What the user paid for the bike, in euros; counted as a cost on the purchase date. */
+    purchasePrice: real("purchase_price"),
     odometerKm: real("odometer_km").notNull().default(0),
     /** Linked Strava bike ("b1234567"). While linked, syncs set odometerKm = Strava km + offset. */
     stravaGearId: text("strava_gear_id"),

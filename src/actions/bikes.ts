@@ -14,6 +14,7 @@ import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import {
   basicsSchema,
+  optionalPrice,
   planBike,
   WizardDraftError,
   type WizardDraft,
@@ -77,6 +78,7 @@ export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBi
 const bikeSchema = basicsSchema.extend({
   bikeId: z.coerce.number().int().positive(),
   purchasedAt: z.union([z.literal(""), isoDate]),
+  purchasePrice: optionalPrice,
 });
 
 export async function updateBike(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -84,7 +86,7 @@ export async function updateBike(_prev: ActionState, formData: FormData): Promis
   const parsed = bikeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  const { bikeId, name, type, brand, model, color, purchasedAt } = parsed.data;
+  const { bikeId, name, type, brand, model, color, purchasedAt, purchasePrice } = parsed.data;
   if (!getOwnedBike(user.id, bikeId)) return { ok: false, error: "Bike not found" };
   db.update(bikes)
     .set({
@@ -94,6 +96,7 @@ export async function updateBike(_prev: ActionState, formData: FormData): Promis
       model: model || null,
       color: color || null,
       purchasedAt: purchasedAt || null,
+      purchasePrice: purchasePrice ?? null,
     })
     .where(eq(bikes.id, bikeId))
     .run();

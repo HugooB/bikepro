@@ -9,6 +9,7 @@ export function BikeNav({ bikeId }: { bikeId: number }) {
   const tabs = [
     { href: `/bikes/${bikeId}`, label: "Parts" },
     { href: `/bikes/${bikeId}/history`, label: "History" },
+    { href: `/bikes/${bikeId}/costs`, label: "Costs" },
   ];
 
   return (

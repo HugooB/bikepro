@@ -1,6 +1,9 @@
+import { format } from "date-fns";
 import { and, asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import type { CostEntry } from "@/lib/costs";
+import { eventTypeLabels } from "@/lib/event-types";
 import { db } from "./index";
-import { bikes, partEvents, parts, serviceRounds } from "./schema";
+import { bikes, partEvents, parts, serviceRounds, type Bike } from "./schema";
 
 // Bike lookups take the signed-in user's id, so nobody sees another user's bikes. Queries
 // below that take a bike id are only called with a bike that came from one of these.
@@ -102,3 +105,69 @@ export function getServiceRounds(bikeId: number) {
 }
 
 export type ServiceRoundWithParts = Awaited<ReturnType<typeof getServiceRounds>>[number];
+
+/** Every cost recorded on a bike, newest first. See lib/costs for what counts where. */
+export function getCostEntries(bike: Bike): CostEntry[] {
+  const bikeId = bike.id;
+  const purchase: CostEntry[] =
+    bike.purchasePrice != null
+      ? [
+          {
+            // Bikes without a purchase date count it from when they were added.
+            date: bike.purchasedAt ?? format(bike.createdAt, "yyyy-MM-dd"),
+            amount: bike.purchasePrice,
+            category: "bike",
+            label: `Bought ${bike.name}`,
+            source: "purchase",
+            partId: null,
+          },
+        ]
+      : [];
+
+  const partCosts = db
+    .select()
+    .from(parts)
+    .where(and(eq(parts.bikeId, bikeId), isNotNull(parts.cost)))
+    .all()
+    .map((p): CostEntry => ({
+      date: p.installedAt,
+      amount: p.cost!,
+      category: p.category,
+      label: [p.name, [p.brand, p.model].filter(Boolean).join(" ")].filter(Boolean).join(" · "),
+      source: "part",
+      partId: p.id,
+    }));
+
+  const eventCosts = db
+    .select({ event: partEvents, part: parts })
+    .from(partEvents)
+    .innerJoin(parts, eq(parts.id, partEvents.partId))
+    .where(and(eq(parts.bikeId, bikeId), isNotNull(partEvents.cost)))
+    .all()
+    .map(({ event, part }): CostEntry => ({
+      date: event.date,
+      amount: event.cost!,
+      category: part.category,
+      label: `${part.name} ${eventTypeLabels[event.type].toLowerCase()}`,
+      source: "event",
+      partId: part.id,
+    }));
+
+  const roundCosts = db
+    .select()
+    .from(serviceRounds)
+    .where(and(eq(serviceRounds.bikeId, bikeId), isNotNull(serviceRounds.totalCost)))
+    .all()
+    .map((r): CostEntry => ({
+      date: r.date,
+      amount: r.totalCost!,
+      category: "service",
+      label: r.shop ? `Service round at ${r.shop}` : "Service round",
+      source: "round",
+      partId: null,
+    }));
+
+  return [...purchase, ...partCosts, ...eventCosts, ...roundCosts].sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
+}

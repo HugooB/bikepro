@@ -132,6 +132,14 @@ describe("planBike", () => {
     expect(chain).toMatchObject({ intervalKm: 4000, intervalDays: undefined });
   });
 
+  it("keeps the purchase price when given and checks it", () => {
+    expect(planBike(draft(), TODAY).bike.purchasePrice).toBeNull();
+    expect(planBike(draft({ purchasePrice: "2499.95" }), TODAY).bike.purchasePrice).toBe(2499.95);
+    expect(validateStep("purchase", draft({ purchasePrice: "-1" }), TODAY)).toEqual({
+      purchasePrice: "The price can't be negative",
+    });
+  });
+
   it("refuses an incomplete draft and names the step to fix", () => {
     expect(() => planBike(draft({ name: "" }), TODAY)).toThrow(WizardDraftError);
     try {

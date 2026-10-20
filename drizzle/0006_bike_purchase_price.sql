@@ -1,0 +1,1 @@
+ALTER TABLE `bikes` ADD `purchase_price` real;

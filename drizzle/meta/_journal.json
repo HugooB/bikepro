@@ -43,6 +43,13 @@
       "when": 1792512013525,
       "tag": "0005_strava",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792516872490,
+      "tag": "0006_bike_purchase_price",
+      "breakpoints": true
     }
   ]
 }

@@ -28,16 +28,20 @@ const zoneColor: Record<StatusLevel, string> = {
   overdue: "var(--status-overdue)",
 };
 
+// Trig results can print differently on the server and in the browser (…608 vs …61), which
+// breaks hydration; two decimals is far finer than the drawing needs.
+const round = (n: number) => Math.round(n * 100) / 100;
+
 function spokes(cx: number, cy: number) {
   return Array.from({ length: 20 }, (_, i) => {
     const a = (i * Math.PI * 2) / 20;
     return (
       <line
         key={i}
-        x1={cx + Math.cos(a) * 10}
-        y1={cy + Math.sin(a) * 10}
-        x2={cx + Math.cos(a) * RIM_INNER_R}
-        y2={cy + Math.sin(a) * RIM_INNER_R}
+        x1={round(cx + Math.cos(a) * 10)}
+        y1={round(cy + Math.sin(a) * 10)}
+        x2={round(cx + Math.cos(a) * RIM_INNER_R)}
+        y2={round(cy + Math.sin(a) * RIM_INNER_R)}
         strokeWidth={1}
         strokeOpacity={0.45}
       />

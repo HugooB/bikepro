@@ -35,6 +35,8 @@ export type WizardDraft = {
   condition: "new" | "used";
   /** Odometer when a used bike was bought. */
   purchaseKm: string;
+  /** What was paid for it in euros; empty when not given. */
+  purchasePrice: string;
   parts: PartChoice[];
   /** Strava bike to link; its total distance becomes the odometer. Empty when typed by hand. */
   stravaGearId: string;
@@ -64,6 +66,7 @@ const savedDraftSchema = z.object({
   purchasedAt: z.string(),
   condition: z.enum(["new", "used"]),
   purchaseKm: z.string(),
+  purchasePrice: z.string().default(""),
   // Drafts saved before Strava linking existed don't have it.
   stravaGearId: z.string().default(""),
   parts: z.array(
@@ -102,6 +105,7 @@ export function emptyDraft(today: string): WizardDraft {
     purchasedAt: today,
     condition: "new",
     purchaseKm: "0",
+    purchasePrice: "",
     parts: partChoicesFor("road"),
     stravaGearId: "",
   };
@@ -121,6 +125,16 @@ const optionalWhole = (label: string) =>
       .positive(`${label} must be more than 0`)
       .optional(),
   );
+
+/** An optional price in euros: empty means not given. */
+export const optionalPrice = z.preprocess(
+  (v) => (v === "" || v === null ? undefined : v),
+  z.coerce
+    .number({ error: "Enter the price as a number" })
+    .min(0, "The price can't be negative")
+    .max(1_000_000, "That's a lot for a bike")
+    .optional(),
+);
 
 export const basicsSchema = z.object({
   name: z
@@ -143,6 +157,7 @@ export const purchaseSchema = (today: string) =>
       condition: z.enum(["new", "used"]),
       purchaseKm: km("the km it had when you bought it"),
       odometerKm: km("the odometer in km"),
+      purchasePrice: optionalPrice,
     })
     .refine((d) => d.condition === "new" || d.purchaseKm <= d.odometerKm, {
       message: "That's more than the bike's odometer now",
@@ -248,6 +263,7 @@ export type BikePlan = {
     model: string | null;
     color: string | null;
     purchasedAt: string;
+    purchasePrice: number | null;
     odometerKm: number;
     stravaGearId?: string;
     stravaDistanceKm?: number;
@@ -311,6 +327,7 @@ export function planBike(draft: WizardDraft, today: string): BikePlan {
       model: basics.model || null,
       color: basics.color || null,
       purchasedAt: draft.purchasedAt,
+      purchasePrice: optionalPrice.parse(draft.purchasePrice) ?? null,
       odometerKm,
     },
     parts,

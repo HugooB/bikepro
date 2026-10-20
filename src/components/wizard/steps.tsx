@@ -8,6 +8,7 @@ import { ZoneProvider } from "@/components/bike/zone-context";
 import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
 import { Button } from "@/components/ui/button";
 import { formatAge, formatKm } from "@/lib/age";
+import { formatCost } from "@/lib/format";
 import { bikeTypeLabels, frameColors } from "@/lib/bikes";
 import { categoryLabels, defaultPartsFor } from "@/lib/default-parts";
 import { cn } from "@/lib/utils";
@@ -269,6 +270,19 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
           />
         )}
       </fieldset>
+
+      <WizardField
+        id="bike-price"
+        label="Price you paid € (optional)"
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step="0.01"
+        value={draft.purchasePrice}
+        onChange={(e) => patch({ purchasePrice: e.target.value })}
+        error={errors.purchasePrice}
+        hint="Counts towards the bike's total cost."
+      />
     </>
   );
 }
@@ -473,6 +487,15 @@ export function StepReview({
       value: `${format(parseISO(draft.purchasedAt), "d MMM yyyy")}, ${draft.condition === "new" ? "new" : `second-hand at ${formatKm(startKm(draft))}`}`,
       step: "purchase",
     },
+    ...(draft.purchasePrice !== ""
+      ? [
+          {
+            label: "Price",
+            value: formatCost(Number(draft.purchasePrice) || 0),
+            step: "purchase" as const,
+          },
+        ]
+      : []),
     {
       label: "Parts",
       value: `${chosen.length} part${chosen.length === 1 ? "" : "s"}${replaced ? `, ${replaced} replaced since` : ""}`,
