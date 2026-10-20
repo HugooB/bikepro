@@ -8,13 +8,14 @@ import { PartEventError } from "@/db/part-events";
 import { serviceRounds } from "@/db/schema";
 import { createServiceRound } from "@/db/service-rounds";
 import type { ActionState } from "@/lib/action-state";
+import { isoDate } from "@/lib/dates";
 import { serviceActions } from "@/lib/event-types";
 
 const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
 
 const roundSchema = z.object({
   bikeId: z.coerce.number().int().positive(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
+  date: isoDate,
   shop: z.preprocess(blankToUndefined, z.string().trim().max(80).optional()),
   odometerKm: z.coerce
     .number({ error: "Enter the odometer in km" })

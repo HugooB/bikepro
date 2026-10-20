@@ -1,5 +1,6 @@
 import type { BikeType } from "@/db/schema";
 import {
+  parseSavedDraft,
   partChoicesFor,
   wizardSteps,
   type PartChoice,
@@ -64,7 +65,9 @@ export function loadSavedWizard(): Pick<WizardState, "step" | "draft"> | null {
     if (!raw) return null;
     const saved = JSON.parse(raw);
     if (saved?.v !== STORAGE_VERSION || !wizardSteps.includes(saved.step)) return null;
-    return { step: saved.step, draft: saved.draft };
+    // Anything malformed (an old format, a hand edit) starts a fresh draft instead.
+    const draft = parseSavedDraft(saved.draft);
+    return draft ? { step: saved.step, draft } : null;
   } catch {
     return null;
   }

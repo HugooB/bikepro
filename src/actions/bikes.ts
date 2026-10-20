@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { createBike } from "@/db/bikes";
 import { bikes } from "@/db/schema";
 import type { ActionState } from "@/lib/action-state";
+import { isoDate } from "@/lib/dates";
 import {
   basicsSchema,
   planBike,
@@ -58,7 +59,7 @@ export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBi
 
 const bikeSchema = basicsSchema.extend({
   bikeId: z.coerce.number().int().positive(),
-  purchasedAt: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date")]),
+  purchasedAt: z.union([z.literal(""), isoDate]),
 });
 
 export async function updateBike(_prev: ActionState, formData: FormData): Promise<ActionState> {

@@ -8,10 +8,10 @@ import { db } from "@/db";
 import { bumpOdometer, PartEventError, recordPartEvent } from "@/db/part-events";
 import { partCategories, partEvents, parts } from "@/db/schema";
 import type { ActionState } from "@/lib/action-state";
+import { isoDate } from "@/lib/dates";
 import { loggableEventTypes } from "@/lib/event-types";
 import { monthsToDays } from "@/lib/format";
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date");
 const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
 const optionalText = (max: number) =>
   z.preprocess(blankToUndefined, z.string().trim().max(max).optional());

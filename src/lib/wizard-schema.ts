@@ -2,6 +2,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { z } from "zod";
 import { bikeTypes, type BikeType, type PartCategory } from "@/db/schema";
 import { defaultPartsFor, type PartTemplate } from "./default-parts";
+import { isoDate } from "./dates";
 import { daysToMonths, monthsToDays } from "./format";
 
 // The add-bike wizard collects a draft over five steps; nothing is saved until the last one.
@@ -50,6 +51,42 @@ export function partChoicesFor(type: BikeType): PartChoice[] {
   }));
 }
 
+// Shape only, no business rules: used to check a draft read back from browser storage.
+const savedDraftSchema = z.object({
+  name: z.string(),
+  type: z.enum(bikeTypes),
+  brand: z.string(),
+  model: z.string(),
+  color: z.string(),
+  odometerKm: z.string(),
+  purchasedAt: z.string(),
+  condition: z.enum(["new", "used"]),
+  purchaseKm: z.string(),
+  parts: z.array(
+    z.object({
+      kind: z.string(),
+      included: z.boolean(),
+      replaced: z.boolean(),
+      replacedAt: z.string(),
+      replacedKm: z.string(),
+      intervalKm: z.string(),
+      intervalMonths: z.string(),
+    }),
+  ),
+});
+
+/**
+ * A saved draft if it still has the expected shape, else null. Its parts are lined up with
+ * the current template, so a part added or removed since it was saved can't break the form.
+ */
+export function parseSavedDraft(value: unknown): WizardDraft | null {
+  const parsed = savedDraftSchema.safeParse(value);
+  if (!parsed.success) return null;
+  const draft = parsed.data;
+  const saved = new Map(draft.parts.map((p) => [p.kind, p]));
+  return { ...draft, parts: partChoicesFor(draft.type).map((p) => saved.get(p.kind) ?? p) };
+}
+
 export function emptyDraft(today: string): WizardDraft {
   return {
     name: "",
@@ -65,7 +102,6 @@ export function emptyDraft(today: string): WizardDraft {
   };
 }
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date");
 const km = (label: string) =>
   z.coerce
     .number({ error: `Enter ${label}` })

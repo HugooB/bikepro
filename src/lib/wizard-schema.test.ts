@@ -3,6 +3,7 @@ import { defaultPartsFor } from "./default-parts";
 import {
   emptyDraft,
   estimateKm,
+  parseSavedDraft,
   partChoicesFor,
   planBike,
   validateStep,
@@ -146,5 +147,39 @@ describe("estimateKm", () => {
     expect(estimateKm("2026-01-01", 1000, "2026-01-11", 2000, "2026-01-06")).toBe(1500);
     expect(estimateKm("2026-01-01", 1000, "2026-01-11", 2000, "2027-01-01")).toBe(2000);
     expect(estimateKm("2026-01-01", 1000, "2026-01-01", 2000, "2026-01-01")).toBe(2000);
+  });
+});
+
+describe("impossible dates", () => {
+  it("rejects calendar dates that don't exist", () => {
+    expect(validateStep("purchase", draft({ purchasedAt: "2026-02-31" }), TODAY)).toEqual({
+      purchasedAt: "Pick a date",
+    });
+    const parts = partChoicesFor("road");
+    parts[0] = { ...parts[0], replaced: true, replacedAt: "2025-13-01" };
+    expect(validateStep("parts", draft({ purchasedAt: "2025-01-01", parts }), TODAY)).toEqual({
+      "parts.0.replacedAt": "Pick when it was replaced",
+    });
+  });
+});
+
+describe("parseSavedDraft", () => {
+  it("restores a valid draft", () => {
+    const saved = draft({ name: "Saved" });
+    expect(parseSavedDraft(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
+  });
+
+  it("rejects malformed drafts", () => {
+    expect(parseSavedDraft(null)).toBeNull();
+    expect(parseSavedDraft({ ...draft(), parts: "zzz" })).toBeNull();
+    expect(parseSavedDraft({ ...draft(), type: "unicycle" })).toBeNull();
+  });
+
+  it("lines parts up with the template", () => {
+    const parts = partChoicesFor("road");
+    const chain = { ...parts[0], included: false };
+    const restored = parseSavedDraft({ ...draft(), parts: [{ ...chain, kind: "gone" }, chain] })!;
+    expect(restored.parts.map((p) => p.kind)).toEqual(partChoicesFor("road").map((p) => p.kind));
+    expect(restored.parts[0]).toEqual(chain);
   });
 });
