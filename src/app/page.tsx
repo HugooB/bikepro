@@ -12,7 +12,7 @@ export default async function Home() {
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-2">
         <p className="text-brand text-sm font-medium">Welcome</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+        <h1 className="font-display text-3xl leading-tight text-balance sm:text-4xl">
           Never wonder how old your chain is again.
         </h1>
         <p className="text-muted-foreground max-w-prose">

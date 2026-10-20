@@ -21,7 +21,7 @@ export default async function NewPartPage({ params }: { params: Promise<{ bikeId
         {bike.name}
       </Link>
       <header className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Add a part</h1>
+        <h1 className="font-display text-3xl leading-tight sm:text-4xl">Add a part</h1>
         <p className="text-muted-foreground">
           Track something that isn&apos;t in the default list, like a power meter or bottle cages.
         </p>

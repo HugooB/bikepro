@@ -240,7 +240,7 @@ function ServiceRoundForm({
             if (items.length === 0) return null;
             return (
               <div key={category} className="flex flex-col gap-1.5">
-                <p className="text-muted-foreground px-1 text-xs font-medium tracking-wide uppercase">
+                <p className="text-muted-foreground px-1 text-sm font-medium">
                   {categoryLabels[category]}
                 </p>
                 <ul className="divide-y overflow-hidden rounded-xl border">

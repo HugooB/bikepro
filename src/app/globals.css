@@ -7,9 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  --font-sans: var(--font-archivo);
+  --font-heading: var(--font-archivo);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-status-ok: var(--status-ok);
@@ -54,15 +53,15 @@
 }
 
 :root {
-  /* BikePro brand + part status colours */
-  --brand: oklch(0.62 0.19 38);
-  --brand-foreground: oklch(0.99 0 0);
+  /* BikePro: cobalt "blueprint ink" accent on cool paper white; status colours stay distinct from it */
+  --brand: #2f49d1;
+  --brand-foreground: #ffffff;
   --status-ok: oklch(0.6 0.13 155);
   --status-due: oklch(0.74 0.15 70);
   --status-overdue: oklch(0.58 0.2 27);
 
-  --background: oklch(0.985 0.002 75);
-  --foreground: oklch(0.145 0 0);
+  --background: #f8f9fb;
+  --foreground: #1a1d24;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -138,5 +137,12 @@
   }
   html {
     @apply font-sans;
+  }
+  /* Bike and page names use Archivo's wide cut, like a race number. */
+  .font-display {
+    font-family: var(--font-archivo);
+    font-stretch: 118%;
+    font-weight: 750;
+    letter-spacing: -0.01em;
   }
 }

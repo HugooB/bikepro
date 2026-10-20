@@ -20,7 +20,7 @@ export default async function HistoryPage({ params }: { params: Params }) {
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{bike.name}</h1>
+        <h1 className="font-display text-4xl leading-none sm:text-5xl">{bike.name}</h1>
         <BikeNav bikeId={bike.id} />
       </header>
 
