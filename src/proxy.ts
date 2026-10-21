@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const SESSION_COOKIE = "bikepro_session";
 const PUBLIC_PATHS = ["/login", "/register", "/api/health"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return NextResponse.next();

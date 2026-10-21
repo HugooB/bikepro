@@ -28,9 +28,12 @@ export function OdometerForm({
   });
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  // Close the editor once a save succeeds (adjusting state while rendering, not in an effect).
+  const [handledState, setHandledState] = useState(state);
+  if (state !== handledState) {
+    setHandledState(state);
     if (state.ok) setEditing(false);
-  }, [state]);
+  }
 
   useEffect(() => {
     if (editing) inputRef.current?.select();

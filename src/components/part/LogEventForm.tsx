@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { addPartEvent } from "@/actions/parts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,13 +37,15 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
   const lowerName = partName.toLowerCase();
 
   // After a successful save, clear the form for the next entry.
-  useEffect(() => {
+  const [handledState, setHandledState] = useState(state);
+  if (state !== handledState) {
+    setHandledState(state);
     if (state.ok) {
       setFormKey((k) => k + 1);
       setType("serviced");
       setResets(resetsByDefault.serviced);
     }
-  }, [state]);
+  }
 
   function chooseType(next: LoggableEventType) {
     setType(next);

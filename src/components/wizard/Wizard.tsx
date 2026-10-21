@@ -78,6 +78,8 @@ export function Wizard({
       if (!linkable) saved.draft.stravaGearId = "";
       dispatch({ type: "restore", state: saved });
     }
+    // sessionStorage only exists in the browser, so this has to wait until after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRestored(true);
     // Only on first load.
     // eslint-disable-next-line react-hooks/exhaustive-deps

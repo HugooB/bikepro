@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:22-bookworm-slim AS base
+FROM node:24-bookworm-slim AS base
 WORKDIR /app
 
 # Install dependencies (better-sqlite3 ships prebuilt binaries; build tools are a fallback)

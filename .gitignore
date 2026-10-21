@@ -47,3 +47,6 @@ next-env.d.ts
 
 # personal Claude Code settings
 .claude/settings.local.json
+
+# Claude Code plans
+PLAN*.md

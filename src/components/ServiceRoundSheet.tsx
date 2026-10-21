@@ -102,11 +102,11 @@ function ServiceRoundForm({
   const [selected, setSelected] = useState<Selection>(new Map());
 
   // An error stays visible until the user changes something in the form.
-  const [showError, setShowError] = useState(false);
+  const [dismissedState, setDismissedState] = useState<ActionState | null>(null);
+  const showError = dismissedState !== state;
 
   useEffect(() => {
     if (state.ok) onSaved(selected.size);
-    setShowError(!!state.error);
     // Only react to a new save result, not to selection changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
@@ -134,7 +134,7 @@ function ServiceRoundForm({
   return (
     <form
       action={formAction}
-      onChange={() => setShowError(false)}
+      onChange={() => setDismissedState(state)}
       className="flex min-h-0 flex-1 flex-col"
     >
       <input type="hidden" name="bikeId" value={bikeId} />

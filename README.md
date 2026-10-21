@@ -120,7 +120,7 @@ To restore, stop BikePro, copy the file back to `/app/data/bikepro.db` in the vo
 
 ## Development
 
-You need Node.js 22.
+You need Node.js 24 (see `.nvmrc`).
 
 ```bash
 npm install
@@ -134,7 +134,7 @@ npm run format       # Prettier
 
 To change the database schema, edit `src/db/schema.ts`, run `npm run db:generate` to create a migration in `drizzle/`, and restart the dev server to apply it. `npm run db:studio` lets you browse the data.
 
-**Built with** [Next.js](https://nextjs.org) 15 and React 19, [SQLite](https://sqlite.org) through [Drizzle ORM](https://orm.drizzle.team), [Tailwind CSS](https://tailwindcss.com) 4 and [Radix UI](https://www.radix-ui.com), with [zod](https://zod.dev) for validation and [Vitest](https://vitest.dev) for tests.
+**Built with** [Next.js](https://nextjs.org) 16 and React 19, [SQLite](https://sqlite.org) through [Drizzle ORM](https://orm.drizzle.team), [Tailwind CSS](https://tailwindcss.com) 4 and [Radix UI](https://www.radix-ui.com), with [zod](https://zod.dev) for validation and [Vitest](https://vitest.dev) for tests.
 
 ## Contributing
 
