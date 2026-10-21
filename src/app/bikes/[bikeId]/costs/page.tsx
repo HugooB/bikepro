@@ -6,8 +6,9 @@ import { BikeNav } from "@/components/BikeNav";
 import { CostsByCategoryChart, CostsByYearChart } from "@/components/costs/CostCharts";
 import { getBike, getCostEntries } from "@/db/queries";
 import { getCurrentUser, requireUser } from "@/lib/auth/session";
-import { costCategoryLabels, summarizeCosts, type CostEntry } from "@/lib/costs";
+import { costCategoryLabels, costPerYear, summarizeCosts, type CostEntry } from "@/lib/costs";
 import { formatCost } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ export default async function CostsPage({ params }: { params: Params }) {
   const thisYear = new Date().getFullYear();
   const summary = summarizeCosts(entries, thisYear);
   const maintenanceThisYear = summary.byYear.find((y) => y.year === thisYear)?.amount ?? 0;
+  // Owned since the purchase date, or since the bike was added when there's none.
+  const ownedSince = bike.purchasedAt ?? format(bike.createdAt, "yyyy-MM-dd");
 
   return (
     <div className="flex flex-col gap-8">
@@ -37,8 +40,8 @@ export default async function CostsPage({ params }: { params: Params }) {
         </p>
       ) : (
         <>
-          <section aria-label="Totals" className="grid grid-cols-2 gap-3">
-            <div className="bg-card col-span-2 flex flex-col gap-1 rounded-xl border px-4 py-3">
+          <section aria-label="Totals" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="bg-card col-span-full flex flex-col gap-1 rounded-xl border px-4 py-3">
               <p className="text-muted-foreground text-sm">Total cost of {bike.name}</p>
               <p className="text-5xl font-semibold tracking-tight">{formatCost(summary.total)}</p>
               <p className="text-muted-foreground text-sm">
@@ -47,6 +50,12 @@ export default async function CostsPage({ params }: { params: Params }) {
                   : "Parts and maintenance. Add what you paid for the bike in Settings to include it."}
               </p>
             </div>
+            {/* Full width on phones, so the two maintenance tiles below pair up. */}
+            <Stat
+              label="Per year of ownership"
+              value={formatCost(costPerYear(summary.total, ownedSince))}
+              className="max-sm:col-span-2"
+            />
             <Stat label={`Maintenance in ${thisYear}`} value={formatCost(maintenanceThisYear)} />
             {bike.odometerKm >= 100 && (
               <Stat
@@ -100,9 +109,9 @@ export default async function CostsPage({ params }: { params: Params }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <div className="bg-card flex flex-col gap-1 rounded-xl border px-4 py-3">
+    <div className={cn("bg-card flex flex-col gap-1 rounded-xl border px-4 py-3", className)}>
       <p className="text-muted-foreground text-sm">{label}</p>
       <p className="text-2xl font-semibold">{value}</p>
     </div>

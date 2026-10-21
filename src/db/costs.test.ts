@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
-import { summarizeCosts } from "@/lib/costs";
+import { costPerYear, summarizeCosts } from "@/lib/costs";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
 import { recordPartEvent } from "./part-events";
@@ -119,5 +119,18 @@ describe("bike costs", () => {
       byYear: [],
       byCategory: [],
     });
+  });
+});
+
+describe("costPerYear", () => {
+  const now = new Date(2026, 9, 21);
+
+  it("spreads the total over the years owned", () => {
+    expect(costPerYear(3000, "2024-10-21", now)).toBeCloseTo(1500, 0);
+    expect(costPerYear(2000, "2025-04-21", now)).toBeCloseTo(2000 / (548 / 365));
+  });
+
+  it("counts a bike owned less than a year as one year", () => {
+    expect(costPerYear(1200, "2026-08-21", now)).toBe(1200);
   });
 });

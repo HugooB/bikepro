@@ -1,3 +1,4 @@
+import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { PartCategory } from "@/db/schema";
 import { categoryLabels } from "./default-parts";
 
@@ -70,4 +71,13 @@ export function summarizeCosts(entries: CostEntry[], currentYear: number): CostS
     .sort((a, b) => b.amount - a.amount);
 
   return { total: purchase + maintenance, purchase, maintenance, byYear, byCategory };
+}
+
+/**
+ * Total cost spread over the years the bike has been owned, from `since` ("YYYY-MM-DD") to
+ * `now`. The first year counts as a whole year, so a new bike doesn't show a huge figure.
+ */
+export function costPerYear(total: number, since: string, now = new Date()): number {
+  const days = differenceInCalendarDays(now, parseISO(since));
+  return total / Math.max(1, days / 365);
 }
