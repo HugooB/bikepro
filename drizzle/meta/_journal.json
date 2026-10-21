@@ -50,6 +50,13 @@
       "when": 1792516872490,
       "tag": "0006_bike_purchase_price",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792571011860,
+      "tag": "0007_brake_type",
+      "breakpoints": true
     }
   ]
 }

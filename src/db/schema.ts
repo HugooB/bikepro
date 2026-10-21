@@ -7,6 +7,9 @@ import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-or
 export const bikeTypes = ["road", "gravel", "tt", "other"] as const;
 export type BikeType = (typeof bikeTypes)[number];
 
+export const brakeTypes = ["disc", "rim"] as const;
+export type BrakeType = (typeof brakeTypes)[number];
+
 export const partCategories = ["drivetrain", "wheels", "brakes", "contact"] as const;
 export type PartCategory = (typeof partCategories)[number];
 
@@ -55,6 +58,8 @@ export const bikes = sqliteTable(
     userId: integer("user_id"),
     name: text("name").notNull(),
     type: text("type", { enum: bikeTypes }).notNull().default("road"),
+    /** Picks the brake parts in the template and how the drawing shows the brakes. */
+    brakeType: text("brake_type", { enum: brakeTypes }).notNull().default("disc"),
     brand: text("brand"),
     model: text("model"),
     color: text("color"),

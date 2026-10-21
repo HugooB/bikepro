@@ -63,7 +63,12 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
       <div className="grid gap-8 lg:grid-cols-[minmax(0,11fr)_minmax(0,10fr)] lg:gap-12">
         <aside className="flex flex-col gap-6 lg:sticky lg:top-20 lg:self-start">
           <BikeHeader bike={bike} lastRound={lastRound} />
-          <BikeDrawing parts={summaryParts} color={bike.color} className="-mx-2 sm:mx-0" />
+          <BikeDrawing
+            parts={summaryParts}
+            color={bike.color}
+            brakeType={bike.brakeType}
+            className="-mx-2 sm:mx-0"
+          />
           <div className="flex flex-col gap-3">
             <OdometerForm bikeId={bike.id} odometerKm={bike.odometerKm} strava={strava} />
             <CostTotalCard

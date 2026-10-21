@@ -9,9 +9,11 @@ import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Bike, BikeType } from "@/db/schema";
+import { brakeTypes, type Bike, type BikeType, type BrakeType } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 import { bikeTypeLabels } from "@/lib/bikes";
+import { brakeTypeLabels } from "@/lib/default-parts";
+import { ChoiceChip } from "@/components/wizard/fields";
 
 export function BikeSettingsRow({ bike }: { bike: Bike }) {
   const [editing, setEditing] = useState(false);
@@ -60,6 +62,7 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
     initialActionState,
   );
   const [type, setType] = useState<BikeType>(bike.type);
+  const [brakeType, setBrakeType] = useState<BrakeType>(bike.brakeType);
   const [color, setColor] = useState(bike.color ?? "");
   const id = (field: string) => `bike-${bike.id}-${field}`;
 
@@ -84,6 +87,25 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
         <BikeTypePicker value={type} onChange={setType} />
         <p className="text-muted-foreground text-xs">
           Changing the type doesn&apos;t change its parts.
+        </p>
+      </fieldset>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-medium">Brakes</legend>
+        <input type="hidden" name="brakeType" value={brakeType} />
+        <div className="grid grid-cols-2 gap-2">
+          {brakeTypes.map((b) => (
+            <ChoiceChip
+              key={b}
+              name={id("brakes")}
+              checked={brakeType === b}
+              onChange={() => setBrakeType(b)}
+            >
+              {brakeTypeLabels[b]}
+            </ChoiceChip>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">
+          Changes the drawing. Brake parts stay as they are: add or remove them on the bike page.
         </p>
       </fieldset>
       <div className="grid gap-3 sm:grid-cols-2">

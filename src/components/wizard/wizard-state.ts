@@ -1,4 +1,4 @@
-import type { BikeType } from "@/db/schema";
+import type { BikeType, BrakeType } from "@/db/schema";
 import {
   parseSavedDraft,
   partChoicesFor,
@@ -18,6 +18,7 @@ export type WizardState = {
 export type WizardAction =
   | { type: "patch"; patch: Partial<WizardDraft> }
   | { type: "bikeType"; bikeType: BikeType }
+  | { type: "brakeType"; brakeType: BrakeType }
   | { type: "part"; kind: string; patch: Partial<PartChoice> }
   | { type: "goto"; step: WizardStep }
   | { type: "errors"; errors: Record<string, string> }
@@ -27,11 +28,14 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
   switch (action.type) {
     case "patch":
       return { ...state, draft: { ...state.draft, ...action.patch }, errors: {} };
-    case "bikeType": {
-      // Keep what was already chosen for parts the new type's template shares.
+    case "bikeType":
+    case "brakeType": {
+      const type = action.type === "bikeType" ? action.bikeType : state.draft.type;
+      const brakeType = action.type === "brakeType" ? action.brakeType : state.draft.brakeType;
+      // Keep what was already chosen for parts the new template shares.
       const previous = new Map(state.draft.parts.map((p) => [p.kind, p]));
-      const parts = partChoicesFor(action.bikeType).map((p) => previous.get(p.kind) ?? p);
-      return { ...state, draft: { ...state.draft, type: action.bikeType, parts }, errors: {} };
+      const parts = partChoicesFor(type, brakeType).map((p) => previous.get(p.kind) ?? p);
+      return { ...state, draft: { ...state.draft, type, brakeType, parts }, errors: {} };
     }
     case "part":
       return {

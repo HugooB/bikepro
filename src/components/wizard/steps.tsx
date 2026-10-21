@@ -6,11 +6,12 @@ import { ChevronDown } from "lucide-react";
 import { BikeDrawing } from "@/components/bike/BikeDrawing";
 import { ZoneProvider } from "@/components/bike/zone-context";
 import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
+import { brakeTypes } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import { formatAge, formatKm } from "@/lib/age";
 import { formatCost } from "@/lib/format";
 import { bikeTypeLabels, frameColors } from "@/lib/bikes";
-import { categoryLabels, defaultPartsFor } from "@/lib/default-parts";
+import { brakeTypeLabels, categoryLabels, defaultPartsFor } from "@/lib/default-parts";
 import { cn } from "@/lib/utils";
 import { partsByCategory, startKm, type WizardDraft, type WizardStep } from "@/lib/wizard-schema";
 import { ChoiceChip, StepHeading, WizardField } from "./fields";
@@ -60,6 +61,26 @@ export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
           value={draft.type}
           onChange={(bikeType) => dispatch({ type: "bikeType", bikeType })}
         />
+      </fieldset>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-medium">Brakes</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {brakeTypes.map((brakeType) => (
+            <ChoiceChip
+              key={brakeType}
+              name="brake-type"
+              checked={draft.brakeType === brakeType}
+              onChange={() => dispatch({ type: "brakeType", brakeType })}
+            >
+              {brakeTypeLabels[brakeType]}
+            </ChoiceChip>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">
+          {draft.brakeType === "disc"
+            ? "Pads, rotors and brake fluid are tracked."
+            : "Pads and brake cables are tracked."}
+        </p>
       </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
         <WizardField
@@ -326,7 +347,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
         </p>
       )}
 
-      {partsByCategory(draft.type).map(([category, templates]) => (
+      {partsByCategory(draft.type, draft.brakeType).map(([category, templates]) => (
         <fieldset key={category} className="flex flex-col gap-1.5">
           <legend className="text-muted-foreground mb-1.5 px-1 text-sm font-medium">
             {categoryLabels[category]}
@@ -452,7 +473,7 @@ export function StepReview({
   onEdit,
 }: StepProps & { onEdit: (step: WizardStep) => void }) {
   const stravaBike = strava.bikes.find((b) => b.id === draft.stravaGearId);
-  const templates = new Map(defaultPartsFor(draft.type).map((t) => [t.kind, t]));
+  const templates = new Map(defaultPartsFor(draft.type, draft.brakeType).map((t) => [t.kind, t]));
   const chosen = draft.parts.filter((p) => p.included);
   const replaced = chosen.filter((p) => p.replaced).length;
   const makeModel = [draft.brand, draft.model].filter((s) => s.trim()).join(" ");
@@ -473,6 +494,7 @@ export function StepReview({
 
   const rows: { label: string; value: string; step: WizardStep }[] = [
     { label: "Type", value: bikeTypeLabels[draft.type].name, step: "basics" },
+    { label: "Brakes", value: brakeTypeLabels[draft.brakeType], step: "basics" },
     ...(makeModel ? [{ label: "Make", value: makeModel, step: "basics" as const }] : []),
     { label: "Frame colour", value: colorName, step: "basics" },
     {
@@ -513,7 +535,7 @@ export function StepReview({
       <div className="overflow-hidden rounded-2xl border">
         <div className="bg-muted/40 px-3 pt-4 pb-2">
           <ZoneProvider>
-            <BikeDrawing parts={drawingParts} color={draft.color} />
+            <BikeDrawing parts={drawingParts} color={draft.color} brakeType={draft.brakeType} />
           </ZoneProvider>
         </div>
         <div className="flex flex-col gap-3 p-4">

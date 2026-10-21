@@ -1,4 +1,4 @@
-import type { BikeType, PartCategory } from "@/db/schema";
+import type { BikeType, BrakeType, PartCategory } from "@/db/schema";
 
 export type PartTemplate = {
   kind: string;
@@ -19,7 +19,67 @@ export const categoryLabels: Record<PartCategory, string> = {
 
 const YEAR = 365;
 
-const roadParts: PartTemplate[] = [
+/** Where the brake parts go in each template. */
+const BRAKES = "brakes" as const;
+
+const brakeParts: Record<BrakeType, PartTemplate[]> = {
+  disc: [
+    {
+      kind: "brake_pads_front",
+      name: "Front brake pads",
+      category: "brakes",
+      svgZone: "brake_front",
+      intervalKm: 2500,
+    },
+    {
+      kind: "brake_pads_rear",
+      name: "Rear brake pads",
+      category: "brakes",
+      svgZone: "brake_rear",
+      intervalKm: 2500,
+    },
+    {
+      kind: "rotors",
+      name: "Brake rotors",
+      category: "brakes",
+      svgZone: "brake_front",
+      intervalKm: 10000,
+    },
+    {
+      kind: "brake_fluid",
+      name: "Brake fluid",
+      category: "brakes",
+      svgZone: "brake_rear",
+      intervalDays: YEAR,
+    },
+  ],
+  // Rim pads also wear the rims, so they're worth checking a little sooner.
+  rim: [
+    {
+      kind: "brake_pads_front",
+      name: "Front brake pads",
+      category: "brakes",
+      svgZone: "brake_front",
+      intervalKm: 2000,
+    },
+    {
+      kind: "brake_pads_rear",
+      name: "Rear brake pads",
+      category: "brakes",
+      svgZone: "brake_rear",
+      intervalKm: 2000,
+    },
+    {
+      kind: "brake_cables",
+      name: "Brake cables & housing",
+      category: "brakes",
+      svgZone: "cables",
+      intervalDays: YEAR,
+    },
+  ],
+};
+
+const roadParts: (PartTemplate | typeof BRAKES)[] = [
   // Drivetrain
   {
     kind: "chain",
@@ -102,35 +162,8 @@ const roadParts: PartTemplate[] = [
     intervalDays: 120,
   },
 
-  // Brakes & cables
-  {
-    kind: "brake_pads_front",
-    name: "Front brake pads",
-    category: "brakes",
-    svgZone: "brake_front",
-    intervalKm: 2500,
-  },
-  {
-    kind: "brake_pads_rear",
-    name: "Rear brake pads",
-    category: "brakes",
-    svgZone: "brake_rear",
-    intervalKm: 2500,
-  },
-  {
-    kind: "rotors",
-    name: "Brake rotors",
-    category: "brakes",
-    svgZone: "brake_front",
-    intervalKm: 10000,
-  },
-  {
-    kind: "brake_fluid",
-    name: "Brake fluid",
-    category: "brakes",
-    svgZone: "brake_rear",
-    intervalDays: YEAR,
-  },
+  // Brakes & cables (the brake parts themselves depend on the brake type, see below)
+  BRAKES,
   {
     kind: "cables",
     name: "Shift cables & housing",
@@ -154,14 +187,19 @@ const roadParts: PartTemplate[] = [
 ];
 
 // Other bike types reuse the road template until they get their own.
-const templates: Record<BikeType, PartTemplate[]> = {
+const templates: Record<BikeType, (PartTemplate | typeof BRAKES)[]> = {
   road: roadParts,
   gravel: roadParts,
   tt: roadParts,
   other: roadParts,
 };
 
-/** Default parts for a new bike of the given type. */
-export function defaultPartsFor(type: BikeType): PartTemplate[] {
-  return templates[type];
+export const brakeTypeLabels: Record<BrakeType, string> = {
+  disc: "Disc brakes",
+  rim: "Rim brakes",
+};
+
+/** Default parts for a new bike of the given type and brakes. */
+export function defaultPartsFor(type: BikeType, brakes: BrakeType = "disc"): PartTemplate[] {
+  return templates[type].flatMap((t) => (t === BRAKES ? brakeParts[brakes] : [t]));
 }

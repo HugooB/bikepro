@@ -1,6 +1,12 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { z } from "zod";
-import { bikeTypes, type BikeType, type PartCategory } from "@/db/schema";
+import {
+  brakeTypes,
+  bikeTypes,
+  type BikeType,
+  type BrakeType,
+  type PartCategory,
+} from "@/db/schema";
 import { defaultPartsFor, type PartTemplate } from "./default-parts";
 import { isoDate } from "./dates";
 import { daysToMonths, monthsToDays } from "./format";
@@ -26,6 +32,7 @@ export type PartChoice = {
 export type WizardDraft = {
   name: string;
   type: BikeType;
+  brakeType: BrakeType;
   brand: string;
   model: string;
   /** Frame colour for the drawing; empty uses the brand colour. */
@@ -43,8 +50,8 @@ export type WizardDraft = {
 };
 
 /** Template parts as wizard choices: everything ticked, default intervals. */
-export function partChoicesFor(type: BikeType): PartChoice[] {
-  return defaultPartsFor(type).map((t) => ({
+export function partChoicesFor(type: BikeType, brakes: BrakeType = "disc"): PartChoice[] {
+  return defaultPartsFor(type, brakes).map((t) => ({
     kind: t.kind,
     included: true,
     replaced: false,
@@ -59,6 +66,8 @@ export function partChoicesFor(type: BikeType): PartChoice[] {
 const savedDraftSchema = z.object({
   name: z.string(),
   type: z.enum(bikeTypes),
+  // Drafts saved before brake types existed don't have it.
+  brakeType: z.enum(brakeTypes).default("disc"),
   brand: z.string(),
   model: z.string(),
   color: z.string(),
@@ -91,13 +100,17 @@ export function parseSavedDraft(value: unknown): WizardDraft | null {
   if (!parsed.success) return null;
   const draft = parsed.data;
   const saved = new Map(draft.parts.map((p) => [p.kind, p]));
-  return { ...draft, parts: partChoicesFor(draft.type).map((p) => saved.get(p.kind) ?? p) };
+  return {
+    ...draft,
+    parts: partChoicesFor(draft.type, draft.brakeType).map((p) => saved.get(p.kind) ?? p),
+  };
 }
 
 export function emptyDraft(today: string): WizardDraft {
   return {
     name: "",
     type: "road",
+    brakeType: "disc",
     brand: "",
     model: "",
     color: "",
@@ -143,6 +156,7 @@ export const basicsSchema = z.object({
     .min(1, "Give your bike a name")
     .max(40, "Keep the name under 40 characters"),
   type: z.enum(bikeTypes, { error: "Choose a bike type" }),
+  brakeType: z.enum(brakeTypes, { error: "Choose the brakes" }),
   brand: z.string().trim().max(60),
   model: z.string().trim().max(80),
   color: z.union([z.literal(""), z.string().regex(/^#[0-9a-f]{6}$/i, "Pick a colour")]),
@@ -259,6 +273,7 @@ export type BikePlan = {
   bike: {
     name: string;
     type: BikeType;
+    brakeType: BrakeType;
     brand: string | null;
     model: string | null;
     color: string | null;
@@ -297,32 +312,35 @@ export function planBike(draft: WizardDraft, today: string): BikePlan {
   const fromKm = startKm(draft);
   const choices = new Map(draft.parts.map((p) => [p.kind, p]));
 
-  const parts = defaultPartsFor(basics.type).flatMap((template, i): PlannedPart[] => {
-    const choice = choices.get(template.kind);
-    if (!choice?.included) return [];
-    const { intervalKm, intervalMonths } = partChoiceSchema.parse(choice);
-    const replaced = choice.replaced;
-    return [
-      {
-        ...template,
-        installedAt: replaced ? choice.replacedAt : draft.purchasedAt,
-        installedKm: replaced
-          ? choice.replacedKm === ""
-            ? estimateKm(draft.purchasedAt, fromKm, today, odometerKm, choice.replacedAt)
-            : Number(choice.replacedKm)
-          : fromKm,
-        intervalKm,
-        intervalDays: intervalMonths ? monthsToDays(intervalMonths) : undefined,
-        sortOrder: i,
-        replaced,
-      },
-    ];
-  });
+  const parts = defaultPartsFor(basics.type, basics.brakeType).flatMap(
+    (template, i): PlannedPart[] => {
+      const choice = choices.get(template.kind);
+      if (!choice?.included) return [];
+      const { intervalKm, intervalMonths } = partChoiceSchema.parse(choice);
+      const replaced = choice.replaced;
+      return [
+        {
+          ...template,
+          installedAt: replaced ? choice.replacedAt : draft.purchasedAt,
+          installedKm: replaced
+            ? choice.replacedKm === ""
+              ? estimateKm(draft.purchasedAt, fromKm, today, odometerKm, choice.replacedAt)
+              : Number(choice.replacedKm)
+            : fromKm,
+          intervalKm,
+          intervalDays: intervalMonths ? monthsToDays(intervalMonths) : undefined,
+          sortOrder: i,
+          replaced,
+        },
+      ];
+    },
+  );
 
   return {
     bike: {
       name: basics.name,
       type: basics.type,
+      brakeType: basics.brakeType,
       brand: basics.brand || null,
       model: basics.model || null,
       color: basics.color || null,
@@ -348,9 +366,12 @@ export function estimateKm(
   return Math.round(fromKm + (toKm - fromKm) * Math.min(1, Math.max(0, share)));
 }
 
-export function partsByCategory(type: BikeType): [PartCategory, PartTemplate[]][] {
+export function partsByCategory(
+  type: BikeType,
+  brakes: BrakeType,
+): [PartCategory, PartTemplate[]][] {
   const groups = new Map<PartCategory, PartTemplate[]>();
-  for (const t of defaultPartsFor(type))
+  for (const t of defaultPartsFor(type, brakes))
     groups.set(t.category, [...(groups.get(t.category) ?? []), t]);
   return [...groups];
 }

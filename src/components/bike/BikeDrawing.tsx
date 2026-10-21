@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { BrakeType } from "@/db/schema";
 import { statusLabels, type StatusLevel } from "@/lib/status";
 import { summarizeZones, type BikeZone, type ZonePart, type ZoneSummary } from "@/lib/zones";
 import { cn } from "@/lib/utils";
@@ -298,6 +299,62 @@ const shapes: Record<BikeZone, ZoneShape> = {
   },
 };
 
+/**
+ * Rim brake seen from the side: the caliper sits just above the tire, its pad on the rim's
+ * braking surface. (dx, dy) points from the hub to where the fork or seat stay crosses the rim.
+ */
+function rimBrake(hub: { x: number; y: number }, dx: number, dy: number): ZoneShape {
+  const len = Math.hypot(dx, dy);
+  const [ux, uy] = [dx / len, dy / len];
+  // Along the rim, for the caliper body and the pad.
+  const [tx, ty] = [-uy, ux];
+  const at = (r: number) => ({ x: round(hub.x + ux * r), y: round(hub.y + uy * r) });
+  const pad = at(RIM_R - 10);
+  const body = at(TIRE_R + 10);
+  const angle = round((Math.atan2(ty, tx) * 180) / Math.PI);
+  return {
+    anchor: body,
+    draw: (
+      <>
+        <line x1={body.x} y1={body.y} x2={pad.x} y2={pad.y} strokeWidth={3} />
+        <rect
+          x={body.x - 13}
+          y={body.y - 6}
+          width={26}
+          height={12}
+          rx={4}
+          strokeWidth={3}
+          transform={`rotate(${angle} ${body.x} ${body.y})`}
+        />
+        <line
+          x1={round(pad.x - tx * 9)}
+          y1={round(pad.y - ty * 9)}
+          x2={round(pad.x + tx * 9)}
+          y2={round(pad.y + ty * 9)}
+          strokeWidth={6}
+        />
+      </>
+    ),
+    hit: (
+      <>
+        <circle cx={body.x} cy={body.y} r={18} fill={T} stroke="none" />
+        <circle cx={pad.x} cy={pad.y} r={14} fill={T} stroke="none" />
+      </>
+    ),
+  };
+}
+
+// Rim brakes replace the disc rotors and calipers: front on the fork crown, rear on the seat
+// stays, each where its tube crosses the rim.
+const shapesByBrakes: Record<BrakeType, Record<BikeZone, ZoneShape>> = {
+  disc: shapes,
+  rim: {
+    ...shapes,
+    brake_front: rimBrake(FRONT, -55, -124),
+    brake_rear: rimBrake(REAR, 89, -104),
+  },
+};
+
 function Frame({ color }: { color: string }) {
   const tube = (d: string, width: number, opacity = 1) => (
     <path d={d} strokeWidth={width} strokeOpacity={opacity} />
@@ -330,10 +387,13 @@ type Props = {
   parts: ZonePart[];
   /** Frame colour; defaults to the brand ink. */
   color?: string | null;
+  /** Disc brakes show rotors at the hubs; rim brakes show calipers with pads on the rims. */
+  brakeType?: BrakeType;
   className?: string;
 };
 
-export function BikeDrawing({ parts, color, className }: Props) {
+export function BikeDrawing({ parts, color, brakeType = "disc", className }: Props) {
+  const shapes = shapesByBrakes[brakeType];
   const zones = useMemo(() => summarizeZones(parts), [parts]);
   const { activeZone, setActiveZone, revealZone } = useZones();
   const [tooltipZone, setTooltipZone] = useState<BikeZone | null>(null);

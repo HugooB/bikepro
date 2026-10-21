@@ -86,12 +86,14 @@ export async function updateBike(_prev: ActionState, formData: FormData): Promis
   const parsed = bikeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  const { bikeId, name, type, brand, model, color, purchasedAt, purchasePrice } = parsed.data;
+  const { bikeId, name, type, brakeType, brand, model, color, purchasedAt, purchasePrice } =
+    parsed.data;
   if (!getOwnedBike(user.id, bikeId)) return { ok: false, error: "Bike not found" };
   db.update(bikes)
     .set({
       name,
       type,
+      brakeType,
       brand: brand || null,
       model: model || null,
       color: color || null,

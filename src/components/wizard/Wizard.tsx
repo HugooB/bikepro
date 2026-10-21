@@ -58,7 +58,7 @@ export function Wizard({
     const draft = { ...emptyDraft(today), ...prefill };
     return {
       step: "basics" as WizardStep,
-      draft: { ...draft, parts: partChoicesFor(draft.type) },
+      draft: { ...draft, parts: partChoicesFor(draft.type, draft.brakeType) },
       errors: {},
     };
   });

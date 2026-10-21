@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { wizardReducer } from "@/components/wizard/wizard-state";
 import { defaultPartsFor } from "./default-parts";
 import {
   emptyDraft,
@@ -189,5 +190,51 @@ describe("parseSavedDraft", () => {
     const restored = parseSavedDraft({ ...draft(), parts: [{ ...chain, kind: "gone" }, chain] })!;
     expect(restored.parts.map((p) => p.kind)).toEqual(partChoicesFor("road").map((p) => p.kind));
     expect(restored.parts[0]).toEqual(chain);
+  });
+});
+
+describe("brake types", () => {
+  const kinds = (brakes: "disc" | "rim") =>
+    defaultPartsFor("road", brakes)
+      .filter((t) => t.category === "brakes")
+      .map((t) => t.kind);
+
+  it("tracks rotors and fluid on disc brakes, cables on rim brakes", () => {
+    // "cables" (shift cables) is in the brakes category for both.
+    expect(kinds("disc")).toEqual([
+      "brake_pads_front",
+      "brake_pads_rear",
+      "rotors",
+      "brake_fluid",
+      "cables",
+    ]);
+    expect(kinds("rim")).toEqual(["brake_pads_front", "brake_pads_rear", "brake_cables", "cables"]);
+  });
+
+  it("creates a rim-brake bike with its brake parts", () => {
+    const plan = planBike(draft({ brakeType: "rim", parts: partChoicesFor("road", "rim") }), TODAY);
+    expect(plan.bike.brakeType).toBe("rim");
+    expect(plan.parts.some((p) => p.kind === "rotors")).toBe(false);
+    expect(plan.parts.some((p) => p.kind === "brake_cables")).toBe(true);
+  });
+
+  it("switches brake parts in the wizard and keeps the shared ones as chosen", () => {
+    const start = { step: "basics" as const, draft: draft(), errors: {} };
+    const unticked = wizardReducer(start, {
+      type: "part",
+      kind: "brake_pads_front",
+      patch: { included: false },
+    });
+    const rim = wizardReducer(unticked, { type: "brakeType", brakeType: "rim" });
+    expect(rim.draft.parts.map((p) => p.kind)).toEqual(
+      partChoicesFor("road", "rim").map((p) => p.kind),
+    );
+    expect(rim.draft.parts.find((p) => p.kind === "brake_pads_front")?.included).toBe(false);
+  });
+
+  it("reads drafts saved before brake types existed as disc", () => {
+    const old: Partial<WizardDraft> = draft();
+    delete old.brakeType;
+    expect(parseSavedDraft(JSON.parse(JSON.stringify(old)))?.brakeType).toBe("disc");
   });
 });
