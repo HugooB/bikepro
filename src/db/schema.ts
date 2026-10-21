@@ -133,8 +133,12 @@ export const parts = sqliteTable(
     svgZone: text("svg_zone"),
     installedAt: text("installed_at").notNull(),
     installedKm: real("installed_km").notNull().default(0),
-    intervalKm: integer("interval_km"),
-    intervalDays: integer("interval_days"),
+    /** How often it needs servicing; counted from its last service (see lib/status). */
+    serviceIntervalKm: integer("service_interval_km"),
+    serviceIntervalDays: integer("service_interval_days"),
+    /** Its maximum life; counted from installation. */
+    replaceIntervalKm: integer("replace_interval_km"),
+    replaceIntervalDays: integer("replace_interval_days"),
     cost: real("cost"),
     status: text("status", { enum: ["active", "retired"] })
       .notNull()

@@ -114,8 +114,10 @@ const partFields = {
   model: optionalText(80),
   installedAt: isoDate,
   installedKm: kmField("km at installation"),
-  intervalKm: optionalNumber("Interval km"),
-  intervalMonths: optionalNumber("Interval months"),
+  serviceKm: optionalNumber("Service km"),
+  serviceMonths: optionalNumber("Service months"),
+  replaceKm: optionalNumber("Replacement km"),
+  replaceMonths: optionalNumber("Replacement months"),
   cost: optionalNumber("Price"),
 };
 
@@ -126,8 +128,10 @@ function partValues(input: z.infer<z.ZodObject<typeof partFields>>) {
     model: input.model ?? null,
     installedAt: input.installedAt,
     installedKm: input.installedKm,
-    intervalKm: input.intervalKm ? Math.round(input.intervalKm) : null,
-    intervalDays: input.intervalMonths ? monthsToDays(input.intervalMonths) : null,
+    serviceIntervalKm: input.serviceKm ? Math.round(input.serviceKm) : null,
+    serviceIntervalDays: input.serviceMonths ? monthsToDays(input.serviceMonths) : null,
+    replaceIntervalKm: input.replaceKm ? Math.round(input.replaceKm) : null,
+    replaceIntervalDays: input.replaceMonths ? monthsToDays(input.replaceMonths) : null,
     cost: input.cost ?? null,
   };
 }

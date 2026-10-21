@@ -81,7 +81,7 @@ export default async function PartPage({
                 Retired
               </span>
             ) : (
-              <StatusBadge level={status.level} />
+              <StatusBadge level={status.level} label={status.condition} />
             )}
           </div>
           {detail && <p className="text-muted-foreground">{detail}</p>}

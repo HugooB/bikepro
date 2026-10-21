@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { BrakeType } from "@/db/schema";
-import { statusLabels, type StatusLevel } from "@/lib/status";
+import type { StatusLevel } from "@/lib/status";
 import { summarizeZones, type BikeZone, type ZonePart, type ZoneSummary } from "@/lib/zones";
 import { cn } from "@/lib/utils";
 import { useZones } from "./zone-context";
@@ -520,9 +520,7 @@ function ZoneTooltip({
         {summary.parts.map((p) => (
           <li key={p.id}>
             <span className="font-semibold">{p.name}</span>
-            <span className="block opacity-75">
-              {p.level === "none" ? statusLabels.none : p.hint}
-            </span>
+            <span className="block opacity-75">{p.hint}</span>
           </li>
         ))}
       </ul>

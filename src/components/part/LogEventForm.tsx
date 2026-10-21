@@ -89,7 +89,7 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
         <div className="bg-muted/60 flex flex-col gap-3 rounded-lg p-3">
           <p className="text-sm">
             The current {lowerName} moves to <span className="font-medium">History</span> and a new
-            one takes its place with the same service interval.
+            one takes its place with the same intervals.
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">

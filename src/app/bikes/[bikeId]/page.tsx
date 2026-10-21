@@ -53,7 +53,7 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
     category: part.category,
     zone: part.svgZone,
     level: status.level,
-    hint: status.hint,
+    hint: status.condition,
   }));
 
   return (

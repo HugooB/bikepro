@@ -57,6 +57,13 @@
       "when": 1792571011860,
       "tag": "0007_brake_type",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1792573448513,
+      "tag": "0008_part_intervals",
+      "breakpoints": true
     }
   ]
 }

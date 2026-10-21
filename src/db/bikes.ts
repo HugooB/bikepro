@@ -37,8 +37,10 @@ export function createBike(tx: Tx, plan: BikePlan, userId: number): Bike {
         svgZone: p.svgZone,
         installedAt: p.installedAt,
         installedKm: p.installedKm,
-        intervalKm: p.intervalKm ?? null,
-        intervalDays: p.intervalDays ?? null,
+        serviceIntervalKm: p.serviceIntervalKm ?? null,
+        serviceIntervalDays: p.serviceIntervalDays ?? null,
+        replaceIntervalKm: p.replaceIntervalKm ?? null,
+        replaceIntervalDays: p.replaceIntervalDays ?? null,
         sortOrder: p.sortOrder,
       })
       .returning()

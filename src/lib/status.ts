@@ -1,71 +1,123 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { formatDays, formatKm } from "./age";
 
+// Every part has two intervals, each in km and/or days (whichever comes first):
+// - service: how often it needs servicing (cleaning, lubing, adjusting, a bleed). Counted from
+//   the latest event that restarted it, or from installation.
+// - replacement: its maximum life. Counted from installation; replacing the part starts a new
+//   part with a fresh count.
+// The part's condition comes from whichever of the two is furthest along.
+
 export type StatusLevel = "ok" | "due" | "overdue" | "none";
 
-export type PartStatus = {
-  level: StatusLevel;
-  /** Share of the service interval used up (0 = fresh, 1 = due). Null when the part has no interval. */
-  ratio: number | null;
-  /** Short human hint, e.g. "Due in 550 km" or "Overdue by 2 mo". */
+export type IntervalStatus = {
+  level: Exclude<StatusLevel, "none">;
+  /** Share of the interval used up (0 = fresh, 1 = due). */
+  ratio: number;
+  /** e.g. "in 550 km", "overdue by 2 mo", "due now". */
   hint: string;
   /** Date ("YYYY-MM-DD") and odometer km the interval is counted from. */
   since: { date: string; km: number };
 };
 
-export const statusLabels: Record<StatusLevel, string> = {
-  ok: "Good",
-  due: "Due soon",
-  overdue: "Overdue",
-  none: "No interval",
+export type PartStatus = {
+  level: StatusLevel;
+  /** The part's condition in words, e.g. "Good condition" or "Replace soon". */
+  condition: string;
+  service: IntervalStatus | null;
+  replace: IntervalStatus | null;
 };
 
 /** Ratio at which a part turns from "ok" to "due soon". */
 export const DUE_SOON_RATIO = 0.75;
+/** Below this ratio a part is in good condition; up to DUE_SOON_RATIO it's fair. */
+const FAIR_RATIO = 0.5;
 
-type StatusInput = {
+export const NO_INTERVALS = "No intervals set";
+
+const conditions = {
+  service: { due: "Service soon", overdue: "Needs a service" },
+  replace: { due: "Replace soon", overdue: "Needs replacing" },
+} as const;
+
+export type IntervalInput = {
   installedAt: string;
   installedKm: number;
-  intervalKm: number | null;
-  intervalDays: number | null;
+  serviceIntervalKm: number | null;
+  serviceIntervalDays: number | null;
+  replaceIntervalKm: number | null;
+  replaceIntervalDays: number | null;
 };
 
 type ResetPoint = { date: string; odometerKm: number | null };
 
-/**
- * Wear status of a part. The interval counts from the latest event that reset it
- * (e.g. a service), or from installation when there is none.
- */
+const severity: Record<StatusLevel, number> = { none: 0, ok: 1, due: 2, overdue: 3 };
+
+function track(
+  since: { date: string; km: number },
+  intervalKm: number | null,
+  intervalDays: number | null,
+  odometerKm: number,
+  now: Date,
+): IntervalStatus | null {
+  const usedKm = Math.max(0, odometerKm - since.km);
+  const usedDays = Math.max(0, differenceInCalendarDays(now, parseISO(since.date)));
+  const kmRatio = intervalKm ? usedKm / intervalKm : null;
+  const dayRatio = intervalDays ? usedDays / intervalDays : null;
+  if (kmRatio === null && dayRatio === null) return null;
+
+  // The dimension that is furthest along decides.
+  const byKm = (kmRatio ?? -1) >= (dayRatio ?? -1);
+  const ratio = byKm ? kmRatio! : dayRatio!;
+  const level = ratio >= 1 ? "overdue" : ratio >= DUE_SOON_RATIO ? "due" : "ok";
+  const remaining = byKm ? intervalKm! - usedKm : intervalDays! - usedDays;
+  const amount = byKm ? formatKm(Math.abs(remaining)) : formatDays(Math.abs(remaining));
+  const hint =
+    remaining < 0 ? `overdue by ${amount}` : remaining === 0 ? "due now" : `in ${amount}`;
+  return { level, ratio, hint, since };
+}
+
+/** Service and replacement status of a part, and its condition in words. */
 export function computeStatus(
-  part: StatusInput,
-  lastReset: ResetPoint | null,
+  part: IntervalInput,
+  lastService: ResetPoint | null,
   odometerKm: number,
   now: Date = new Date(),
 ): PartStatus {
-  const since =
-    lastReset && lastReset.date >= part.installedAt
-      ? { date: lastReset.date, km: lastReset.odometerKm ?? part.installedKm }
-      : { date: part.installedAt, km: part.installedKm };
+  const installed = { date: part.installedAt, km: part.installedKm };
+  const serviced =
+    lastService && lastService.date >= part.installedAt
+      ? { date: lastService.date, km: lastService.odometerKm ?? part.installedKm }
+      : installed;
 
-  const usedKm = Math.max(0, odometerKm - since.km);
-  const usedDays = Math.max(0, differenceInCalendarDays(now, parseISO(since.date)));
+  const service = track(
+    serviced,
+    part.serviceIntervalKm,
+    part.serviceIntervalDays,
+    odometerKm,
+    now,
+  );
+  const replace = track(
+    installed,
+    part.replaceIntervalKm,
+    part.replaceIntervalDays,
+    odometerKm,
+    now,
+  );
+  if (!service && !replace) return { level: "none", condition: NO_INTERVALS, service, replace };
 
-  const kmRatio = part.intervalKm ? usedKm / part.intervalKm : null;
-  const dayRatio = part.intervalDays ? usedDays / part.intervalDays : null;
+  // The more urgent interval decides; on a tie, replacing matters more than servicing.
+  const [kind, driver] =
+    replace && (!service || severity[replace.level] >= severity[service.level])
+      ? (["replace", replace] as const)
+      : (["service", service!] as const);
+  const worstRatio = Math.max(service?.ratio ?? 0, replace?.ratio ?? 0);
+  const condition =
+    driver.level === "ok"
+      ? worstRatio < FAIR_RATIO
+        ? "Good condition"
+        : "Fair condition"
+      : conditions[kind][driver.level];
 
-  if (kmRatio === null && dayRatio === null) {
-    return { level: "none", ratio: null, hint: statusLabels.none, since };
-  }
-
-  // The dimension that is furthest along decides the status.
-  const byKm = (kmRatio ?? -1) >= (dayRatio ?? -1);
-  const ratio = byKm ? kmRatio! : dayRatio!;
-  const level: StatusLevel = ratio >= 1 ? "overdue" : ratio >= DUE_SOON_RATIO ? "due" : "ok";
-
-  const remaining = byKm ? part.intervalKm! - usedKm : part.intervalDays! - usedDays;
-  const amount = byKm ? formatKm(Math.abs(remaining)) : formatDays(Math.abs(remaining));
-  const hint =
-    remaining < 0 ? `Overdue by ${amount}` : remaining === 0 ? "Due now" : `Due in ${amount}`;
-
-  return { level, ratio, hint, since };
+  return { level: driver.level, condition, service, replace };
 }

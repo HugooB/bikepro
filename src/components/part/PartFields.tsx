@@ -23,11 +23,60 @@ export type PartFieldValues = {
   installedAt: string;
   installedKm: number;
   cost?: number | null;
-  intervalKm?: number | null;
-  intervalDays?: number | null;
+  serviceIntervalKm?: number | null;
+  serviceIntervalDays?: number | null;
+  replaceIntervalKm?: number | null;
+  replaceIntervalDays?: number | null;
 };
 
-/** Name, make, installation, price and service interval inputs shared by the add and edit forms. */
+function IntervalFields({
+  legend,
+  hint,
+  kmId,
+  kmLabel,
+  monthsId,
+  monthsLabel,
+  km,
+  days,
+}: {
+  legend: string;
+  hint: string;
+  kmId: string;
+  kmLabel: string;
+  monthsId: string;
+  monthsLabel: string;
+  km?: number | null;
+  days?: number | null;
+}) {
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-1 text-sm font-medium">{legend}</legend>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Field
+          id={kmId}
+          label={kmLabel}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          defaultValue={km ?? ""}
+        />
+        <Field
+          id={monthsId}
+          label={monthsLabel}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          defaultValue={days ? daysToMonths(days) : ""}
+        />
+      </div>
+      <p className="text-muted-foreground text-xs">{hint}</p>
+    </fieldset>
+  );
+}
+
+/** Name, make, installation, price and interval inputs shared by the add and edit forms. */
 export function PartFields({ values }: { values: PartFieldValues }) {
   return (
     <>
@@ -83,32 +132,29 @@ export function PartFields({ values }: { values: PartFieldValues }) {
           defaultValue={values.cost ?? ""}
         />
       </div>
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium">Service interval</legend>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Field
-            id="intervalKm"
-            label="Every … km"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            defaultValue={values.intervalKm ?? ""}
-          />
-          <Field
-            id="intervalMonths"
-            label="or every … months"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            defaultValue={values.intervalDays ? daysToMonths(values.intervalDays) : ""}
-          />
-        </div>
-        <p className="text-muted-foreground text-xs">
-          Whichever comes first. Leave both empty if this part has no fixed interval.
-        </p>
-      </fieldset>
+      <IntervalFields
+        legend="Service interval"
+        hint="How often it needs servicing (cleaning, lubing, adjusting), whichever comes first."
+        kmId="serviceKm"
+        kmLabel="Every … km"
+        monthsId="serviceMonths"
+        monthsLabel="or every … months"
+        km={values.serviceIntervalKm}
+        days={values.serviceIntervalDays}
+      />
+      <IntervalFields
+        legend="Replacement interval"
+        hint="Its maximum life, counted from when it was installed, whichever comes first."
+        kmId="replaceKm"
+        kmLabel="After … km"
+        monthsId="replaceMonths"
+        monthsLabel="or after … months"
+        km={values.replaceIntervalKm}
+        days={values.replaceIntervalDays}
+      />
+      <p className="text-muted-foreground text-xs">
+        Leave an interval empty if it doesn&apos;t apply.
+      </p>
     </>
   );
 }

@@ -25,8 +25,12 @@ export type PartChoice = {
   replacedAt: string;
   /** Odometer when it was fitted; empty means "estimate it". */
   replacedKm: string;
-  intervalKm: string;
-  intervalMonths: string;
+  /** Service interval: every … km and/or months. */
+  serviceKm: string;
+  serviceMonths: string;
+  /** Replacement interval: after … km and/or months. */
+  replaceKm: string;
+  replaceMonths: string;
 };
 
 export type WizardDraft = {
@@ -57,8 +61,10 @@ export function partChoicesFor(type: BikeType, brakes: BrakeType = "disc"): Part
     replaced: false,
     replacedAt: "",
     replacedKm: "",
-    intervalKm: t.intervalKm ? String(t.intervalKm) : "",
-    intervalMonths: t.intervalDays ? String(daysToMonths(t.intervalDays)) : "",
+    serviceKm: t.serviceIntervalKm ? String(t.serviceIntervalKm) : "",
+    serviceMonths: t.serviceIntervalDays ? String(daysToMonths(t.serviceIntervalDays)) : "",
+    replaceKm: t.replaceIntervalKm ? String(t.replaceIntervalKm) : "",
+    replaceMonths: t.replaceIntervalDays ? String(daysToMonths(t.replaceIntervalDays)) : "",
   }));
 }
 
@@ -85,8 +91,10 @@ const savedDraftSchema = z.object({
       replaced: z.boolean(),
       replacedAt: z.string(),
       replacedKm: z.string(),
-      intervalKm: z.string(),
-      intervalMonths: z.string(),
+      serviceKm: z.string(),
+      serviceMonths: z.string(),
+      replaceKm: z.string(),
+      replaceMonths: z.string(),
     }),
   ),
 });
@@ -184,8 +192,10 @@ const partChoiceSchema = z.object({
   replaced: z.boolean(),
   replacedAt: z.string(),
   replacedKm: z.string(),
-  intervalKm: optionalWhole("Interval km"),
-  intervalMonths: optionalWhole("Interval months"),
+  serviceKm: optionalWhole("Service km"),
+  serviceMonths: optionalWhole("Service months"),
+  replaceKm: optionalWhole("Replacement km"),
+  replaceMonths: optionalWhole("Replacement months"),
 });
 
 export const partsSchema = (
@@ -263,8 +273,6 @@ function stepSchema(step: WizardStep, draft: WizardDraft, today: string): z.ZodT
 export type PlannedPart = PartTemplate & {
   installedAt: string;
   installedKm: number;
-  intervalKm: number | undefined;
-  intervalDays: number | undefined;
   sortOrder: number;
   replaced: boolean;
 };
@@ -316,7 +324,7 @@ export function planBike(draft: WizardDraft, today: string): BikePlan {
     (template, i): PlannedPart[] => {
       const choice = choices.get(template.kind);
       if (!choice?.included) return [];
-      const { intervalKm, intervalMonths } = partChoiceSchema.parse(choice);
+      const intervals = partChoiceSchema.parse(choice);
       const replaced = choice.replaced;
       return [
         {
@@ -327,8 +335,14 @@ export function planBike(draft: WizardDraft, today: string): BikePlan {
               ? estimateKm(draft.purchasedAt, fromKm, today, odometerKm, choice.replacedAt)
               : Number(choice.replacedKm)
             : fromKm,
-          intervalKm,
-          intervalDays: intervalMonths ? monthsToDays(intervalMonths) : undefined,
+          serviceIntervalKm: intervals.serviceKm,
+          serviceIntervalDays: intervals.serviceMonths
+            ? monthsToDays(intervals.serviceMonths)
+            : undefined,
+          replaceIntervalKm: intervals.replaceKm,
+          replaceIntervalDays: intervals.replaceMonths
+            ? monthsToDays(intervals.replaceMonths)
+            : undefined,
           sortOrder: i,
           replaced,
         },

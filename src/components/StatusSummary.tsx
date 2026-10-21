@@ -18,12 +18,12 @@ export function StatusSummary({ statuses }: { statuses: PartStatus[] }) {
     <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
       {overdue > 0 && (
         <span className="flex items-center gap-2">
-          <StatusDot level="overdue" /> {overdue} overdue
+          <StatusDot level="overdue" /> {overdue} need attention
         </span>
       )}
       {due > 0 && (
         <span className="flex items-center gap-2">
-          <StatusDot level="due" /> {due} due soon
+          <StatusDot level="due" /> {due} need attention soon
         </span>
       )}
     </p>

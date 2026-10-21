@@ -24,8 +24,9 @@ function makeTire(): Part {
       brand: "Old brand",
       installedAt: "2025-05-01",
       installedKm: 1000,
-      intervalKm: 3500,
-      intervalDays: 730,
+      serviceIntervalKm: 1000,
+      replaceIntervalKm: 3500,
+      replaceIntervalDays: 730,
       cost: 40,
       sortOrder: 9,
     })
@@ -38,7 +39,7 @@ const eventsFor = (id: number) =>
   db.select().from(partEvents).where(eq(partEvents.partId, id)).all();
 
 describe("recordPartEvent: replaced", () => {
-  it("retires the part and installs a new one with the same interval", () => {
+  it("retires the part and installs a new one with the same intervals", () => {
     const tire = makeTire();
     const fresh = db.transaction((tx) =>
       recordPartEvent(tx, tire, {
@@ -65,8 +66,9 @@ describe("recordPartEvent: replaced", () => {
       category: "wheels",
       svgZone: "tire_rear",
       sortOrder: 9,
-      intervalKm: 3500,
-      intervalDays: 730,
+      serviceIntervalKm: 1000,
+      replaceIntervalKm: 3500,
+      replaceIntervalDays: 730,
       brand: "Continental",
       model: "GP5000",
       cost: 65,

@@ -63,7 +63,7 @@ type Replacement = {
 };
 
 /**
- * Retires `part` and installs a fresh one of the same kind with the same service interval.
+ * Retires `part` and installs a fresh one of the same kind with the same intervals.
  * The old part keeps its history and ends with a "replaced" event; the new one starts with
  * an "installed" event. Only the old part's event links to a service round, so a round lists
  * each replaced part once.
@@ -81,8 +81,10 @@ export function replacePart(tx: Tx, part: Part, r: Replacement): Part {
       kind: part.kind,
       name: part.name,
       svgZone: part.svgZone,
-      intervalKm: part.intervalKm,
-      intervalDays: part.intervalDays,
+      serviceIntervalKm: part.serviceIntervalKm,
+      serviceIntervalDays: part.serviceIntervalDays,
+      replaceIntervalKm: part.replaceIntervalKm,
+      replaceIntervalDays: part.replaceIntervalDays,
       sortOrder: part.sortOrder,
       brand: r.brand ?? null,
       model: r.model ?? null,

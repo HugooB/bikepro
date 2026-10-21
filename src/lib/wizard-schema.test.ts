@@ -98,8 +98,8 @@ describe("planBike", () => {
       installedAt: "2026-09-20",
       installedKm: 2400,
       replaced: true,
-      intervalKm: 3000,
-      intervalDays: 365,
+      serviceIntervalKm: 400,
+      replaceIntervalKm: 4000,
     });
     expect(plan.parts.find((p) => p.kind === "cassette")).toMatchObject({
       installedAt: "2025-10-20",
@@ -127,10 +127,15 @@ describe("planBike", () => {
 
   it("uses edited intervals and drops cleared ones", () => {
     const parts = partChoicesFor("road").map((p) =>
-      p.kind === "chain" ? { ...p, intervalKm: "4000", intervalMonths: "" } : p,
+      p.kind === "chain" ? { ...p, replaceKm: "5000", serviceKm: "", serviceMonths: "3" } : p,
     );
     const chain = planBike(draft({ parts }), TODAY).parts.find((p) => p.kind === "chain");
-    expect(chain).toMatchObject({ intervalKm: 4000, intervalDays: undefined });
+    expect(chain).toMatchObject({
+      serviceIntervalKm: undefined,
+      serviceIntervalDays: 91,
+      replaceIntervalKm: 5000,
+      replaceIntervalDays: undefined,
+    });
   });
 
   it("keeps the purchase price when given and checks it", () => {

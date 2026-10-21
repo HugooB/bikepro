@@ -35,7 +35,7 @@ export function PartRow({ part, status, odometerKm }: Props) {
         <StatusDot level={status.level} className="shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{part.name}</p>
-          <p className={`truncate text-sm ${statusTextClass(status.level)}`}>{status.hint}</p>
+          <p className={`truncate text-sm ${statusTextClass(status.level)}`}>{status.condition}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="font-medium tabular-nums">{formatAge(part.installedAt)}</p>

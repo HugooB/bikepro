@@ -3,45 +3,87 @@ import { format, parseISO } from "date-fns";
 import type { Part } from "@/db/schema";
 import { formatAge, formatDays, formatKm, kmSince, partLifetime } from "@/lib/age";
 import { formatCost } from "@/lib/format";
-import type { PartStatus } from "@/lib/status";
+import type { IntervalStatus, PartStatus } from "@/lib/status";
 import { StatusBar, statusTextClass } from "../StatusBadge";
 
 type Props = { part: Part; status: PartStatus; odometerKm: number };
 
-function intervalText(part: Part) {
-  const bits = [
-    part.intervalKm ? formatKm(part.intervalKm) : null,
-    part.intervalDays ? formatDays(part.intervalDays) : null,
-  ].filter(Boolean);
-  return bits.length ? `Every ${bits.join(" or ")}` : "Not set";
+function intervalText(km: number | null, days: number | null) {
+  const bits = [km ? formatKm(km) : null, days ? formatDays(days) : null].filter(Boolean);
+  return bits.length ? bits.join(" or ") : null;
+}
+
+/** One interval: how much is left, a bar, and the interval itself. */
+function IntervalRow({
+  title,
+  every,
+  track,
+  showSince,
+}: {
+  title: string;
+  every: string | null;
+  track: IntervalStatus | null;
+  showSince: boolean;
+}) {
+  if (!track || !every) {
+    return (
+      <div className="flex items-baseline justify-between gap-4 text-sm">
+        <p className="font-medium">{title}</p>
+        <p className="text-muted-foreground">No interval</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-4 text-sm">
+        <p>
+          <span className="font-medium">{title}</span>{" "}
+          <span className={statusTextClass(track.level)}>{track.hint}</span>
+        </p>
+        {showSince && (
+          <p className="text-muted-foreground text-xs">
+            since {format(parseISO(track.since.date), "d MMM yyyy")}
+          </p>
+        )}
+      </div>
+      <StatusBar level={track.level} ratio={track.ratio} label={`${title} interval used`} />
+      <p className="text-muted-foreground text-xs">{every}</p>
+    </div>
+  );
 }
 
 export function PartOverview({ part, status, odometerKm }: Props) {
-  const sinceReset = status.since.date !== part.installedAt || status.since.km !== part.installedKm;
+  const serviced =
+    status.service !== null &&
+    (status.service.since.date !== part.installedAt ||
+      status.service.since.km !== part.installedKm);
+  const service = intervalText(part.serviceIntervalKm, part.serviceIntervalDays);
+  const replace = intervalText(part.replaceIntervalKm, part.replaceIntervalDays);
 
   const stats = [
     { label: "Age", value: formatAge(part.installedAt) },
     { label: "Ridden", value: formatKm(kmSince(part.installedKm, odometerKm)) },
     { label: "Installed", value: format(parseISO(part.installedAt), "d MMM yyyy") },
-    { label: "Service interval", value: intervalText(part) },
   ];
 
   return (
     <section className="bg-card flex flex-col gap-4 rounded-xl border p-4">
-      {status.ratio !== null && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-baseline justify-between gap-4">
-            <p className={`font-medium ${statusTextClass(status.level)}`}>{status.hint}</p>
-            {sinceReset && (
-              <p className="text-muted-foreground text-xs">
-                since {format(parseISO(status.since.date), "d MMM yyyy")}
-              </p>
-            )}
-          </div>
-          <StatusBar level={status.level} ratio={status.ratio} />
-        </div>
-      )}
-      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <p className={`font-semibold ${statusTextClass(status.level)}`}>{status.condition}</p>
+      <div className="flex flex-col gap-4">
+        <IntervalRow
+          title="Service"
+          every={service && `Every ${service}`}
+          track={status.service}
+          showSince={serviced}
+        />
+        <IntervalRow
+          title="Replacement"
+          every={replace && `After ${replace}`}
+          track={status.replace}
+          showSince={false}
+        />
+      </div>
+      <dl className="grid grid-cols-3 gap-4 border-t pt-4">
         {stats.map((s) => (
           <div key={s.label}>
             <dt className="text-muted-foreground text-xs">{s.label}</dt>

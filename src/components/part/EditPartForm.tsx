@@ -22,7 +22,7 @@ export function EditPartForm({ part }: { part: Part }) {
   return (
     <details ref={detailsRef} className="group bg-card rounded-xl border">
       <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium [&::-webkit-details-marker]:hidden">
-        Edit part details & service interval
+        Edit part details & intervals
         <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
       </summary>
 

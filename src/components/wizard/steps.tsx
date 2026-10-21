@@ -310,7 +310,7 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
 
 export function StepParts({ draft, errors, dispatch, today, headingRef }: StepProps) {
   const [showIntervals, setShowIntervals] = useState(
-    Object.keys(errors).some((k) => k.endsWith("intervalKm") || k.endsWith("intervalMonths")),
+    Object.keys(errors).some((k) => /\.(service|replace)(Km|Months)$/.test(k)),
   );
   const indexOf = new Map(draft.parts.map((p, i) => [p.kind, i]));
   const included = draft.parts.filter((p) => p.included).length;
@@ -334,7 +334,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
           aria-expanded={showIntervals}
           onClick={() => setShowIntervals((v) => !v)}
         >
-          Advanced: service intervals
+          Advanced: service and replacement intervals
           <ChevronDown
             aria-hidden
             className={cn("transition-transform", showIntervals && "rotate-180")}
@@ -429,28 +429,52 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                       {showIntervals && (
                         <div className="grid grid-cols-2 gap-3">
                           <WizardField
-                            id={`${id}-interval-km`}
+                            id={`${id}-service-km`}
                             label="Service every … km"
                             type="number"
                             inputMode="numeric"
                             min={1}
                             step={1}
-                            value={choice.intervalKm}
-                            onChange={(e) => set({ intervalKm: e.target.value })}
-                            placeholder="No limit"
-                            error={err("intervalKm")}
+                            value={choice.serviceKm}
+                            onChange={(e) => set({ serviceKm: e.target.value })}
+                            placeholder="None"
+                            error={err("serviceKm")}
                           />
                           <WizardField
-                            id={`${id}-interval-months`}
+                            id={`${id}-service-months`}
                             label="or every … months"
                             type="number"
                             inputMode="numeric"
                             min={1}
                             step={1}
-                            value={choice.intervalMonths}
-                            onChange={(e) => set({ intervalMonths: e.target.value })}
-                            placeholder="No limit"
-                            error={err("intervalMonths")}
+                            value={choice.serviceMonths}
+                            onChange={(e) => set({ serviceMonths: e.target.value })}
+                            placeholder="None"
+                            error={err("serviceMonths")}
+                          />
+                          <WizardField
+                            id={`${id}-replace-km`}
+                            label="Replace after … km"
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            step={1}
+                            value={choice.replaceKm}
+                            onChange={(e) => set({ replaceKm: e.target.value })}
+                            placeholder="None"
+                            error={err("replaceKm")}
+                          />
+                          <WizardField
+                            id={`${id}-replace-months`}
+                            label="or after … months"
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            step={1}
+                            value={choice.replaceMonths}
+                            onChange={(e) => set({ replaceMonths: e.target.value })}
+                            placeholder="None"
+                            error={err("replaceMonths")}
                           />
                         </div>
                       )}

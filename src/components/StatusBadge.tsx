@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { statusLabels, type StatusLevel } from "@/lib/status";
+import type { StatusLevel } from "@/lib/status";
 
 const dotColors: Record<StatusLevel, string> = {
   ok: "bg-status-ok",
@@ -28,7 +28,7 @@ export function statusTextClass(level: StatusLevel) {
   return textColors[level];
 }
 
-export function StatusBadge({ level }: { level: StatusLevel }) {
+export function StatusBadge({ level, label }: { level: StatusLevel; label: string }) {
   return (
     <span
       className={cn(
@@ -37,19 +37,26 @@ export function StatusBadge({ level }: { level: StatusLevel }) {
       )}
     >
       <StatusDot level={level} className="size-2" />
-      {statusLabels[level]}
+      {label}
     </span>
   );
 }
 
-/** Horizontal bar showing how much of the service interval is used up. */
-export function StatusBar({ level, ratio }: { level: StatusLevel; ratio: number | null }) {
-  if (ratio === null) return null;
+/** Horizontal bar showing how much of an interval is used up. */
+export function StatusBar({
+  level,
+  ratio,
+  label,
+}: {
+  level: StatusLevel;
+  ratio: number;
+  label: string;
+}) {
   const pct = Math.min(100, Math.round(ratio * 100));
   return (
     <div
       role="progressbar"
-      aria-label="Service interval used"
+      aria-label={label}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={pct}
