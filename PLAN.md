@@ -4,7 +4,7 @@
 
 Hugo keeps forgetting how old the parts on their race bike are (chain, tires, wheels and so on) and when maintenance was last done. The goal is a self-hosted web app that works on desktop and mobile. Its home screen shows a stylised race bike with every part listed underneath, each with its age and wear status. Tapping a part lets you log maintenance steps on it. A floating action button (FAB) in the bottom right logs a full service round.
 
-**Decisions so far:** Next.js + SQLite, self-hosted with Docker · multiple users, each with multiple bikes · part age tracked as time plus km from Strava · colour status only (no notifications) · interactive SVG bike · light, minimal style · English only · cost tracking, installable PWA, and a history of retired parts · **a guided "Add bike" wizard (including Strava linking) whenever a bike is added; when it finishes, the new bike appears on the home screen.**
+**Decisions so far:** Next.js + SQLite, self-hosted with Docker · multiple users, each with multiple bikes · part age tracked as time plus km from Strava · colour status only (no notifications) · interactive SVG bike · light, minimal style · English only · cost tracking and a history of retired parts (no installable PWA) · **a guided "Add bike" wizard (including Strava linking) whenever a bike is added; when it finishes, the new bike appears on the home screen.**
 
 The project directory (`/Users/hugobijmans/Documents/git/bikepro`) is empty, so this is a greenfield build.
 
@@ -14,7 +14,6 @@ The project directory (`/Users/hugobijmans/Documents/git/bikepro`) is empty, so 
 - **SQLite** with **Drizzle ORM** and `better-sqlite3`; migrations via `drizzle-kit`
 - **Auth.js v5**: email + password credentials (bcrypt) and database sessions. Strava is a linked OAuth account, not the login method.
 - **zod** for validation, **date-fns** for ages
-- **PWA**: `app/manifest.ts` + a small service worker (`@serwist/next`) for installability and offline app-shell caching
 - **Docker**: multi-stage `Dockerfile` + `docker-compose.yml` with a volume holding `data/bikepro.db`
 
 ## Data model (`src/db/schema.ts`)
@@ -98,7 +97,6 @@ src/
   app/(app)/bikes/[bikeId]/page.tsx, parts/[partId]/page.tsx, @modal/(.)parts/[partId]
   app/(app)/settings/page.tsx
   app/api/strava/{connect,callback,sync}/route.ts
-  app/manifest.ts
   components/BikeSvg.tsx, PartList.tsx, PartRow.tsx, ServiceRoundSheet.tsx, Fab.tsx, StatusBadge.tsx
   db/schema.ts, db/index.ts
   lib/auth.ts, strava.ts, status.ts, age.ts, default-parts.ts
@@ -181,12 +179,12 @@ Each milestone leaves the app working and usable, so the build can stop after an
 - Cost fields already exist; add `/bikes/[bikeId]/costs` with totals per year and category (simple bar chart, using the `dataviz` skill) and a per-bike lifetime total
 - **Done when:** the totals equal the sum of part, event and service round costs
 
-### M10: Installable PWA and deployment polish
+### M10: Deployment polish
 
-- `app/manifest.ts`, icons, a Serwist service worker (offline app shell)
 - Loading and empty states, error boundaries, a pass over mobile ergonomics
-- JSON export of a user's data as a backup; deployment notes in README (reverse proxy + HTTPS, needed for PWA and Strava callback)
-- **Done when:** Lighthouse reports the app as installable, it installs on iOS and Android home screens, and it survives `docker compose` restarts with data intact
+- JSON export of a user's data as a backup; deployment notes in README (reverse proxy + HTTPS, needed for the Strava callback)
+- **Done when:** every page has a loading and an error state, a user can download their data as JSON, and the app survives `docker compose` restarts with data intact
+- (An installable PWA was dropped from the plan.)
 
 ## Verification
 
@@ -196,4 +194,3 @@ Each milestone leaves the app working and usable, so the build can stop after an
 - Drive the app in a browser with Claude in Chrome at mobile (390px) and desktop widths, and check that SVG zones highlight the matching parts
 - Strava: connect with a test account and confirm the bike's odometer matches the Strava gear distance
 - `docker compose up --build`: app on port 3000, and data survives a container restart
-- Lighthouse PWA check: the app is installable

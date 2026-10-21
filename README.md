@@ -31,6 +31,36 @@ docker compose up --build -d
 
 The app runs on port 3000. The database is stored in the `bikepro-data` volume, so it survives restarts and rebuilds. `GET /api/health` reports app and database status.
 
+To update to a new version: `git pull && docker compose up --build -d`. Migrations run automatically when the container starts.
+
+### Reaching it from outside your home network
+
+Put BikePro behind a reverse proxy that handles HTTPS, and don't expose port 3000 directly. With [Caddy](https://caddyserver.com), which gets certificates by itself, the whole `Caddyfile` is:
+
+```
+bikes.example.com {
+	reverse_proxy localhost:3000
+}
+```
+
+Then set in `.env` and restart:
+
+- `APP_URL=https://bikes.example.com`. This marks the sign-in cookie as HTTPS-only and gives Strava the right callback address.
+- In your Strava API application, set **Authorization Callback Domain** to `bikes.example.com`.
+
+Any other proxy (nginx, Traefik, a Cloudflare Tunnel) works the same way: forward to port 3000 and terminate HTTPS in front of it.
+
+### Backups
+
+All data is in one SQLite file inside the `bikepro-data` volume. Copy it safely while the app runs with:
+
+```bash
+docker compose exec bikepro node -e "require('better-sqlite3')('/app/data/bikepro.db').backup('/app/data/backup.db').then(() => console.log('ok'))"
+docker compose cp bikepro:/app/data/backup.db ./bikepro-backup.db
+```
+
+To restore, stop the app, copy the file back to `/app/data/bikepro.db` in the volume, and start it again. Each user can also download their own data as JSON in Settings → Your data.
+
 ### Accounts
 
 - Open the app and create the first account; it's always allowed, so a fresh install works.

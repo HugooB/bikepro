@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { logout, logoutEverywhere } from "@/actions/auth";
 import { BikeSettingsRow } from "@/components/settings/BikeSettingsRow";
 import { StravaSettings } from "@/components/settings/StravaSettings";
@@ -33,7 +33,8 @@ export default async function SettingsPage({
           Account
         </h2>
         <div className="bg-card flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border px-4 py-3">
-          <div className="min-w-0 flex-1">
+          {/* On phones the buttons wrap below rather than squeezing the email. */}
+          <div className="min-w-48 flex-1">
             <p className="font-semibold">{user.name}</p>
             <p className="text-muted-foreground truncate text-sm">{user.email}</p>
           </div>
@@ -81,6 +82,24 @@ export default async function SettingsPage({
         bikes={bikes}
         outcome={strava}
       />
+
+      <section aria-labelledby="data-heading" className="flex flex-col gap-3">
+        <div>
+          <h2 id="data-heading" className="text-lg font-semibold">
+            Your data
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            A copy of your bikes, parts, history and costs as a JSON file, to keep as a backup.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="self-start">
+          {/* A plain link: the route answers with a file download. */}
+          <a href="/api/export" download>
+            <Download aria-hidden />
+            Download my data
+          </a>
+        </Button>
+      </section>
 
       {archived.length > 0 && (
         <section aria-labelledby="archived-heading" className="flex flex-col gap-3">
