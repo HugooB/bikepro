@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Download, Plus } from "lucide-react";
+import { updateRegistration } from "@/actions/admin";
 import { logout, logoutEverywhere } from "@/actions/auth";
 import { BikeSettingsRow } from "@/components/settings/BikeSettingsRow";
 import { StravaSettings } from "@/components/settings/StravaSettings";
 import { Button } from "@/components/ui/button";
 import { getBikes } from "@/db/queries";
 import { getStravaConnection } from "@/db/strava";
+import { registrationOpen } from "@/db/users";
 import { requireUser } from "@/lib/auth/session";
 import { stravaConfig } from "@/lib/strava/api";
 
@@ -52,6 +54,8 @@ export default async function SettingsPage({
           </div>
         </div>
       </section>
+
+      {user.isAdmin && <AdminSettings />}
 
       <section aria-labelledby="bikes-heading" className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
@@ -119,5 +123,36 @@ export default async function SettingsPage({
         </section>
       )}
     </div>
+  );
+}
+
+/** Install-wide settings, shown to admins only. */
+function AdminSettings() {
+  const open = registrationOpen();
+  return (
+    <section aria-labelledby="admin-heading" className="flex flex-col gap-3">
+      <div>
+        <h2 id="admin-heading" className="text-lg font-semibold">
+          Admin
+        </h2>
+        <p className="text-muted-foreground text-sm">Settings for everyone on this BikePro.</p>
+      </div>
+      <div className="bg-card flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border px-4 py-3">
+        <div className="min-w-48 flex-1">
+          <p className="font-semibold">Registration is {open ? "open" : "closed"}</p>
+          <p className="text-muted-foreground text-sm">
+            {open
+              ? "Anyone who can reach this BikePro can create an account. Close it again once everyone has signed up."
+              : "Only existing accounts can sign in. Open registration to let someone create an account."}
+          </p>
+        </div>
+        <form action={updateRegistration}>
+          <input type="hidden" name="open" value={String(!open)} />
+          <Button type="submit" variant="outline">
+            {open ? "Close registration" : "Open registration"}
+          </Button>
+        </form>
+      </div>
+    </section>
   );
 }

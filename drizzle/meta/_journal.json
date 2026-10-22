@@ -64,6 +64,13 @@
       "when": 1792573448513,
       "tag": "0008_part_intervals",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1792682389151,
+      "tag": "0009_admin_and_app_settings",
+      "breakpoints": true
     }
   ]
 }

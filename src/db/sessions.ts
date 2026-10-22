@@ -19,7 +19,7 @@ export function createSession(userId: number, now = new Date()): string {
   return token;
 }
 
-export type SessionUser = { id: number; email: string; name: string };
+export type SessionUser = { id: number; email: string; name: string; isAdmin: boolean };
 
 /**
  * The signed-in user for a session token, or null. Expired sessions are removed; active ones
@@ -30,7 +30,7 @@ export function validateSession(token: string, now = new Date()): SessionUser | 
   const row = db
     .select({
       expiresAt: sessions.expiresAt,
-      user: { id: users.id, email: users.email, name: users.name },
+      user: { id: users.id, email: users.email, name: users.name, isAdmin: users.isAdmin },
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))

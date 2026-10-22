@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { decryptToken, encryptToken } from "@/lib/strava/crypto";
 import { emptyDraft, planBike } from "@/lib/wizard-schema";
+import { setAppSetting } from "./app-settings";
 import { createBike, setOdometer } from "./bikes";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
@@ -74,9 +75,9 @@ describe("token encryption", () => {
 
 describe("connecting", () => {
   it("won't connect one Strava account to two BikePro accounts", () => {
-    process.env.ALLOW_REGISTRATION = "true";
+    setAppSetting("registrationOpen", true);
     const other = createUser({ email: "other@example.com", name: "Other", passwordHash: "x" });
-    delete process.env.ALLOW_REGISTRATION;
+    setAppSetting("registrationOpen", false);
     expect(() =>
       saveStravaConnection(other.id, { athleteId: 42, athleteName: "X", scope: "read", tokens }),
     ).toThrow(StravaAccountTakenError);

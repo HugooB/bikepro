@@ -47,11 +47,11 @@ You need [Docker](https://docs.docker.com/get-docker/) with Docker Compose.
 ```bash
 git clone https://github.com/HugooB/bikepro.git
 cd bikepro
-cp .env.example .env
+cp .env.example .env    # then set ADMIN_EMAIL and ADMIN_PASSWORD in .env
 docker compose up -d --build
 ```
 
-Open <http://localhost:3000>, create your account, and the wizard walks you through adding your first bike.
+BikePro creates your admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` on its first start. Open <http://localhost:3000>, sign in, and the wizard walks you through adding your first bike.
 
 The database lives in the `bikepro-data` Docker volume, so it survives restarts and updates. `GET /api/health` reports whether the app and database are up.
 
@@ -59,12 +59,13 @@ The database lives in the `bikepro-data` Docker volume, so it survives restarts 
 
 All settings go in `.env`. Restart after changing them (`docker compose up -d`).
 
-| Variable                                   | Default                 | What it does                                                                                                                                                                        |
-| ------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APP_URL`                                  | `http://localhost:3000` | The address you open BikePro on. Set it to your `https://` address when running behind HTTPS: this keeps the sign-in cookie HTTPS-only and gives Strava the right callback address. |
-| `ALLOW_REGISTRATION`                       | `false`                 | The first account can always be created. After that, set this to `true` to let someone else sign up, then set it back.                                                              |
-| `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | empty                   | Turn on Strava sync. See [Strava](#strava).                                                                                                                                         |
-| `DATABASE_PATH`                            | `data/bikepro.db`       | Where the SQLite file is stored.                                                                                                                                                    |
+| Variable                                   | Default                 | What it does                                                                                                                                                                                                                      |
+| ------------------------------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_URL`                                  | `http://localhost:3000` | The address you open BikePro on. Set it to your `https://` address when running behind HTTPS: this keeps the sign-in cookie HTTPS-only and gives Strava the right callback address.                                               |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD`            | empty                   | Create the admin account on start, so nobody else can claim a fresh install. The password is only used to create the account: changing it later has no effect. If an account with this email already exists, it becomes an admin. |
+| `ADMIN_NAME`                               | `Admin`                 | The admin account's display name.                                                                                                                                                                                                 |
+| `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | empty                   | Turn on Strava sync. See [Strava](#strava).                                                                                                                                                                                       |
+| `DATABASE_PATH`                            | `data/bikepro.db`       | Where the SQLite file is stored.                                                                                                                                                                                                  |
 
 ## Strava
 
@@ -108,9 +109,12 @@ To restore, stop BikePro, copy the file back to `/app/data/bikepro.db` in the vo
 
 ## Accounts and security
 
-- The first account can always be created, so a fresh install just works. After that, registration is closed unless `ALLOW_REGISTRATION=true`.
+- The admin account comes from `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Without them, the first person to open BikePro creates an account and becomes the admin, so set them before BikePro can be reached by others.
+- Registration is closed once the first account exists. The admin opens and closes it under **Settings → Admin**, for example to let family members sign up.
 - Passwords are hashed with scrypt. Sessions are stored in the database, so signing out (or **Sign out everywhere** in Settings) ends them immediately. Unused sessions expire after 30 days.
 - After 10 failed sign-ins for an account, further attempts are refused for 15 minutes.
+- Every page is sent with a strict Content Security Policy and other security headers. HSTS is added when `APP_URL` is `https://`.
+- Found a security problem? Please report it privately, as described in [SECURITY.md](SECURITY.md).
 
 ## Good to know
 

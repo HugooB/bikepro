@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { emptyDraft, planBike } from "@/lib/wizard-schema";
 import { getOwnedBike, getOwnedEvent, getOwnedPart, getOwnedServiceRound } from "./access";
+import { setAppSetting } from "./app-settings";
 import { createBike } from "./bikes";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
@@ -14,7 +15,13 @@ import {
   SESSION_TTL,
   validateSession,
 } from "./sessions";
-import { createUser, registrationOpen, RegistrationError } from "./users";
+import {
+  createUser,
+  NotAdminError,
+  registrationOpen,
+  RegistrationError,
+  setRegistrationOpen,
+} from "./users";
 
 const TODAY = "2026-10-20";
 const user = (email: string) => createUser({ email, name: email, passwordHash: "x" });
@@ -32,7 +39,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
-  delete process.env.ALLOW_REGISTRATION;
+  setAppSetting("registrationOpen", false);
 });
 
 describe("registration", () => {
@@ -41,23 +48,40 @@ describe("registration", () => {
     expect(getOwnedBike(alice.id, orphanId)?.name).toBe("Old bike");
   });
 
-  it("is closed after the first account unless ALLOW_REGISTRATION=true", () => {
+  it("is closed after the first account until an admin opens it", () => {
     expect(registrationOpen()).toBe(false);
     expect(() => user("bob@example.com")).toThrow(RegistrationError);
-    process.env.ALLOW_REGISTRATION = "true";
+    setAppSetting("registrationOpen", true);
     expect(registrationOpen()).toBe(true);
     expect(user("bob@example.com").email).toBe("bob@example.com");
   });
 
+  it("makes the first account the admin, and later accounts regular users", () => {
+    expect(alice.isAdmin).toBe(true);
+    setAppSetting("registrationOpen", true);
+    expect(user("erin@example.com").isAdmin).toBe(false);
+  });
+
+  it("lets only an admin open and close registration", () => {
+    setRegistrationOpen(alice.id, true);
+    expect(registrationOpen()).toBe(true);
+    const frank = user("frank@example.com");
+    expect(() => setRegistrationOpen(frank.id, true)).toThrow(NotAdminError);
+    setRegistrationOpen(alice.id, false);
+    expect(registrationOpen()).toBe(false);
+    expect(() => setRegistrationOpen(frank.id, true)).toThrow(NotAdminError);
+    expect(registrationOpen()).toBe(false);
+  });
+
   it("refuses a second account with the same email, in any case", () => {
-    process.env.ALLOW_REGISTRATION = "true";
+    setAppSetting("registrationOpen", true);
     expect(() => user("ALICE@example.com")).toThrow(/already an account/);
   });
 });
 
 describe("two accounts only see their own bikes", () => {
   it("scopes bike lists, pages and every ownership check", async () => {
-    process.env.ALLOW_REGISTRATION = "true";
+    setAppSetting("registrationOpen", true);
     const carol = user("carol@example.com");
     const dave = user("dave@example.com");
     const carolsBike = newBike(carol.id, "Carol's bike");

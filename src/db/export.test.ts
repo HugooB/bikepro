@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { emptyDraft, planBike } from "@/lib/wizard-schema";
+import { setAppSetting } from "./app-settings";
 import { createBike } from "./bikes";
 import { buildExport, EXPORT_VERSION } from "./export";
 import { db } from "./index";
@@ -16,9 +17,9 @@ beforeAll(() => {
   process.env.STRAVA_CLIENT_SECRET = "test-secret";
   runMigrations();
   alice = createUser({ email: "alice@example.com", name: "Alice", passwordHash: "secret-hash" }).id;
-  process.env.ALLOW_REGISTRATION = "true";
+  setAppSetting("registrationOpen", true);
   bob = createUser({ email: "bob@example.com", name: "Bob", passwordHash: "x" }).id;
-  delete process.env.ALLOW_REGISTRATION;
+  setAppSetting("registrationOpen", false);
 
   const plan = (name: string) => planBike({ ...emptyDraft(TODAY), name }, TODAY);
   const road = db.transaction((tx) => createBike(tx, plan("Road"), alice));

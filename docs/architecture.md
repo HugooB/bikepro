@@ -21,8 +21,8 @@ src/
   lib/            logic with no database access: status, ages, costs, default parts, wizard rules
   lib/auth/       passwords, sessions, sign-in throttling, safe redirects
   lib/strava/     Strava API client, sync, token encryption, OAuth state
-  proxy.ts        sends signed-out visitors to /login
-  instrumentation.ts  runs the migrations on start
+  proxy.ts        sends signed-out visitors to /login and sets the Content Security Policy
+  instrumentation.ts  runs the migrations and creates the admin account on start
 drizzle/          generated SQL migrations (never edit by hand)
 ```
 
@@ -34,8 +34,9 @@ The schema is defined in `src/db/schema.ts`. Calendar dates (purchase, installat
 
 | Table                | Holds                                                                                                                                    | Notes                                                                                                                    |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `users`              | email (lowercased), name, scrypt password hash                                                                                           |                                                                                                                          |
+| `users`              | email (lowercased), name, scrypt password hash, `isAdmin`                                                                                |                                                                                                                          |
 | `sessions`           | SHA-256 of the session token, user, expiry                                                                                               | The token itself is only in the user's cookie                                                                            |
+| `app_settings`       | install-wide settings as key/value pairs, such as `registrationOpen`                                                                     | Changed by an admin in Settings → Admin (`src/db/app-settings.ts`)                                                       |
 | `bikes`              | name, type (`road` / `gravel` / `tt` / `other`), brake type, brand, model, colour, purchase date and price, odometer                     | Strava link: `stravaGearId` (unique), `stravaDistanceKm`, `stravaOffsetKm`                                               |
 | `parts`              | category, `kind` (e.g. `chain`), name, drawing zone, installation date and km, service and replacement intervals (km and/or days), price | `status` is `active` or `retired`. Retired parts keep `retiredAt`, `retiredKm` and `replacedByPartId`                    |
 | `part_events`        | what happened to a part: `installed`, `serviced`, `cleaned`, `adjusted`, `replaced` or `note`, with date, km, description and cost       | `resetsInterval` marks events that restart the service interval. `serviceRoundId` links events logged by a service round |
@@ -103,7 +104,10 @@ Everything except the purchase counts as maintenance. The Costs tab shows totals
 - **Access control:** there are two layers.
   - `src/proxy.ts` sends visitors without a session cookie to `/login`. It only checks that the cookie exists.
   - Every page and server action calls `requireUser()` (`src/lib/auth/session.ts`), which validates the session. Then it loads records through the ownership checks in `src/db/access.ts`. Those return nothing for records that don't exist or belong to someone else.
-- **Registration:** the first account can always be created. Later accounts need `ALLOW_REGISTRATION=true` (`src/db/users.ts`). The first account also takes over any bikes created before accounts existed.
+- **Admin and registration:** on start, `bootstrapAccounts()` (`src/lib/auth/bootstrap.ts`) creates the admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD`, or makes an existing account with that email an admin. It refuses to start when `ADMIN_EMAIL` is set without a usable password. Without `ADMIN_EMAIL`, the first account to register becomes the admin.
+  - Once any account exists, registration is closed until an admin opens it in Settings → Admin (`registrationOpen` in `app_settings`, see `src/db/users.ts`).
+  - The first account also takes over any bikes created before accounts existed.
+- **Security headers:** `src/proxy.ts` sends a Content Security Policy with a fresh nonce per request, which Next.js adds to its own scripts. No inline script without that nonce can run, and nothing is loaded from other domains. It also adds HSTS when `APP_URL` is https. `next.config.ts` adds `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options` and `Permissions-Policy` to every response.
 - **Throttling:** after 10 failed sign-ins for one email within 15 minutes, further attempts are refused (`src/lib/auth/throttle.ts`). The counter is kept in memory, which suits a single self-hosted server.
 
 ## Strava
