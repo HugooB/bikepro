@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { getOwnedBike, getOwnedEvent, getOwnedPart } from "@/db/access";
 import { bumpOdometer, PartEventError, recordPartEvent } from "@/db/part-events";
 import { partCategories, partEvents, parts } from "@/db/schema";
-import type { ActionState } from "@/lib/action-state";
+import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import { loggableEventTypes } from "@/lib/event-types";
@@ -27,10 +27,6 @@ const optionalNumber = (label: string) =>
   );
 const kmField = (label: string) =>
   z.coerce.number({ error: `Enter the ${label}` }).min(0, "Kilometres can't be negative");
-
-function firstError(error: z.ZodError) {
-  return error.issues[0]?.message ?? "Something went wrong";
-}
 
 /** Part pages, the bike page and history all show part data, so refresh the whole bike. */
 function revalidateBike(bikeId: number) {

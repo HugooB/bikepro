@@ -43,7 +43,7 @@ describe("validateStep", () => {
 
   it("checks replacement dates and km against the purchase and today", () => {
     const parts = partChoicesFor("road");
-    parts[0] = { ...parts[0], replaced: true, replacedAt: "2025-01-01", replacedKm: "9000" };
+    parts[0] = { ...parts[0]!, replaced: true, replacedAt: "2025-01-01", replacedKm: "9000" };
     const errors = validateStep(
       "parts",
       draft({ purchasedAt: "2026-01-01", odometerKm: "3000", parts }),
@@ -170,7 +170,7 @@ describe("impossible dates", () => {
       purchasedAt: "Pick a date",
     });
     const parts = partChoicesFor("road");
-    parts[0] = { ...parts[0], replaced: true, replacedAt: "2025-13-01" };
+    parts[0] = { ...parts[0]!, replaced: true, replacedAt: "2025-13-01" };
     expect(validateStep("parts", draft({ purchasedAt: "2025-01-01", parts }), TODAY)).toEqual({
       "parts.0.replacedAt": "Pick when it was replaced",
     });

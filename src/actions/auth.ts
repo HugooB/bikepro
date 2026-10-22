@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { deleteUserSessions } from "@/db/sessions";
 import { createUser, findUserByEmail, normalizeEmail, RegistrationError } from "@/db/users";
-import type { ActionState } from "@/lib/action-state";
+import { firstError, type ActionState } from "@/lib/action-state";
 import { safeNextPath } from "@/lib/auth/next-path";
 import {
   burnPasswordCheck,
@@ -29,7 +29,7 @@ const SIGN_IN_FAILED = "Email or password is incorrect";
 
 export async function login(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   const input = parsed.data;
 
   const key = normalizeEmail(input.email);
@@ -62,7 +62,7 @@ const registerSchema = z.object({
 
 export async function register(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = registerSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   const input = parsed.data;
 
   let user;

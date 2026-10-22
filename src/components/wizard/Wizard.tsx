@@ -115,7 +115,7 @@ export function Wizard({
       );
       return;
     }
-    if (!isLast) return goto(wizardSteps[index + 1]);
+    if (!isLast) return goto(wizardSteps[index + 1]!);
 
     startTransition(async () => {
       const result = await createBikeFromWizard(state.draft);
@@ -197,7 +197,7 @@ export function Wizard({
               variant="outline"
               size="lg"
               className="h-12 px-4"
-              onClick={() => goto(wizardSteps[index - 1])}
+              onClick={() => goto(wizardSteps[index - 1]!)}
               disabled={pending}
             >
               <ArrowLeft aria-hidden />

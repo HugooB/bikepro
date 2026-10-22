@@ -312,7 +312,7 @@ export class WizardDraftError extends Error {
 export function planBike(draft: WizardDraft, today: string): BikePlan {
   for (const step of wizardSteps) {
     const errors = validateStep(step, draft, today);
-    if (errors) throw new WizardDraftError(step, Object.values(errors)[0]);
+    if (errors) throw new WizardDraftError(step, Object.values(errors)[0] ?? "Check this step");
   }
 
   const basics = basicsSchema.parse(draft);

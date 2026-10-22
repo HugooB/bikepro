@@ -20,6 +20,7 @@ export function encryptToken(plain: string, secret?: string): string {
 /** Throws when the value was tampered with or encrypted with another secret. */
 export function decryptToken(stored: string, secret?: string): string {
   const [iv, tag, data] = stored.split(".").map((p) => Buffer.from(p, "base64url"));
+  if (!iv || !tag || !data) throw new Error("Malformed encrypted token");
   const decipher = createDecipheriv("aes-256-gcm", key(secret), iv);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(data), decipher.final()]).toString("utf8");

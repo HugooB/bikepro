@@ -49,7 +49,7 @@ describe("buildExport", () => {
       strava: { athleteName: "Alice R" },
     });
     expect(data.bikes.map((b) => b.name)).toEqual(["Road"]);
-    const [bike] = data.bikes;
+    const bike = data.bikes[0]!;
     expect(bike.parts.length).toBeGreaterThan(0);
     expect(bike.parts.every((p) => p.events.some((e) => e.type === "installed"))).toBe(true);
     expect(bike.serviceRounds).toMatchObject([{ totalCost: 80 }]);

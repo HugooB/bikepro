@@ -8,7 +8,7 @@ import { getOwnedBike, getOwnedServiceRound } from "@/db/access";
 import { PartEventError } from "@/db/part-events";
 import { serviceRounds } from "@/db/schema";
 import { createServiceRound } from "@/db/service-rounds";
-import type { ActionState } from "@/lib/action-state";
+import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import { serviceActions } from "@/lib/event-types";
@@ -59,7 +59,7 @@ export async function saveServiceRound(
       note: formData.get(`note-${id}`),
     })),
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message };
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
 
   const input = parsed.data;
   if (!getOwnedBike(user.id, input.bikeId)) return { ok: false, error: "Bike not found" };

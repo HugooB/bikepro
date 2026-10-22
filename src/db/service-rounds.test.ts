@@ -7,12 +7,13 @@ import { createServiceRound } from "./service-rounds";
 
 let bikeId: number;
 let otherBikePartId: number;
-const partIds: Record<string, number> = {};
+const kinds = ["chain", "cassette", "bar_tape", "saddle"] as const;
+const partIds = {} as Record<(typeof kinds)[number], number>;
 
 beforeAll(() => {
   runMigrations();
   bikeId = db.insert(bikes).values({ name: "Test bike", odometerKm: 5000 }).returning().get().id;
-  for (const kind of ["chain", "cassette", "bar_tape", "saddle"]) {
+  for (const kind of kinds) {
     partIds[kind] = db
       .insert(parts)
       .values({

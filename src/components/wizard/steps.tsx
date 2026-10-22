@@ -355,7 +355,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
           <ul className="divide-y overflow-hidden rounded-xl border">
             {templates.map((t) => {
               const i = indexOf.get(t.kind)!;
-              const choice = draft.parts[i];
+              const choice = draft.parts[i]!;
               const err = (field: string) => errors[`parts.${i}.${field}`];
               const set = (patch: Partial<typeof choice>) =>
                 dispatch({ type: "part", kind: t.kind, patch });

@@ -9,7 +9,7 @@ import {
   StravaLinkError,
   unlinkBikeFromStrava,
 } from "@/db/strava";
-import type { ActionState } from "@/lib/action-state";
+import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
 import { deauthorize, stravaConfig } from "@/lib/strava/api";
 import { getAccessToken, syncStrava } from "@/lib/strava/sync";
@@ -62,7 +62,7 @@ const linkSchema = z.object({
 export async function linkStravaBike(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
   const parsed = linkSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
 
   const bike = getOwnedBike(user.id, parsed.data.bikeId);
   if (!bike) return { ok: false, error: "Bike not found" };

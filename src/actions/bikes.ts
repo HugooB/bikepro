@@ -9,7 +9,7 @@ import { getOwnedBike } from "@/db/access";
 import { createBike, setOdometer } from "@/db/bikes";
 import { bikes } from "@/db/schema";
 import { findLinkableGear, StravaLinkError } from "@/db/strava";
-import type { ActionState } from "@/lib/action-state";
+import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import {
@@ -35,7 +35,7 @@ export async function updateOdometer(_prev: ActionState, formData: FormData): Pr
     bikeId: formData.get("bikeId"),
     odometerKm: formData.get("odometerKm"),
   });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
 
   const { bikeId, odometerKm } = parsed.data;
   const bike = getOwnedBike(user.id, bikeId);
@@ -84,7 +84,7 @@ const bikeSchema = basicsSchema.extend({
 export async function updateBike(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
   const parsed = bikeSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
 
   const { bikeId, name, type, brakeType, brand, model, color, purchasedAt, purchasePrice } =
     parsed.data;

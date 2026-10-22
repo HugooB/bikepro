@@ -9,6 +9,7 @@
 A self-hosted maintenance tracker for your bikes: part wear, service history and costs,<br>
 with kilometres synced from Strava.
 
+[![CI](https://github.com/HugooB/bikepro/actions/workflows/ci.yml/badge.svg)](https://github.com/HugooB/bikepro/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2f49d1.svg)](LICENSE)
 [![Self-hosted with Docker](https://img.shields.io/badge/self--hosted-Docker-2f49d1.svg)](#quick-start)
 
@@ -124,10 +125,12 @@ You need Node.js 24 (see `.nvmrc`).
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
-npm test             # unit tests (Vitest)
+npm run dev           # http://localhost:3000
+npm test              # unit tests (Vitest)
+npm run test:coverage # the same, with a coverage report in coverage/
 npm run lint
-npm run format       # Prettier
+npm run typecheck
+npm run format        # Prettier
 ```
 
 `npm run db:seed` adds a sample race bike with every default part (`npm run db:seed -- --reset` starts over). It refuses to run in production. Locally, data lives in `data/bikepro.db`.
@@ -138,7 +141,7 @@ To change the database schema, edit `src/db/schema.ts`, run `npm run db:generate
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a pull request, please make sure `npm test` and `npm run lint` pass, and run `npm run format`.
+Issues and pull requests are welcome. Before opening a pull request, please run `npm run format` and make sure `npm test`, `npm run lint` and `npm run typecheck` pass. CI runs the same checks, plus a production build and a Docker build, on every pull request.
 
 ## License
 
