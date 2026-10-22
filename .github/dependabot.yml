@@ -8,6 +8,17 @@ updates:
       # One PR for all minor and patch updates; major updates get their own PR.
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Major versions we move to by hand:
+      # - typescript: typescript-eslint must support the new major first
+      # - eslint: eslint-config-next's plugins must support the new major first
+      # - @types/node: tracks the Node LTS in .nvmrc, not the newest Node
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
