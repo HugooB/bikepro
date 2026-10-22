@@ -1,0 +1,62 @@
+name: Bug report
+description: Something in BikePro doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! For a security problem, please don't use this form: see [SECURITY.md](https://github.com/HugooB/bikepro/blob/main/SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect to see instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a bike's page
+        2. Tap the chain
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: BikePro version or commit
+      description: The release tag, or the output of `git rev-parse --short HEAD`.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run BikePro?
+      options:
+        - Docker Compose
+        - Docker (other)
+        - npm start / npm run dev
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Safari on iPhone 16, Firefox 145 on Windows
+  - type: dropdown
+    id: strava
+    attributes:
+      label: Is Strava sync involved?
+      options:
+        - "No"
+        - "Yes"
+        - Not sure
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Server output, e.g. from `docker compose logs bikepro`. Remove anything private first.
+      render: text

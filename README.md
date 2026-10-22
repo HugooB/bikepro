@@ -119,29 +119,30 @@ To restore, stop BikePro, copy the file back to `/app/data/bikepro.db` in the vo
 - BikePro shows each part's condition in the app. It doesn't send notifications or emails.
 - Strava sync reads your bikes' totals only. It doesn't import rides, and there are no webhooks, so kilometres update when you open the app.
 
-## Development
+## Roadmap
 
-You need Node.js 24 (see `.nvmrc`).
+Planned, roughly in this order:
 
-```bash
-npm install
-npm run dev           # http://localhost:3000
-npm test              # unit tests (Vitest)
-npm run test:coverage # the same, with a coverage report in coverage/
-npm run lint
-npm run typecheck
-npm run format        # Prettier
-```
+- **First public release (v0.1.0):**
+  - set the first admin account through environment variables, so no stranger can claim a fresh install
+  - open and close registration from the app
+  - security headers
+- **Account management:**
+  - change your password
+  - an admin can reset a user's password, with a command-line fallback
+  - delete your account
+  - import a JSON export into another install
+- **Miles and other currencies,** chosen per user.
+- **More languages,** starting with Dutch.
+- **Install it as an app** on your phone's home screen.
 
-`npm run db:seed` adds a sample race bike with every default part (`npm run db:seed -- --reset` starts over). It refuses to run in production. Locally, data lives in `data/bikepro.db`.
-
-To change the database schema, edit `src/db/schema.ts`, run `npm run db:generate` to create a migration in `drizzle/`, and restart the dev server to apply it. `npm run db:studio` lets you browse the data.
-
-**Built with** [Next.js](https://nextjs.org) 16 and React 19, [SQLite](https://sqlite.org) through [Drizzle ORM](https://orm.drizzle.team), [Tailwind CSS](https://tailwindcss.com) 4 and [Radix UI](https://www.radix-ui.com), with [zod](https://zod.dev) for validation and [Vitest](https://vitest.dev) for tests.
+Ideas for later: a ready-made Docker image, automatic backups, notifications when a part needs attention, and more bike types such as MTB and city bikes. Suggestions are welcome as [feature requests](https://github.com/HugooB/bikepro/issues/new/choose).
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a pull request, please run `npm run format` and make sure `npm test`, `npm run lint` and `npm run typecheck` pass. CI runs the same checks, plus a production build and a Docker build, on every pull request.
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the checks CI runs and how to change the database. [docs/architecture.md](docs/architecture.md) explains how BikePro works inside. Please report security problems privately, as described in [SECURITY.md](SECURITY.md), and follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+**Built with** [Next.js](https://nextjs.org) 16 and React 19, [SQLite](https://sqlite.org) through [Drizzle ORM](https://orm.drizzle.team), [Tailwind CSS](https://tailwindcss.com) 4 and [Radix UI](https://www.radix-ui.com), with [zod](https://zod.dev) for validation and [Vitest](https://vitest.dev) for tests.
 
 ## License
 
