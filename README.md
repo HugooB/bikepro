@@ -9,6 +9,7 @@
 A self-hosted maintenance tracker for your bikes: part wear, service history and costs,<br>
 with kilometres synced from Strava.
 
+[![Latest release](https://img.shields.io/github/v/release/HugooB/bikepro?label=version&color=2f49d1)](https://github.com/HugooB/bikepro/releases/latest)
 [![CI](https://github.com/HugooB/bikepro/actions/workflows/ci.yml/badge.svg)](https://github.com/HugooB/bikepro/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2f49d1.svg)](LICENSE)
 [![Self-hosted with Docker](https://img.shields.io/badge/self--hosted-Docker-2f49d1.svg)](#quick-start)
