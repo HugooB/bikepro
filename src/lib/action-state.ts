@@ -1,7 +1,7 @@
 import type { ZodError } from "zod";
 
 /** Result returned by form server actions and consumed with useActionState. */
-export type ActionState = { ok: boolean; error?: string; savedAt?: number };
+export type ActionState = { ok: boolean; error?: string; message?: string; savedAt?: number };
 
 export const initialActionState: ActionState = { ok: false };
 

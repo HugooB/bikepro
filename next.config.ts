@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["better-sqlite3"],
   poweredByHeader: false,
+  // Room for a JSON import (Settings → Your data), which allows files up to 5 MB.
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

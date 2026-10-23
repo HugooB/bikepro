@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db } from "./index";
 import { sessions, users } from "./schema";
 
@@ -60,4 +60,11 @@ export function deleteSession(token: string) {
 /** Signs the user out on every device. */
 export function deleteUserSessions(userId: number) {
   db.delete(sessions).where(eq(sessions.userId, userId)).run();
+}
+
+/** Signs the user out everywhere except the session with this token, e.g. after a password change. */
+export function deleteOtherSessions(userId: number, keepToken: string) {
+  db.delete(sessions)
+    .where(and(eq(sessions.userId, userId), ne(sessions.id, hashToken(keepToken))))
+    .run();
 }

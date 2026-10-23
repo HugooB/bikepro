@@ -1,4 +1,5 @@
-import { randomBytes, scrypt, timingSafeEqual, type ScryptOptions } from "node:crypto";
+import { randomBytes, randomInt, scrypt, timingSafeEqual, type ScryptOptions } from "node:crypto";
+import { z } from "zod";
 
 // Passwords are hashed with scrypt (built into Node) using OWASP's recommended cost:
 // N=2^17, r=8, p=1. The parameters are stored with each hash so they can be raised later.
@@ -9,6 +10,12 @@ const MAX_MEM = 256 * 1024 * 1024;
 
 export const PASSWORD_MIN = 8;
 export const PASSWORD_MAX = 128;
+
+/** Rules for a password someone chooses, when registering or changing it. */
+export const newPasswordSchema = z
+  .string()
+  .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters`)
+  .max(PASSWORD_MAX, `Use at most ${PASSWORD_MAX} characters`);
 
 function derive(password: string, salt: Buffer, opts: ScryptOptions): Promise<Buffer> {
   return new Promise((resolve, reject) =>
@@ -41,6 +48,15 @@ export async function verifyPassword(password: string, stored: string): Promise<
     p: Number(p),
   });
   return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+// No 0/o, 1/l/i: easy to read out or type over from a screen.
+const TEMP_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+
+/** A random password like "k7mp-2xq9-hd4w-p8nc" (about 79 bits), for an admin reset. */
+export function temporaryPassword(): string {
+  const chars = Array.from({ length: 16 }, () => TEMP_ALPHABET[randomInt(TEMP_ALPHABET.length)]);
+  return chars.join("").match(/.{4}/g)!.join("-");
 }
 
 // Checked when an email is unknown, so a failed sign-in takes as long either way and

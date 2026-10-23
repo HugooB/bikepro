@@ -1,10 +1,13 @@
-import { count, eq, isNull } from "drizzle-orm";
+import { asc, count, eq, isNull } from "drizzle-orm";
 import { getAppSetting, setAppSetting } from "./app-settings";
 import { db } from "./index";
-import { bikes, users, type User } from "./schema";
+import { bikes, sessions, users, type User } from "./schema";
 
 /** A user-facing reason the account couldn't be created. */
 export class RegistrationError extends Error {}
+
+/** A user-facing reason an account change was refused. */
+export class AccountError extends Error {}
 
 /** Thrown when someone who isn't an admin tries to change the install's settings. */
 export class NotAdminError extends Error {
@@ -85,4 +88,63 @@ function isAdmin(userId: number): boolean {
 export function setRegistrationOpen(actorId: number, open: boolean) {
   if (!isAdmin(actorId)) throw new NotAdminError();
   setAppSetting("registrationOpen", open);
+}
+
+/** Every account on this install, oldest first, for the admin's user list. */
+export function listUsers() {
+  return db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      isAdmin: users.isAdmin,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .orderBy(asc(users.id))
+    .all();
+}
+
+export function setPasswordHash(userId: number, passwordHash: string) {
+  db.update(users).set({ passwordHash }).where(eq(users.id, userId)).run();
+}
+
+/**
+ * An admin sets a temporary password for someone else and signs them out everywhere. Admins
+ * change their own password under Settings → Account instead.
+ */
+export function resetPassword(actorId: number, targetId: number, passwordHash: string): User {
+  if (!isAdmin(actorId)) throw new NotAdminError();
+  if (actorId === targetId) throw new AccountError("Change your own password under Account.");
+  return db.transaction((tx) => {
+    const target = tx
+      .update(users)
+      .set({ passwordHash })
+      .where(eq(users.id, targetId))
+      .returning()
+      .get();
+    if (!target) throw new AccountError("That account no longer exists.");
+    tx.delete(sessions).where(eq(sessions.userId, targetId)).run();
+    return target;
+  });
+}
+
+/**
+ * Deletes the account and everything in it. Bikes have no foreign key to their owner, so
+ * they're removed here; their parts, events and service rounds go with them, and the
+ * sessions and Strava connection go with the user. An admin can't delete their account,
+ * since the install would be left without one.
+ */
+export function deleteAccount(userId: number) {
+  db.transaction((tx) => {
+    const user = tx
+      .select({ isAdmin: users.isAdmin })
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+    if (!user) return;
+    if (user.isAdmin) throw new AccountError("The admin account can't be deleted.");
+    tx.delete(bikes).where(eq(bikes.userId, userId)).run();
+    tx.delete(users).where(eq(users.id, userId)).run();
+  });
 }

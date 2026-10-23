@@ -2,12 +2,16 @@ import Link from "next/link";
 import { Download, Plus } from "lucide-react";
 import { updateRegistration } from "@/actions/admin";
 import { logout, logoutEverywhere } from "@/actions/auth";
+import { ChangePasswordForm, DeleteAccountForm } from "@/components/settings/AccountForms";
 import { BikeSettingsRow } from "@/components/settings/BikeSettingsRow";
+import { ImportDataForm } from "@/components/settings/ImportDataForm";
+import { ResetPasswordButton } from "@/components/settings/ResetPasswordButton";
 import { StravaSettings } from "@/components/settings/StravaSettings";
 import { Button } from "@/components/ui/button";
 import { getBikes } from "@/db/queries";
 import { getStravaConnection } from "@/db/strava";
-import { registrationOpen } from "@/db/users";
+import { listUsers, registrationOpen } from "@/db/users";
+import { PASSWORD_MIN } from "@/lib/auth/password";
 import { requireUser } from "@/lib/auth/session";
 import { stravaConfig } from "@/lib/strava/api";
 
@@ -53,9 +57,10 @@ export default async function SettingsPage({
             </form>
           </div>
         </div>
+        <ChangePasswordForm passwordMin={PASSWORD_MIN} />
       </section>
 
-      {user.isAdmin && <AdminSettings />}
+      {user.isAdmin && <AdminSettings adminId={user.id} />}
 
       <section aria-labelledby="bikes-heading" className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
@@ -93,7 +98,8 @@ export default async function SettingsPage({
             Your data
           </h2>
           <p className="text-muted-foreground text-sm">
-            A copy of your bikes, parts, history and costs as a JSON file, to keep as a backup.
+            A copy of your bikes, parts, history and costs as a JSON file, to keep as a backup or to
+            move to another BikePro.
           </p>
         </div>
         <Button asChild variant="outline" className="self-start">
@@ -103,6 +109,7 @@ export default async function SettingsPage({
             Download my data
           </a>
         </Button>
+        <ImportDataForm />
       </section>
 
       {archived.length > 0 && (
@@ -122,13 +129,24 @@ export default async function SettingsPage({
           </ul>
         </section>
       )}
+
+      {/* The admin account can't be deleted: the install would be left without an admin. */}
+      {!user.isAdmin && (
+        <section aria-labelledby="danger-heading" className="flex flex-col gap-3">
+          <h2 id="danger-heading" className="text-destructive text-lg font-semibold">
+            Danger zone
+          </h2>
+          <DeleteAccountForm />
+        </section>
+      )}
     </div>
   );
 }
 
 /** Install-wide settings, shown to admins only. */
-function AdminSettings() {
+function AdminSettings({ adminId }: { adminId: number }) {
   const open = registrationOpen();
+  const users = listUsers();
   return (
     <section aria-labelledby="admin-heading" className="flex flex-col gap-3">
       <div>
@@ -153,6 +171,29 @@ function AdminSettings() {
           </Button>
         </form>
       </div>
+      <h3 className="mt-2 font-semibold">Users</h3>
+      <ul className="flex flex-col gap-2">
+        {users.map((u) => (
+          <li
+            key={u.id}
+            className="bg-card flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border px-4 py-3"
+          >
+            <div className="min-w-48 flex-1">
+              <p className="font-semibold">
+                {u.name}
+                {u.isAdmin && <span className="text-muted-foreground font-normal"> · admin</span>}
+              </p>
+              <p className="text-muted-foreground truncate text-sm">{u.email}</p>
+            </div>
+            {u.id !== adminId && <ResetPasswordButton userId={u.id} name={u.name} />}
+          </li>
+        ))}
+      </ul>
+      <p className="text-muted-foreground text-xs">
+        Locked out of the admin account itself? Run{" "}
+        <code className="font-mono">node scripts/reset-password.js &lt;email&gt;</code> on the
+        server; see the README.
+      </p>
     </section>
   );
 }

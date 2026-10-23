@@ -12,9 +12,10 @@ export const metadata = { title: "Sign in · BikePro" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; deleted?: string }>;
 }) {
-  const next = safeNextPath((await searchParams).next);
+  const params = await searchParams;
+  const next = safeNextPath(params.next);
   if (await getCurrentUser()) redirect(next);
 
   return (
@@ -23,6 +24,11 @@ export default async function LoginPage({
         <h1 className="font-display text-3xl leading-tight">Sign in</h1>
         <p className="text-muted-foreground">Welcome back. Your bikes are waiting.</p>
       </div>
+      {params.deleted && (
+        <p role="status" className="bg-card rounded-xl border px-4 py-3 text-sm">
+          Your account and all its data have been deleted.
+        </p>
+      )}
       <AuthForm mode="login" next={next === "/" ? undefined : next} />
       {registrationOpen() && (
         <p className="text-muted-foreground text-sm">

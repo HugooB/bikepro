@@ -15,7 +15,7 @@ How BikePro works under the hood: the stack, the data model, and the rules behin
 ```
 src/
   app/            routes: pages, loading/error states, and API routes under app/api/
-  actions/        server actions, one file per area (auth, bikes, parts, service-rounds, strava)
+  actions/        server actions, one file per area (account, admin, auth, bikes, parts, …)
   components/     React components; ui/ holds the shadcn primitives
   db/             schema, connection, migrations runner, queries and write operations
   lib/            logic with no database access: status, ages, costs, default parts, wizard rules
@@ -24,6 +24,7 @@ src/
   proxy.ts        sends signed-out visitors to /login and sets the Content Security Policy
   instrumentation.ts  runs the migrations and creates the admin account on start
 drizzle/          generated SQL migrations (never edit by hand)
+scripts/          plain Node scripts that also run inside the Docker image (reset-password.js)
 ```
 
 Most logic lives in `src/lib` (no database access) and in `src/db` (queries and writes). Both are tested with Vitest. Pages and server actions are thin: they check the user, validate input with zod, and call into those two folders.
@@ -107,6 +108,8 @@ Everything except the purchase counts as maintenance. The Costs tab shows totals
 - **Admin and registration:** on start, `bootstrapAccounts()` (`src/lib/auth/bootstrap.ts`) creates the admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD`, or makes an existing account with that email an admin. It refuses to start when `ADMIN_EMAIL` is set without a usable password. Without `ADMIN_EMAIL`, the first account to register becomes the admin.
   - Once any account exists, registration is closed until an admin opens it in Settings → Admin (`registrationOpen` in `app_settings`, see `src/db/users.ts`).
   - The first account also takes over any bikes created before accounts existed.
+- **Changing and resetting passwords:** changing your own password needs the current one, and wrong guesses count towards the sign-in throttle. Afterwards every other session of that user is deleted; the current one stays. An admin can reset someone else's password in Settings → Admin (`resetPassword()` in `src/db/users.ts`): it sets a random temporary password, shows it once and deletes all of that user's sessions. `scripts/reset-password.js` does the same from the command line, which is the only way back into a locked-out admin account. It's plain JavaScript so it runs in the Docker image without a build; it writes the same hash format as `password.ts`, and a test checks the two agree.
+- **Deleting an account:** needs the password and is refused for admins, so an install always keeps one. It revokes BikePro's Strava access on a best-effort basis, then deletes the user's bikes (which have no foreign key to their owner) and the user in one transaction. Parts, events, service rounds, sessions and the Strava connection go with them through `ON DELETE CASCADE`.
 - **Security headers:** `src/proxy.ts` sends a Content Security Policy with a fresh nonce per request, which Next.js adds to its own scripts. No inline script without that nonce can run, and nothing is loaded from other domains. It also adds HSTS when `APP_URL` is https. `next.config.ts` adds `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options` and `Permissions-Policy` to every response.
 - **Throttling:** after 10 failed sign-ins for one email within 15 minutes, further attempts are refused (`src/lib/auth/throttle.ts`). The counter is kept in memory, which suits a single self-hosted server.
 
@@ -137,3 +140,5 @@ The draft is kept in a reducer and mirrored to `sessionStorage`, so it survives 
 ## Data export
 
 `GET /api/export` (`src/db/export.ts`) downloads all of a user's data as JSON: bikes, parts, events, service rounds and the Strava athlete name. The file has a format `version` (currently `1`). It leaves out passwords, sessions and Strava tokens.
+
+Settings → Your data imports such a file (`src/db/import.ts`). A zod schema that mirrors the export checks it first, and a file from a newer format version is refused. The bikes are then added to the signed-in account as new rows in one transaction, so a bad file writes nothing. Every id is new, and the links between records (events to parts and service rounds, a retired part to the part that replaced it) are remapped. Strava links are left out, because the Strava bikes belong to the old install's connection; odometer readings are kept. Server actions accept bodies up to 6 MB (`next.config.ts`) to leave room for a 5 MB import.

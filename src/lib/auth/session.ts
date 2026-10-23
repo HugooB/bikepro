@@ -1,7 +1,13 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createSession, deleteSession, validateSession, type SessionUser } from "@/db/sessions";
+import {
+  createSession,
+  deleteOtherSessions,
+  deleteSession,
+  validateSession,
+  type SessionUser,
+} from "@/db/sessions";
 
 export const SESSION_COOKIE = "bikepro_session";
 
@@ -43,4 +49,10 @@ export async function endSession() {
   const token = jar.get(SESSION_COOKIE)?.value;
   if (token) deleteSession(token);
   jar.delete(SESSION_COOKIE);
+}
+
+/** Signs the user out on every other device and keeps this browser signed in. */
+export async function endOtherSessions(userId: number) {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (token) deleteOtherSessions(userId, token);
 }

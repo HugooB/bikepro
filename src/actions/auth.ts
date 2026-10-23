@@ -10,8 +10,8 @@ import { safeNextPath } from "@/lib/auth/next-path";
 import {
   burnPasswordCheck,
   hashPassword,
+  newPasswordSchema,
   PASSWORD_MAX,
-  PASSWORD_MIN,
   verifyPassword,
 } from "@/lib/auth/password";
 import { endSession, requireUser, startSession } from "@/lib/auth/session";
@@ -54,10 +54,7 @@ export async function login(_prev: ActionState, formData: FormData): Promise<Act
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Enter your name").max(60),
   email,
-  password: z
-    .string()
-    .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters`)
-    .max(PASSWORD_MAX, `Use at most ${PASSWORD_MAX} characters`),
+  password: newPasswordSchema,
 });
 
 export async function register(_prev: ActionState, formData: FormData): Promise<ActionState> {

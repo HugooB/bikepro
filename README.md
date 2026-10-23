@@ -106,12 +106,22 @@ docker compose exec bikepro node -e "require('better-sqlite3')('/app/data/bikepr
 docker compose cp bikepro:/app/data/backup.db ./bikepro-backup.db
 ```
 
-To restore, stop BikePro, copy the file back to `/app/data/bikepro.db` in the volume, and start it again. Each user can also download their own data as JSON under **Settings → Your data**.
+To restore, stop BikePro, copy the file back to `/app/data/bikepro.db` in the volume, and start it again.
+
+Each user can also download their own data as JSON under **Settings → Your data**, and import such a file there, for example to move to another BikePro. An import adds the bikes as new bikes next to the ones you have. Link them to Strava again afterwards.
 
 ## Accounts and security
 
 - The admin account comes from `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Without them, the first person to open BikePro creates an account and becomes the admin, so set them before BikePro can be reached by others.
 - Registration is closed once the first account exists. The admin opens and closes it under **Settings → Admin**, for example to let family members sign up.
+- Change your password under **Settings → Account**. Your other devices are signed out.
+- The admin can give someone a temporary password under **Settings → Admin**. Lost the admin password itself? Run this on the server for a temporary one, then change it in Settings:
+
+  ```bash
+  docker compose exec bikepro node scripts/reset-password.js admin@example.com
+  ```
+
+- Delete your account and all its data under **Settings → Danger zone**. The admin account can't be deleted.
 - Passwords are hashed with scrypt. Sessions are stored in the database, so signing out (or **Sign out everywhere** in Settings) ends them immediately. Unused sessions expire after 30 days.
 - After 10 failed sign-ins for an account, further attempts are refused for 15 minutes.
 - Every page is sent with a strict Content Security Policy and other security headers. HSTS is added when `APP_URL` is `https://`.
@@ -128,15 +138,6 @@ To restore, stop BikePro, copy the file back to `/app/data/bikepro.db` in the vo
 
 Planned, roughly in this order:
 
-- **First public release (v0.1.0):**
-  - set the first admin account through environment variables, so no stranger can claim a fresh install
-  - open and close registration from the app
-  - security headers
-- **Account management:**
-  - change your password
-  - an admin can reset a user's password, with a command-line fallback
-  - delete your account
-  - import a JSON export into another install
 - **Miles and other currencies,** chosen per user.
 - **More languages,** starting with Dutch.
 - **Install it as an app** on your phone's home screen.

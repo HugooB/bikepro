@@ -4,6 +4,18 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-23
+
+Account management: you can now manage your own account in full and move your data between installs.
+
+### Added
+
+- Change your password under **Settings → Account**. Your other devices are signed out; this one stays signed in.
+- The admin can reset another user's password under **Settings → Admin**, which now lists every account. The temporary password is shown once, and the user is signed out everywhere.
+- `scripts/reset-password.js` resets a password from the command line, the way back into a locked-out admin account: `docker compose exec bikepro node scripts/reset-password.js <email>`.
+- Delete your account and all its data under **Settings → Danger zone**, after confirming your password. BikePro's access to Strava is revoked as well. The admin account can't be deleted.
+- Import a JSON export under **Settings → Your data**, for example to move to another BikePro. The bikes are added as new bikes with all their parts, history and service rounds; Strava links are left out.
+
 ## [0.1.0] - 2026-10-22
 
 The first public release.
@@ -27,5 +39,6 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/HugooB/bikepro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/HugooB/bikepro/releases/tag/v0.1.0
