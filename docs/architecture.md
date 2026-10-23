@@ -18,7 +18,7 @@ src/
   actions/        server actions, one file per area (account, admin, auth, bikes, parts, …)
   components/     React components; ui/ holds the shadcn primitives
   db/             schema, connection, migrations runner, queries and write operations
-  lib/            logic with no database access: status, ages, costs, default parts, wizard rules
+  lib/            logic with no database access: status, ages, units, costs, default parts, wizard rules
   lib/auth/       passwords, sessions, sign-in throttling, safe redirects
   lib/strava/     Strava API client, sync, token encryption, OAuth state
   proxy.ts        sends signed-out visitors to /login and sets the Content Security Policy
@@ -35,7 +35,7 @@ The schema is defined in `src/db/schema.ts`. Calendar dates (purchase, installat
 
 | Table                | Holds                                                                                                                                    | Notes                                                                                                                    |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `users`              | email (lowercased), name, scrypt password hash, `isAdmin`                                                                                |                                                                                                                          |
+| `users`              | email (lowercased), name, scrypt password hash, `isAdmin`, `distanceUnit` (`km` / `mi`), `currency` (ISO 4217)                           | The unit and currency only change how values are shown and entered                                                       |
 | `sessions`           | SHA-256 of the session token, user, expiry                                                                                               | The token itself is only in the user's cookie                                                                            |
 | `app_settings`       | install-wide settings as key/value pairs, such as `registrationOpen`                                                                     | Changed by an admin in Settings → Admin (`src/db/app-settings.ts`)                                                       |
 | `bikes`              | name, type (`road` / `gravel` / `tt` / `other`), brake type, brand, model, colour, purchase date and price, odometer                     | Strava link: `stravaGearId` (unique), `stravaDistanceKm`, `stravaOffsetKm`                                               |
@@ -45,6 +45,15 @@ The schema is defined in `src/db/schema.ts`. Calendar dates (purchase, installat
 | `strava_connections` | one per user: athlete, encrypted tokens, cached Strava bikes, sync status                                                                | A Strava account connects to one BikePro account only                                                                    |
 
 Deleting a bike deletes its parts, events and service rounds (`ON DELETE CASCADE`). Deleting a service round deletes the events it logged.
+
+## Units and currency
+
+Every distance in the database is in km, and every amount is a plain number. Each user picks `km` or `mi` and a currency in Settings → Preferences. `src/lib/units.ts` holds the conversion and formatting: server components call `getUnits()` (`src/lib/auth/session.ts`), and client components call `useUnits()`, which reads the preferences the root layout passes to `UnitsProvider`. Nothing formats a distance or an amount any other way.
+
+- **Display:** whole numbers in the user's unit, and amounts with `Intl.NumberFormat` in their currency. Euro amounts look exactly as they did before currencies existed (`€1,234.50`).
+- **Forms:** fields show `toInput(km)`, and server actions turn what comes back into km with `inputToKm()` or `intervalToKm()`. When a field still shows the value it was filled with, the stored value is kept as it is. A rounded display value never overwrites a precise one (8412.37 km shows as 5,227 mi), so saving a form unchanged changes nothing.
+- **Wizard:** a draft records the unit its numbers are in, and `planBike()` converts them to km. Default intervals are shown rounded the way a person would write them (3000 km becomes 1,850 mi). A saved draft in the other unit is discarded rather than shown with the wrong label.
+- **Amounts** are never converted between currencies. Switching currency relabels the same numbers.
 
 ## Part status
 
@@ -139,6 +148,6 @@ The draft is kept in a reducer and mirrored to `sessionStorage`, so it survives 
 
 ## Data export
 
-`GET /api/export` (`src/db/export.ts`) downloads all of a user's data as JSON: bikes, parts, events, service rounds and the Strava athlete name. The file has a format `version` (currently `1`). It leaves out passwords, sessions and Strava tokens.
+`GET /api/export` (`src/db/export.ts`) downloads all of a user's data as JSON: bikes, parts, events, service rounds and the Strava athlete name. The file has a format `version` (currently `1`). Distances are always in km (`distanceUnit: "km"`), and `currency` says what the amounts are in, whatever the user's display settings. It leaves out passwords, sessions and Strava tokens.
 
 Settings → Your data imports such a file (`src/db/import.ts`). A zod schema that mirrors the export checks it first, and a file from a newer format version is refused. The bikes are then added to the signed-in account as new rows in one transaction, so a bad file writes nothing. Every id is new, and the links between records (events to parts and service rounds, a retired part to the part that replaced it) are remapped. Strava links are left out, because the Strava bikes belong to the old install's connection; odometer readings are kept. Server actions accept bodies up to 6 MB (`next.config.ts`) to leave room for a 5 MB import.

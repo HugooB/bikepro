@@ -1,3 +1,4 @@
+import type { DistanceUnit } from "@/db/schema";
 import type { BikeType, BrakeType } from "@/db/schema";
 import {
   parseSavedDraft,
@@ -34,7 +35,9 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
       const brakeType = action.type === "brakeType" ? action.brakeType : state.draft.brakeType;
       // Keep what was already chosen for parts the new template shares.
       const previous = new Map(state.draft.parts.map((p) => [p.kind, p]));
-      const parts = partChoicesFor(type, brakeType).map((p) => previous.get(p.kind) ?? p);
+      const parts = partChoicesFor(type, brakeType, state.draft.unit).map(
+        (p) => previous.get(p.kind) ?? p,
+      );
       return { ...state, draft: { ...state.draft, type, brakeType, parts }, errors: {} };
     }
     case "part":
@@ -63,14 +66,14 @@ export const stepIndex = (step: WizardStep) => wizardSteps.indexOf(step);
 const STORAGE_KEY = "bikepro:new-bike";
 const STORAGE_VERSION = 1;
 
-export function loadSavedWizard(): Pick<WizardState, "step" | "draft"> | null {
+export function loadSavedWizard(unit: DistanceUnit): Pick<WizardState, "step" | "draft"> | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const saved = JSON.parse(raw);
     if (saved?.v !== STORAGE_VERSION || !wizardSteps.includes(saved.step)) return null;
     // Anything malformed (an old format, a hand edit) starts a fresh draft instead.
-    const draft = parseSavedDraft(saved.draft);
+    const draft = parseSavedDraft(saved.draft, unit);
     return draft ? { step: saved.step, draft } : null;
   } catch {
     return null;

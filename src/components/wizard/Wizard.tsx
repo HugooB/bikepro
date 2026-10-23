@@ -15,6 +15,7 @@ import {
   type WizardDraft,
   type WizardStep,
 } from "@/lib/wizard-schema";
+import { useUnits } from "../UnitsProvider";
 import { ProgressBar } from "./ProgressBar";
 import {
   StepBasics,
@@ -35,7 +36,7 @@ import {
 
 const stepLabels: Record<WizardStep, string> = {
   basics: "Your bike",
-  odometer: "Kilometres",
+  odometer: "Distance",
   purchase: "Purchase",
   parts: "Parts",
   review: "Review",
@@ -54,11 +55,12 @@ export function Wizard({
   prefill?: Partial<WizardDraft>;
 }) {
   const router = useRouter();
+  const { unit } = useUnits();
   const [state, dispatch] = useReducer(wizardReducer, undefined, () => {
-    const draft = { ...emptyDraft(today), ...prefill };
+    const draft = { ...emptyDraft(today, unit), ...prefill };
     return {
       step: "basics" as WizardStep,
-      draft: { ...draft, parts: partChoicesFor(draft.type, draft.brakeType) },
+      draft: { ...draft, parts: partChoicesFor(draft.type, draft.brakeType, unit) },
       errors: {},
     };
   });
@@ -71,7 +73,7 @@ export function Wizard({
 
   // Pick up a draft from earlier in this browser tab (refresh, or coming back from Strava).
   useEffect(() => {
-    const saved = prefill ? null : loadSavedWizard();
+    const saved = prefill ? null : loadSavedWizard(unit);
     if (saved) {
       // The Strava bike may have been linked elsewhere since the draft was saved.
       const linkable = strava.bikes.some((b) => b.id === saved.draft.stravaGearId);

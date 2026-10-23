@@ -10,9 +10,8 @@ import {
 } from "lucide-react";
 import type { PartEventWithRound } from "@/db/queries";
 import type { PartEventType } from "@/db/schema";
-import { formatKm } from "@/lib/age";
 import { eventTypeLabels } from "@/lib/event-types";
-import { formatCost } from "@/lib/format";
+import { getUnits } from "@/lib/auth/session";
 import { DeleteEventButton } from "./DeleteEventButton";
 
 const icons: Record<PartEventType, LucideIcon> = {
@@ -26,7 +25,8 @@ const icons: Record<PartEventType, LucideIcon> = {
 
 type Props = { events: PartEventWithRound[]; readOnly?: boolean };
 
-export function EventTimeline({ events, readOnly = false }: Props) {
+export async function EventTimeline({ events, readOnly = false }: Props) {
+  const u = await getUnits();
   if (events.length === 0) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
@@ -41,8 +41,8 @@ export function EventTimeline({ events, readOnly = false }: Props) {
         const Icon = icons[event.type];
         const meta = [
           format(parseISO(event.date), "d MMM yyyy"),
-          event.odometerKm != null ? formatKm(event.odometerKm) : null,
-          event.cost != null ? formatCost(event.cost) : null,
+          event.odometerKm != null ? u.distance(event.odometerKm) : null,
+          event.cost != null ? u.money(event.cost) : null,
         ].filter(Boolean);
 
         return (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAge, formatDays, formatKm, kmSince, partLifetime } from "./age";
+import { formatAge, formatDays, kmSince, partLifetime } from "./age";
 
 const now = new Date(2026, 9, 19, 15, 0); // 19 Oct 2026, local time
 
@@ -30,12 +30,6 @@ describe("kmSince", () => {
 
   it("never returns negative km", () => {
     expect(kmSince(9000, 8000)).toBe(0);
-  });
-});
-
-describe("formatKm", () => {
-  it("adds thousands separators", () => {
-    expect(formatKm(12345)).toBe("12,345 km");
   });
 });
 

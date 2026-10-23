@@ -8,10 +8,16 @@ export const EXPORT_VERSION = 1;
 /**
  * Everything a user has in BikePro, as plain JSON for a backup. Secrets stay out: no password
  * hash, no Strava tokens. Each bike carries its parts (with their events) and service rounds.
+ * Distances are always in km and amounts in `currency`, whatever the user's display settings.
  */
 export function buildExport(userId: number, now = new Date()) {
   const user = db
-    .select({ name: users.name, email: users.email, createdAt: users.createdAt })
+    .select({
+      name: users.name,
+      email: users.email,
+      createdAt: users.createdAt,
+      currency: users.currency,
+    })
     .from(users)
     .where(eq(users.id, userId))
     .get();
@@ -59,7 +65,9 @@ export function buildExport(userId: number, now = new Date()) {
     app: "BikePro",
     version: EXPORT_VERSION,
     exportedAt: now.toISOString(),
-    user,
+    distanceUnit: "km",
+    currency: user.currency,
+    user: { name: user.name, email: user.email, createdAt: user.createdAt },
     strava: strava ?? null,
     bikes: bikeRows.map((bike) => ({
       ...bike,

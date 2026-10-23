@@ -1,7 +1,7 @@
 import { asc, count, eq, isNull } from "drizzle-orm";
 import { getAppSetting, setAppSetting } from "./app-settings";
 import { db } from "./index";
-import { bikes, sessions, users, type User } from "./schema";
+import { bikes, sessions, users, type DistanceUnit, type User } from "./schema";
 
 /** A user-facing reason the account couldn't be created. */
 export class RegistrationError extends Error {}
@@ -103,6 +103,14 @@ export function listUsers() {
     .from(users)
     .orderBy(asc(users.id))
     .all();
+}
+
+/** How the user sees distances and amounts. Stored values never change with it. */
+export function setPreferences(
+  userId: number,
+  prefs: { distanceUnit: DistanceUnit; currency: string },
+) {
+  db.update(users).set(prefs).where(eq(users.id, userId)).run();
 }
 
 export function setPasswordHash(userId: number, passwordHash: string) {

@@ -37,7 +37,9 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
   const resets = getLastResets(bike.id);
   const rows = parts.map((part) => ({
     part,
-    status: computeStatus(part, resets.get(part.id) ?? null, bike.odometerKm),
+    status: computeStatus(part, resets.get(part.id) ?? null, bike.odometerKm, {
+      unit: user.distanceUnit,
+    }),
   }));
   const lastRound = await getLastServiceRound(bike.id);
   const connection = bike.stravaGearId ? getStravaConnection(user.id) : undefined;

@@ -7,6 +7,7 @@ import { saveServiceRound } from "@/actions/service-rounds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUnits } from "@/components/UnitsProvider";
 import {
   Sheet,
   SheetContent,
@@ -95,6 +96,7 @@ function ServiceRoundForm({
   knownShops,
   onSaved,
 }: Props & { onSaved: (count: number) => void }) {
+  const u = useUnits();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     saveServiceRound,
     initialActionState,
@@ -155,7 +157,7 @@ function ServiceRoundForm({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sr-odometer">Odometer (km)</Label>
+              <Label htmlFor="sr-odometer">Odometer ({u.unitLabel})</Label>
               <Input
                 id="sr-odometer"
                 name="odometerKm"
@@ -163,7 +165,7 @@ function ServiceRoundForm({
                 inputMode="decimal"
                 min={0}
                 step="any"
-                defaultValue={Math.round(odometerKm)}
+                defaultValue={u.toInput(odometerKm)}
                 required
               />
             </div>
@@ -184,7 +186,7 @@ function ServiceRoundForm({
               </datalist>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="sr-cost">Total cost €</Label>
+              <Label htmlFor="sr-cost">Total cost {u.currencySymbol}</Label>
               <Input
                 id="sr-cost"
                 name="totalCost"

@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "./index";
-import { sessions, users } from "./schema";
+import { sessions, users, type DistanceUnit } from "./schema";
 
 const DAY = 24 * 60 * 60 * 1000;
 /** A session ends after this long without use. */
@@ -19,7 +19,14 @@ export function createSession(userId: number, now = new Date()): string {
   return token;
 }
 
-export type SessionUser = { id: number; email: string; name: string; isAdmin: boolean };
+export type SessionUser = {
+  id: number;
+  email: string;
+  name: string;
+  isAdmin: boolean;
+  distanceUnit: DistanceUnit;
+  currency: string;
+};
 
 /**
  * The signed-in user for a session token, or null. Expired sessions are removed; active ones
@@ -30,7 +37,14 @@ export function validateSession(token: string, now = new Date()): SessionUser | 
   const row = db
     .select({
       expiresAt: sessions.expiresAt,
-      user: { id: users.id, email: users.email, name: users.name, isAdmin: users.isAdmin },
+      user: {
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        isAdmin: users.isAdmin,
+        distanceUnit: users.distanceUnit,
+        currency: users.currency,
+      },
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))

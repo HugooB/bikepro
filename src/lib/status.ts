@@ -1,5 +1,7 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
-import { formatDays, formatKm } from "./age";
+import type { DistanceUnit } from "@/db/schema";
+import { formatDays } from "./age";
+import { formatDistance } from "./units";
 
 // Every part has two intervals, each in km and/or days (whichever comes first):
 // - service: how often it needs servicing (cleaning, lubing, adjusting, a bleed). Counted from
@@ -14,7 +16,7 @@ export type IntervalStatus = {
   level: Exclude<StatusLevel, "none">;
   /** Share of the interval used up (0 = fresh, 1 = due). */
   ratio: number;
-  /** e.g. "in 550 km", "overdue by 2 mo", "due now". */
+  /** e.g. "in 550 km", "overdue by 2 mo", "due now", in the user's distance unit. */
   hint: string;
   /** Date ("YYYY-MM-DD") and odometer km the interval is counted from. */
   since: { date: string; km: number };
@@ -59,6 +61,7 @@ function track(
   intervalDays: number | null,
   odometerKm: number,
   now: Date,
+  unit: DistanceUnit,
 ): IntervalStatus | null {
   const usedKm = Math.max(0, odometerKm - since.km);
   const usedDays = Math.max(0, differenceInCalendarDays(now, parseISO(since.date)));
@@ -71,7 +74,7 @@ function track(
   const ratio = byKm ? kmRatio! : dayRatio!;
   const level = ratio >= 1 ? "overdue" : ratio >= DUE_SOON_RATIO ? "due" : "ok";
   const remaining = byKm ? intervalKm! - usedKm : intervalDays! - usedDays;
-  const amount = byKm ? formatKm(Math.abs(remaining)) : formatDays(Math.abs(remaining));
+  const amount = byKm ? formatDistance(Math.abs(remaining), unit) : formatDays(Math.abs(remaining));
   const hint =
     remaining < 0 ? `overdue by ${amount}` : remaining === 0 ? "due now" : `in ${amount}`;
   return { level, ratio, hint, since };
@@ -82,7 +85,7 @@ export function computeStatus(
   part: IntervalInput,
   lastService: ResetPoint | null,
   odometerKm: number,
-  now: Date = new Date(),
+  { now = new Date(), unit = "km" }: { now?: Date; unit?: DistanceUnit } = {},
 ): PartStatus {
   const installed = { date: part.installedAt, km: part.installedKm };
   const serviced =
@@ -96,6 +99,7 @@ export function computeStatus(
     part.serviceIntervalDays,
     odometerKm,
     now,
+    unit,
   );
   const replace = track(
     installed,
@@ -103,6 +107,7 @@ export function computeStatus(
     part.replaceIntervalDays,
     odometerKm,
     now,
+    unit,
   );
   if (!service && !replace) return { level: "none", condition: NO_INTERVALS, service, replace };
 

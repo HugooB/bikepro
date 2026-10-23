@@ -5,6 +5,7 @@ import { addPartEvent } from "@/actions/parts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUnits } from "@/components/UnitsProvider";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 import {
   descriptionPlaceholders,
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function LogEventForm({ partId, partName, odometerKm, today, initialType }: Props) {
+  const u = useUnits();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     addPartEvent,
     initialActionState,
@@ -122,7 +124,7 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
           <Input id="date" name="date" type="date" defaultValue={today} max={today} required />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="odometerKm">Odometer (km)</Label>
+          <Label htmlFor="odometerKm">Odometer ({u.unitLabel})</Label>
           <Input
             id="odometerKm"
             name="odometerKm"
@@ -130,12 +132,16 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
             inputMode="decimal"
             min={0}
             step="any"
-            defaultValue={Math.round(odometerKm)}
+            defaultValue={u.toInput(odometerKm)}
             required
           />
         </div>
         <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-1">
-          <Label htmlFor="cost">{replacing ? "Price of new part €" : "Cost € (optional)"}</Label>
+          <Label htmlFor="cost">
+            {replacing
+              ? `Price of new part ${u.currencySymbol}`
+              : `Cost ${u.currencySymbol} (optional)`}
+          </Label>
           <Input id="cost" name="cost" type="number" inputMode="decimal" min={0} step="0.01" />
         </div>
       </div>

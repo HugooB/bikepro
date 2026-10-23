@@ -7,7 +7,7 @@ import { CostsByCategoryChart, CostsByYearChart } from "@/components/costs/CostC
 import { getBike, getCostEntries } from "@/db/queries";
 import { getCurrentUser, requireUser } from "@/lib/auth/session";
 import { costCategoryLabels, costPerYear, summarizeCosts, type CostEntry } from "@/lib/costs";
-import { formatCost } from "@/lib/format";
+import { toUnit, unitsFor, type Units } from "@/lib/units";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,7 @@ export default async function CostsPage({ params }: { params: Params }) {
   const user = await requireUser();
   const bike = await getBike(user.id, Number((await params).bikeId));
   if (!bike) notFound();
+  const u = unitsFor(user);
 
   const entries = getCostEntries(bike);
   const thisYear = new Date().getFullYear();
@@ -43,24 +44,24 @@ export default async function CostsPage({ params }: { params: Params }) {
           <section aria-label="Totals" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="bg-card col-span-full flex flex-col gap-1 rounded-xl border px-4 py-3">
               <p className="text-muted-foreground text-sm">Total cost of {bike.name}</p>
-              <p className="text-5xl font-semibold tracking-tight">{formatCost(summary.total)}</p>
+              <p className="text-5xl font-semibold tracking-tight">{u.money(summary.total)}</p>
               <p className="text-muted-foreground text-sm">
                 {summary.purchase > 0
-                  ? `${formatCost(summary.purchase)} to buy it + ${formatCost(summary.maintenance)} on parts and maintenance`
+                  ? `${u.money(summary.purchase)} to buy it + ${u.money(summary.maintenance)} on parts and maintenance`
                   : "Parts and maintenance. Add what you paid for the bike in Settings to include it."}
               </p>
             </div>
             {/* Full width on phones, so the two maintenance tiles below pair up. */}
             <Stat
               label="Per year of ownership"
-              value={formatCost(costPerYear(summary.total, ownedSince))}
+              value={u.money(costPerYear(summary.total, ownedSince))}
               className="max-sm:col-span-2"
             />
-            <Stat label={`Maintenance in ${thisYear}`} value={formatCost(maintenanceThisYear)} />
+            <Stat label={`Maintenance in ${thisYear}`} value={u.money(maintenanceThisYear)} />
             {bike.odometerKm >= 100 && (
               <Stat
-                label="Maintenance per 1,000 km"
-                value={formatCost((summary.maintenance / bike.odometerKm) * 1000)}
+                label={`Maintenance per 1,000 ${u.unitLabel}`}
+                value={u.money((summary.maintenance / toUnit(bike.odometerKm, u.unit)) * 1000)}
               />
             )}
           </section>
@@ -99,7 +100,7 @@ export default async function CostsPage({ params }: { params: Params }) {
             </h2>
             <ul className="bg-card divide-y overflow-hidden rounded-xl border">
               {entries.map((entry, i) => (
-                <CostRow key={i} entry={entry} bikeId={bike.id} />
+                <CostRow key={i} entry={entry} bikeId={bike.id} u={u} />
               ))}
             </ul>
           </section>
@@ -118,7 +119,7 @@ function Stat({ label, value, className }: { label: string; value: string; class
   );
 }
 
-function CostRow({ entry, bikeId }: { entry: CostEntry; bikeId: number }) {
+function CostRow({ entry, bikeId, u }: { entry: CostEntry; bikeId: number; u: Units }) {
   // The purchase price is edited in Settings; service rounds are listed under History.
   const href =
     entry.source === "purchase"
@@ -140,7 +141,7 @@ function CostRow({ entry, bikeId }: { entry: CostEntry; bikeId: number }) {
             {entry.source === "part" && <span className="max-sm:hidden"> · part price</span>}
           </p>
         </div>
-        <p className="shrink-0 font-medium tabular-nums">{formatCost(entry.amount)}</p>
+        <p className="shrink-0 font-medium tabular-nums">{u.money(entry.amount)}</p>
         <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0" />
       </Link>
     </li>

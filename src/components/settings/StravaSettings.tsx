@@ -4,14 +4,14 @@ import { Plus } from "lucide-react";
 import { disconnectStrava } from "@/actions/strava";
 import { Button } from "@/components/ui/button";
 import type { Bike, StravaConnection } from "@/db/schema";
-import { formatKm } from "@/lib/age";
+import { getUnits } from "@/lib/auth/session";
 import { StravaBikeLink, SyncNowButton } from "./StravaControls";
 
 const outcomes: Record<string, { text: string; error?: boolean }> = {
   connected: { text: "Strava is connected. Link your bikes below." },
   denied: { text: "Connecting Strava was cancelled.", error: true },
   scope: {
-    text: "BikePro needs to see your bikes on Strava to read their kilometres. Connect again and leave every permission ticked.",
+    text: "BikePro needs to see your bikes on Strava to read their distances. Connect again and leave every permission ticked.",
     error: true,
   },
   taken: {
@@ -33,7 +33,7 @@ export function ConnectStravaButton({ next }: { next?: string }) {
   );
 }
 
-export function StravaSettings({
+export async function StravaSettings({
   configured,
   connection,
   bikes,
@@ -45,6 +45,7 @@ export function StravaSettings({
   bikes: Bike[];
   outcome?: string;
 }) {
+  const u = await getUnits();
   const message = outcome ? outcomes[outcome] : undefined;
   // Archived bikes are listed elsewhere, but keep their Strava bike taken.
   const active = bikes.filter((b) => !b.archivedAt);
@@ -60,7 +61,7 @@ export function StravaSettings({
           Strava
         </h2>
         <p className="text-muted-foreground text-sm">
-          Linked bikes take their kilometres from Strava, updated when you open BikePro.
+          Linked bikes take their {u.unitLong} from Strava, updated when you open BikePro.
         </p>
       </div>
 
@@ -109,7 +110,7 @@ export function StravaSettings({
             {connection.syncError === "revoked" && (
               <div className="flex flex-wrap items-center gap-3 border-t pt-3">
                 <p role="alert" className="text-destructive min-w-0 flex-1 text-sm">
-                  Strava no longer gives BikePro access, so kilometres aren&apos;t updating.
+                  Strava no longer gives BikePro access, so {u.unitLong} aren&apos;t updating.
                 </p>
                 <ConnectStravaButton />
               </div>
@@ -151,7 +152,7 @@ export function StravaSettings({
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{g.name}</p>
-                      <p className="text-muted-foreground text-sm">{formatKm(g.distanceKm)}</p>
+                      <p className="text-muted-foreground text-sm">{u.distance(g.distanceKm)}</p>
                     </div>
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/bikes/new?strava=${encodeURIComponent(g.id)}`}>

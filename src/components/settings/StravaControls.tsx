@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { StravaGear } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/lib/action-state";
-import { formatKm } from "@/lib/age";
+import { useUnits } from "@/components/UnitsProvider";
 
 export function SyncNowButton() {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
@@ -102,6 +102,7 @@ function LinkForm({
     linkStravaBike,
     initialActionState,
   );
+  const u = useUnits();
   const [gearId, setGearId] = useState("");
   // Keeping the reading is the safe default: jumping to Strava's total changes every part's wear.
   const [keep, setKeep] = useState<"strava" | "mine">("mine");
@@ -139,7 +140,7 @@ function LinkForm({
           <option value="">Not linked</option>
           {gear.map((g) => (
             <option key={g.id} value={g.id} disabled={g.id in linkedTo}>
-              {g.name} · {formatKm(g.distanceKm)}
+              {g.name} · {u.distance(g.distanceKm)}
               {g.id in linkedTo ? ` (linked to ${linkedTo[g.id]})` : g.retired ? " (retired)" : ""}
             </option>
           ))}
@@ -155,22 +156,22 @@ function LinkForm({
               checked={keep === "mine"}
               onChange={() => setKeep("mine")}
             >
-              Keep {formatKm(bike.odometerKm)}
+              Keep {u.distance(bike.odometerKm)}
             </ChoiceChip>
             <ChoiceChip
               name={`keep-${bike.id}`}
               checked={keep === "strava"}
               onChange={() => setKeep("strava")}
             >
-              Strava&apos;s total, {formatKm(chosen.distanceKm)}
+              Strava&apos;s total, {u.distance(chosen.distanceKm)}
             </ChoiceChip>
           </div>
           <p className="text-muted-foreground text-xs">
             {keep === "mine"
               ? "New rides on Strava are added on top of your current reading."
               : chosen.distanceKm > bike.odometerKm
-                ? `Every part on this bike counts the extra ${formatKm(chosen.distanceKm - bike.odometerKm)} as ridden.`
-                : `The odometer goes back ${formatKm(bike.odometerKm - chosen.distanceKm)}, and parts lose those km of wear.`}
+                ? `Every part on this bike counts the extra ${u.distance(chosen.distanceKm - bike.odometerKm)} as ridden.`
+                : `The odometer goes back ${u.distance(bike.odometerKm - chosen.distanceKm)}, and parts lose that much wear.`}
           </p>
           <input type="hidden" name="keep" value={keep} />
         </fieldset>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ActionState } from "@/lib/action-state";
-import { formatKm } from "@/lib/age";
+import { useUnits } from "./UnitsProvider";
 
 /** Set when the bike takes its km from Strava. */
 export type OdometerStrava = { gearName: string | null; syncedAgo: string | null };
@@ -22,6 +22,7 @@ export function OdometerForm({
   odometerKm: number;
   strava?: OdometerStrava | null;
 }) {
+  const u = useUnits();
   const [editing, setEditing] = useState(false);
   const [state, formAction, pending] = useActionState<ActionState, FormData>(updateOdometer, {
     ok: false,
@@ -46,7 +47,7 @@ export function OdometerForm({
           <Gauge className="text-muted-foreground size-5" aria-hidden />
           <div>
             <p className="text-muted-foreground text-xs">Odometer</p>
-            <p className="text-lg font-semibold tabular-nums">{formatKm(odometerKm)}</p>
+            <p className="text-lg font-semibold tabular-nums">{u.distance(odometerKm)}</p>
             {strava && <StravaNote strava={strava} />}
           </div>
         </div>
@@ -65,7 +66,7 @@ export function OdometerForm({
     >
       <input type="hidden" name="bikeId" value={bikeId} />
       <div className="flex flex-1 flex-col gap-1.5">
-        <Label htmlFor="odometerKm">Odometer (km)</Label>
+        <Label htmlFor="odometerKm">Odometer ({u.unitLabel})</Label>
         <Input
           ref={inputRef}
           id="odometerKm"
@@ -74,7 +75,7 @@ export function OdometerForm({
           inputMode="decimal"
           min={0}
           step="any"
-          defaultValue={Math.round(odometerKm)}
+          defaultValue={u.toInput(odometerKm)}
           aria-invalid={state.error ? true : undefined}
           aria-describedby={state.error ? "odometer-error" : undefined}
           required

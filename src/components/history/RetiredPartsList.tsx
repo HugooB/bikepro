@@ -2,10 +2,11 @@ import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { ChevronRight } from "lucide-react";
 import type { Part } from "@/db/schema";
-import { formatDays, formatKm, partLifetime } from "@/lib/age";
-import { formatCost } from "@/lib/format";
+import { formatDays, partLifetime } from "@/lib/age";
+import { getUnits } from "@/lib/auth/session";
 
-export function RetiredPartsList({ parts }: { parts: Part[] }) {
+export async function RetiredPartsList({ parts }: { parts: Part[] }) {
+  const u = await getUnits();
   if (parts.length === 0) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
@@ -33,11 +34,11 @@ export function RetiredPartsList({ parts }: { parts: Part[] }) {
                 <p className="text-muted-foreground text-sm">
                   {format(parseISO(part.installedAt), "MMM yyyy")} –{" "}
                   {format(parseISO(part.retiredAt!), "MMM yyyy")}
-                  {part.cost != null && ` · ${formatCost(part.cost)}`}
+                  {part.cost != null && ` · ${u.money(part.cost)}`}
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <p className="font-medium tabular-nums">{formatKm(lifetime.km)}</p>
+                <p className="font-medium tabular-nums">{u.distance(lifetime.km)}</p>
                 <p className="text-muted-foreground text-sm tabular-nums">
                   {formatDays(lifetime.days)}
                 </p>

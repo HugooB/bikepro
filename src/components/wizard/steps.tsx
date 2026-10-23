@@ -8,12 +8,13 @@ import { ZoneProvider } from "@/components/bike/zone-context";
 import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
 import { brakeTypes } from "@/db/schema";
 import { Button } from "@/components/ui/button";
-import { formatAge, formatKm } from "@/lib/age";
-import { formatCost } from "@/lib/format";
+import { formatAge } from "@/lib/age";
+import { formatDistance, fromUnit } from "@/lib/units";
 import { bikeTypeLabels, frameColors } from "@/lib/bikes";
 import { brakeTypeLabels, categoryLabels, defaultPartsFor } from "@/lib/default-parts";
 import { cn } from "@/lib/utils";
 import { partsByCategory, startKm, type WizardDraft, type WizardStep } from "@/lib/wizard-schema";
+import { useUnits } from "../UnitsProvider";
 import { ChoiceChip, StepHeading, WizardField } from "./fields";
 import type { WizardAction } from "./wizard-state";
 
@@ -109,8 +110,9 @@ export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
   );
 }
 
-/** Kilometres step: pick a Strava bike to take them from, or type the odometer reading. */
+/** Distance step: pick a Strava bike to take it from, or type the odometer reading. */
 export function StepStrava({ draft, errors, dispatch, headingRef, strava }: StepProps) {
+  const u = useUnits();
   const patch = (p: Partial<WizardDraft>) => dispatch({ type: "patch", patch: p });
   const offerStrava = strava.connected && strava.bikes.length > 0;
   const fromStrava = strava.bikes.some((b) => b.id === draft.stravaGearId);
@@ -123,13 +125,13 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
         title="How far has it been ridden?"
         intro={
           offerStrava
-            ? "Take the kilometres from Strava and they stay up to date, or enter the odometer yourself."
+            ? `Take the ${u.unitLong} from Strava and they stay up to date, or enter the odometer yourself.`
             : "Enter the odometer reading. Part wear is counted from this, and you can update it any time."
         }
       />
       {offerStrava && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-sm font-medium">Kilometres from</legend>
+          <legend className="mb-2 text-sm font-medium">Distance from</legend>
           <div className="grid gap-2">
             {strava.bikes.map((b) => (
               <ChoiceChip
@@ -137,10 +139,10 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
                 name="km-source"
                 checked={draft.stravaGearId === b.id}
                 onChange={() =>
-                  patch({ stravaGearId: b.id, odometerKm: String(Math.round(b.distanceKm)) })
+                  patch({ stravaGearId: b.id, odometerKm: String(u.toInput(b.distanceKm)) })
                 }
               >
-                {b.name} on Strava · {formatKm(b.distanceKm)}
+                {b.name} on Strava · {u.distance(b.distanceKm)}
               </ChoiceChip>
             ))}
             <ChoiceChip
@@ -156,7 +158,7 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
       {!fromStrava && (
         <WizardField
           id="bike-odometer"
-          label="Odometer (km)"
+          label={`Odometer (${u.unitLabel})`}
           type="number"
           inputMode="decimal"
           min={0}
@@ -170,7 +172,7 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
       )}
       {connectFailed && (
         <p role="alert" className="text-destructive text-sm">
-          Strava didn&apos;t connect. You can enter the kilometres by hand, or try again from
+          Strava didn&apos;t connect. You can enter the odometer by hand, or try again from
           Settings.
         </p>
       )}
@@ -191,6 +193,7 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
 }
 
 export function StepPurchase({ draft, errors, dispatch, today, headingRef }: StepProps) {
+  const u = useUnits();
   const patch = (p: Partial<WizardDraft>) => dispatch({ type: "patch", patch: p });
   const todayDate = parseISO(today);
   const quickPicks = [
@@ -278,7 +281,7 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
         {draft.condition === "used" && (
           <WizardField
             id="bike-purchase-km"
-            label="Odometer when you bought it (km)"
+            label={`Odometer when you bought it (${u.unitLabel})`}
             type="number"
             inputMode="decimal"
             min={0}
@@ -287,14 +290,14 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
             onChange={(e) => patch({ purchaseKm: e.target.value })}
             onFocus={(e) => e.target.select()}
             error={errors.purchaseKm}
-            hint="Parts count their km from here. Leave 0 if you don't know."
+            hint={`Parts count their ${u.unitLabel} from here. Leave 0 if you don't know.`}
           />
         )}
       </fieldset>
 
       <WizardField
         id="bike-price"
-        label="Price you paid € (optional)"
+        label={`Price you paid ${u.currencySymbol} (optional)`}
         type="number"
         inputMode="decimal"
         min={0}
@@ -309,6 +312,7 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
 }
 
 export function StepParts({ draft, errors, dispatch, today, headingRef }: StepProps) {
+  const u = useUnits();
   const [showIntervals, setShowIntervals] = useState(
     Object.keys(errors).some((k) => /\.(service|replace)(Km|Months)$/.test(k)),
   );
@@ -413,7 +417,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                           />
                           <WizardField
                             id={`${id}-replaced-km`}
-                            label="At km (optional)"
+                            label={`At ${u.unitLabel} (optional)`}
                             type="number"
                             inputMode="decimal"
                             min={fromKm}
@@ -430,7 +434,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                         <div className="grid grid-cols-2 gap-3">
                           <WizardField
                             id={`${id}-service-km`}
-                            label="Service every … km"
+                            label={`Service every … ${u.unitLabel}`}
                             type="number"
                             inputMode="numeric"
                             min={1}
@@ -454,7 +458,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                           />
                           <WizardField
                             id={`${id}-replace-km`}
-                            label="Replace after … km"
+                            label={`Replace after … ${u.unitLabel}`}
                             type="number"
                             inputMode="numeric"
                             min={1}
@@ -496,6 +500,9 @@ export function StepReview({
   strava,
   onEdit,
 }: StepProps & { onEdit: (step: WizardStep) => void }) {
+  const u = useUnits();
+  /** A distance as typed in the draft, in the draft's unit. */
+  const typed = (value: number) => formatDistance(fromUnit(value, draft.unit), draft.unit);
   const stravaBike = strava.bikes.find((b) => b.id === draft.stravaGearId);
   const templates = new Map(defaultPartsFor(draft.type, draft.brakeType).map((t) => [t.kind, t]));
   const chosen = draft.parts.filter((p) => p.included);
@@ -524,20 +531,20 @@ export function StepReview({
     {
       label: "Odometer",
       value: stravaBike
-        ? `${formatKm(stravaBike.distanceKm)}, from ${stravaBike.name} on Strava`
-        : `${formatKm(Number(draft.odometerKm) || 0)}, entered by hand`,
+        ? `${u.distance(stravaBike.distanceKm)}, from ${stravaBike.name} on Strava`
+        : `${typed(Number(draft.odometerKm) || 0)}, entered by hand`,
       step: "odometer",
     },
     {
       label: "Got it on",
-      value: `${format(parseISO(draft.purchasedAt), "d MMM yyyy")}, ${draft.condition === "new" ? "new" : `second-hand at ${formatKm(startKm(draft))}`}`,
+      value: `${format(parseISO(draft.purchasedAt), "d MMM yyyy")}, ${draft.condition === "new" ? "new" : `second-hand at ${typed(startKm(draft))}`}`,
       step: "purchase",
     },
     ...(draft.purchasePrice !== ""
       ? [
           {
             label: "Price",
-            value: formatCost(Number(draft.purchasePrice) || 0),
+            value: u.money(Number(draft.purchasePrice) || 0),
             step: "purchase" as const,
           },
         ]

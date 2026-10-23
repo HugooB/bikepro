@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUnits } from "@/components/UnitsProvider";
 import { daysToMonths } from "@/lib/format";
 
 function Field({
@@ -48,6 +49,7 @@ function IntervalFields({
   km?: number | null;
   days?: number | null;
 }) {
+  const { toInput } = useUnits();
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="mb-1 text-sm font-medium">{legend}</legend>
@@ -59,7 +61,7 @@ function IntervalFields({
           inputMode="numeric"
           min={0}
           step={1}
-          defaultValue={km ?? ""}
+          defaultValue={km ? toInput(km) : ""}
         />
         <Field
           id={monthsId}
@@ -78,6 +80,7 @@ function IntervalFields({
 
 /** Name, make, installation, price and interval inputs shared by the add and edit forms. */
 export function PartFields({ values }: { values: PartFieldValues }) {
+  const u = useUnits();
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -114,17 +117,17 @@ export function PartFields({ values }: { values: PartFieldValues }) {
         />
         <Field
           id="installedKm"
-          label="Odometer at install (km)"
+          label={`Odometer at install (${u.unitLabel})`}
           type="number"
           inputMode="decimal"
           min={0}
           step="any"
-          defaultValue={Math.round(values.installedKm)}
+          defaultValue={u.toInput(values.installedKm)}
           required
         />
         <Field
           id="cost"
-          label="Price €"
+          label={`Price ${u.currencySymbol}`}
           type="number"
           inputMode="decimal"
           min={0}
@@ -136,7 +139,7 @@ export function PartFields({ values }: { values: PartFieldValues }) {
         legend="Service interval"
         hint="How often it needs servicing (cleaning, lubing, adjusting), whichever comes first."
         kmId="serviceKm"
-        kmLabel="Every … km"
+        kmLabel={`Every … ${u.unitLabel}`}
         monthsId="serviceMonths"
         monthsLabel="or every … months"
         km={values.serviceIntervalKm}
@@ -146,7 +149,7 @@ export function PartFields({ values }: { values: PartFieldValues }) {
         legend="Replacement interval"
         hint="Its maximum life, counted from when it was installed, whichever comes first."
         kmId="replaceKm"
-        kmLabel="After … km"
+        kmLabel={`After … ${u.unitLabel}`}
         monthsId="replaceMonths"
         monthsLabel="or after … months"
         km={values.replaceIntervalKm}

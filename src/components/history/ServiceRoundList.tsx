@@ -1,12 +1,12 @@
 import { format, parseISO } from "date-fns";
 import { Store } from "lucide-react";
 import type { ServiceRoundWithParts } from "@/db/queries";
-import { formatKm } from "@/lib/age";
 import { eventTypeLabels } from "@/lib/event-types";
-import { formatCost } from "@/lib/format";
+import { getUnits } from "@/lib/auth/session";
 import { DeleteServiceRoundButton } from "./DeleteServiceRoundButton";
 
-export function ServiceRoundList({ rounds }: { rounds: ServiceRoundWithParts[] }) {
+export async function ServiceRoundList({ rounds }: { rounds: ServiceRoundWithParts[] }) {
+  const u = await getUnits();
   if (rounds.length === 0) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
@@ -33,8 +33,8 @@ export function ServiceRoundList({ rounds }: { rounds: ServiceRoundWithParts[] }
                   <p className="text-muted-foreground text-sm tabular-nums">
                     {[
                       format(parseISO(round.date), "d MMM yyyy"),
-                      formatKm(round.odometerKm),
-                      round.totalCost != null ? formatCost(round.totalCost) : null,
+                      u.distance(round.odometerKm),
+                      round.totalCost != null ? u.money(round.totalCost) : null,
                     ]
                       .filter(Boolean)
                       .join(" · ")}

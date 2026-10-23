@@ -28,12 +28,6 @@ export function kmSince(installedKm: number, odometerKm: number): number {
   return Math.max(0, Math.round(odometerKm - installedKm));
 }
 
-const kmFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
-
-export function formatKm(km: number): string {
-  return `${kmFormatter.format(km)} km`;
-}
-
 /** Compact length of a span of days, e.g. "5 days", "3 wk", "4 mo", "1y 2m". */
 export function formatDays(days: number): string {
   const d = Math.max(0, Math.round(days));

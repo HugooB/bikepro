@@ -7,7 +7,7 @@ import { db } from "./index";
 import { runMigrations } from "./migrate";
 import { createServiceRound } from "./service-rounds";
 import { saveStravaConnection } from "./strava";
-import { createUser } from "./users";
+import { createUser, findUserByEmail, setPreferences } from "./users";
 
 const TODAY = "2026-10-21";
 let alice: number;
@@ -54,6 +54,19 @@ describe("buildExport", () => {
     expect(bike.parts.length).toBeGreaterThan(0);
     expect(bike.parts.every((p) => p.events.some((e) => e.type === "installed"))).toBe(true);
     expect(bike.serviceRounds).toMatchObject([{ totalCost: 80 }]);
+  });
+
+  it("stays in km with a currency code, whatever the display settings", () => {
+    expect(findUserByEmail("alice@example.com")).toMatchObject({
+      distanceUnit: "km",
+      currency: "EUR",
+    });
+    const before = buildExport(alice);
+    setPreferences(alice, { distanceUnit: "mi", currency: "USD" });
+    const after = buildExport(alice);
+    expect(after).toMatchObject({ distanceUnit: "km", currency: "USD" });
+    expect(after.bikes).toEqual(before.bikes);
+    setPreferences(alice, { distanceUnit: "km", currency: "EUR" });
   });
 
   it("leaves out other users' data and every secret", () => {

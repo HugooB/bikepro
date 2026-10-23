@@ -9,6 +9,7 @@ import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUnits } from "@/components/UnitsProvider";
 import { brakeTypes, type Bike, type BikeType, type BrakeType } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 import { bikeTypeLabels } from "@/lib/bikes";
@@ -57,6 +58,7 @@ export function BikeSettingsRow({ bike }: { bike: Bike }) {
 }
 
 function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
+  const u = useUnits();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     updateBike,
     initialActionState,
@@ -127,7 +129,7 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={id("price")}>Price you paid €</Label>
+          <Label htmlFor={id("price")}>Price you paid {u.currencySymbol}</Label>
           <Input
             id={id("price")}
             name="purchasePrice"

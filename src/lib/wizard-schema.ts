@@ -3,16 +3,20 @@ import { z } from "zod";
 import {
   brakeTypes,
   bikeTypes,
+  distanceUnits,
   type BikeType,
   type BrakeType,
+  type DistanceUnit,
   type PartCategory,
 } from "@/db/schema";
 import { defaultPartsFor, type PartTemplate } from "./default-parts";
 import { isoDate } from "./dates";
 import { daysToMonths, monthsToDays } from "./format";
+import { fromUnit, niceInterval, unitName } from "./units";
 
 // The add-bike wizard collects a draft over five steps; nothing is saved until the last one.
 // Each step validates its own slice of the draft, and the server re-validates the whole thing.
+// Distances in a draft are in its `unit`, as the user typed them; planBike converts them to km.
 
 export const wizardSteps = ["basics", "odometer", "purchase", "parts", "review"] as const;
 export type WizardStep = (typeof wizardSteps)[number];
@@ -23,7 +27,7 @@ export type PartChoice = {
   /** Fitted since the bike was bought, so it is younger than the bike. */
   replaced: boolean;
   replacedAt: string;
-  /** Odometer when it was fitted; empty means "estimate it". */
+  /** Odometer when it was fitted; empty means "estimate it". Distances are in the draft's unit. */
   replacedKm: string;
   /** Service interval: every … km and/or months. */
   serviceKm: string;
@@ -51,19 +55,26 @@ export type WizardDraft = {
   parts: PartChoice[];
   /** Strava bike to link; its total distance becomes the odometer. Empty when typed by hand. */
   stravaGearId: string;
+  /** The unit of every distance in this draft: the user's unit when they started it. */
+  unit: DistanceUnit;
 };
 
-/** Template parts as wizard choices: everything ticked, default intervals. */
-export function partChoicesFor(type: BikeType, brakes: BrakeType = "disc"): PartChoice[] {
+/** Template parts as wizard choices: everything ticked, default intervals in `unit`. */
+export function partChoicesFor(
+  type: BikeType,
+  brakes: BrakeType = "disc",
+  unit: DistanceUnit = "km",
+): PartChoice[] {
+  const distance = (km: number | undefined) => (km ? String(niceInterval(km, unit)) : "");
   return defaultPartsFor(type, brakes).map((t) => ({
     kind: t.kind,
     included: true,
     replaced: false,
     replacedAt: "",
     replacedKm: "",
-    serviceKm: t.serviceIntervalKm ? String(t.serviceIntervalKm) : "",
+    serviceKm: distance(t.serviceIntervalKm),
     serviceMonths: t.serviceIntervalDays ? String(daysToMonths(t.serviceIntervalDays)) : "",
-    replaceKm: t.replaceIntervalKm ? String(t.replaceIntervalKm) : "",
+    replaceKm: distance(t.replaceIntervalKm),
     replaceMonths: t.replaceIntervalDays ? String(daysToMonths(t.replaceIntervalDays)) : "",
   }));
 }
@@ -84,6 +95,8 @@ const savedDraftSchema = z.object({
   purchasePrice: z.string().default(""),
   // Drafts saved before Strava linking existed don't have it.
   stravaGearId: z.string().default(""),
+  // Drafts saved before distance units existed were in km.
+  unit: z.enum(distanceUnits).default("km"),
   parts: z.array(
     z.object({
       kind: z.string(),
@@ -100,21 +113,23 @@ const savedDraftSchema = z.object({
 });
 
 /**
- * A saved draft if it still has the expected shape, else null. Its parts are lined up with
- * the current template, so a part added or removed since it was saved can't break the form.
+ * A saved draft if it still has the expected shape and was made in `unit`, else null. Its
+ * parts are lined up with the current template, so a part added or removed since it was saved
+ * can't break the form.
  */
-export function parseSavedDraft(value: unknown): WizardDraft | null {
+export function parseSavedDraft(value: unknown, unit: DistanceUnit = "km"): WizardDraft | null {
   const parsed = savedDraftSchema.safeParse(value);
-  if (!parsed.success) return null;
+  // A draft in the other unit would show its numbers with the wrong label: start afresh.
+  if (!parsed.success || parsed.data.unit !== unit) return null;
   const draft = parsed.data;
   const saved = new Map(draft.parts.map((p) => [p.kind, p]));
   return {
     ...draft,
-    parts: partChoicesFor(draft.type, draft.brakeType).map((p) => saved.get(p.kind) ?? p),
+    parts: partChoicesFor(draft.type, draft.brakeType, unit).map((p) => saved.get(p.kind) ?? p),
   };
 }
 
-export function emptyDraft(today: string): WizardDraft {
+export function emptyDraft(today: string, unit: DistanceUnit = "km"): WizardDraft {
   return {
     name: "",
     type: "road",
@@ -127,16 +142,18 @@ export function emptyDraft(today: string): WizardDraft {
     condition: "new",
     purchaseKm: "0",
     purchasePrice: "",
-    parts: partChoicesFor("road"),
+    parts: partChoicesFor("road", "disc", unit),
     stravaGearId: "",
+    unit,
   };
 }
 
-const km = (label: string) =>
+/** A distance someone types, in whichever unit they use. */
+export const distanceField = (label: string) =>
   z.coerce
     .number({ error: `Enter ${label}` })
-    .min(0, "Kilometres can't be negative")
-    .max(1_000_000, "That's a lot of kilometres");
+    .min(0, "Distances can't be negative")
+    .max(1_000_000, "That's a lot of riding");
 const optionalWhole = (label: string) =>
   z.preprocess(
     (v) => (v === "" || v === null ? undefined : v),
@@ -170,15 +187,15 @@ export const basicsSchema = z.object({
   color: z.union([z.literal(""), z.string().regex(/^#[0-9a-f]{6}$/i, "Pick a colour")]),
 });
 
-export const odometerSchema = z.object({ odometerKm: km("the odometer in km") });
+export const odometerSchema = z.object({ odometerKm: distanceField("the odometer") });
 
 export const purchaseSchema = (today: string) =>
   z
     .object({
       purchasedAt: isoDate.refine((d) => d <= today, "The purchase date can't be in the future"),
       condition: z.enum(["new", "used"]),
-      purchaseKm: km("the km it had when you bought it"),
-      odometerKm: km("the odometer in km"),
+      purchaseKm: distanceField("the odometer when you bought it"),
+      odometerKm: distanceField("the odometer"),
       purchasePrice: optionalPrice,
     })
     .refine((d) => d.condition === "new" || d.purchaseKm <= d.odometerKm, {
@@ -192,9 +209,9 @@ const partChoiceSchema = z.object({
   replaced: z.boolean(),
   replacedAt: z.string(),
   replacedKm: z.string(),
-  serviceKm: optionalWhole("Service km"),
+  serviceKm: optionalWhole("Service distance"),
   serviceMonths: optionalWhole("Service months"),
-  replaceKm: optionalWhole("Replacement km"),
+  replaceKm: optionalWhole("Replacement distance"),
   replaceMonths: optionalWhole("Replacement months"),
 });
 
@@ -203,6 +220,7 @@ export const partsSchema = (
   purchasedAt: string,
   startKm: number,
   odometerKm: number,
+  unit: DistanceUnit = "km",
 ) =>
   z.object({
     parts: z
@@ -230,7 +248,7 @@ export const partsSchema = (
           if (!Number.isFinite(kmAt) || kmAt < startKm || kmAt > odometerKm) {
             ctx.addIssue({
               code: "custom",
-              message: `Enter km between ${Math.round(startKm)} and ${Math.round(odometerKm)}`,
+              message: `Enter ${unitName(unit)} between ${Math.round(startKm)} and ${Math.round(odometerKm)}`,
               path: [i, "replacedKm"],
             });
           }
@@ -238,7 +256,7 @@ export const partsSchema = (
       }),
   });
 
-/** Odometer km the bike had when it was bought. */
+/** Odometer the bike had when it was bought, in the draft's unit. */
 export function startKm(draft: Pick<WizardDraft, "condition" | "purchaseKm">): number {
   return draft.condition === "used" ? Number(draft.purchaseKm) || 0 : 0;
 }
@@ -264,7 +282,13 @@ function stepSchema(step: WizardStep, draft: WizardDraft, today: string): z.ZodT
     case "purchase":
       return purchaseSchema(today);
     case "parts":
-      return partsSchema(today, draft.purchasedAt, startKm(draft), Number(draft.odometerKm) || 0);
+      return partsSchema(
+        today,
+        draft.purchasedAt,
+        startKm(draft),
+        Number(draft.odometerKm) || 0,
+        draft.unit,
+      );
     case "review":
       return z.any();
   }
@@ -308,6 +332,7 @@ export class WizardDraftError extends Error {
  * Validates a complete draft and turns it into the bike and part rows to create. Parts start
  * at the purchase date and km, except parts replaced since then, which start when they were
  * fitted. A replacement without km gets an estimate from the average riding since purchase.
+ * Distances are converted from the draft's unit to km.
  */
 export function planBike(draft: WizardDraft, today: string): BikePlan {
   for (const step of wizardSteps) {
@@ -316,8 +341,10 @@ export function planBike(draft: WizardDraft, today: string): BikePlan {
   }
 
   const basics = basicsSchema.parse(draft);
-  const odometerKm = Number(draft.odometerKm);
-  const fromKm = startKm(draft);
+  const km = (value: number) => fromUnit(value, draft.unit);
+  const wholeKm = (value: number | undefined) => (value ? Math.round(km(value)) : undefined);
+  const odometerKm = km(Number(draft.odometerKm));
+  const fromKm = km(startKm(draft));
   const choices = new Map(draft.parts.map((p) => [p.kind, p]));
 
   const parts = defaultPartsFor(basics.type, basics.brakeType).flatMap(
@@ -333,13 +360,13 @@ export function planBike(draft: WizardDraft, today: string): BikePlan {
           installedKm: replaced
             ? choice.replacedKm === ""
               ? estimateKm(draft.purchasedAt, fromKm, today, odometerKm, choice.replacedAt)
-              : Number(choice.replacedKm)
+              : km(Number(choice.replacedKm))
             : fromKm,
-          serviceIntervalKm: intervals.serviceKm,
+          serviceIntervalKm: wholeKm(intervals.serviceKm),
           serviceIntervalDays: intervals.serviceMonths
             ? monthsToDays(intervals.serviceMonths)
             : undefined,
-          replaceIntervalKm: intervals.replaceKm,
+          replaceIntervalKm: wholeKm(intervals.replaceKm),
           replaceIntervalDays: intervals.replaceMonths
             ? monthsToDays(intervals.replaceMonths)
             : undefined,

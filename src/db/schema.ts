@@ -23,6 +23,9 @@ export const partEventTypes = [
 ] as const;
 export type PartEventType = (typeof partEventTypes)[number];
 
+export const distanceUnits = ["km", "mi"] as const;
+export type DistanceUnit = (typeof distanceUnits)[number];
+
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   /** Stored lowercased, so sign-in ignores case. */
@@ -31,6 +34,10 @@ export const users = sqliteTable("users", {
   passwordHash: text("password_hash").notNull(),
   /** Admins manage the install itself, such as whether others may register. */
   isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
+  /** How distances are shown and entered. The database always stores km (see lib/units). */
+  distanceUnit: text("distance_unit", { enum: distanceUnits }).notNull().default("km"),
+  /** ISO 4217 code amounts are shown in. Amounts are stored as plain numbers, never converted. */
+  currency: text("currency").notNull().default("EUR"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { Part } from "@/db/schema";
-import { formatAge, formatKm, kmSince } from "@/lib/age";
+import { formatAge, kmSince } from "@/lib/age";
 import type { PartStatus } from "@/lib/status";
 import { cn } from "@/lib/utils";
 import { isBikeZone } from "@/lib/zones";
 import { useZones } from "./bike/zone-context";
 import { StatusDot, statusTextClass } from "./StatusBadge";
+import { useUnits } from "./UnitsProvider";
 
 type Props = { part: Part; status: PartStatus; odometerKm: number };
 
 export function PartRow({ part, status, odometerKm }: Props) {
   const { activeZone, setActiveZone, flashedZone } = useZones();
+  const u = useUnits();
   const zone = isBikeZone(part.svgZone) ? part.svgZone : null;
   const linked = zone !== null && (activeZone === zone || flashedZone === zone);
   const enter = () => zone && setActiveZone(zone);
@@ -40,7 +42,7 @@ export function PartRow({ part, status, odometerKm }: Props) {
         <div className="shrink-0 text-right">
           <p className="font-medium tabular-nums">{formatAge(part.installedAt)}</p>
           <p className="text-muted-foreground text-sm tabular-nums">
-            {formatKm(kmSince(part.installedKm, odometerKm))}
+            {u.distance(kmSince(part.installedKm, odometerKm))}
           </p>
         </div>
         <ChevronRight className="text-muted-foreground/60 size-4 shrink-0" aria-hidden />

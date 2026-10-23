@@ -12,6 +12,7 @@ import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import { serviceActions } from "@/lib/event-types";
+import { inputToKm } from "@/lib/units";
 
 const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
 
@@ -19,9 +20,10 @@ const roundSchema = z.object({
   bikeId: z.coerce.number().int().positive(),
   date: isoDate,
   shop: z.preprocess(blankToUndefined, z.string().trim().max(80).optional()),
+  /** In the user's distance unit. */
   odometerKm: z.coerce
-    .number({ error: "Enter the odometer in km" })
-    .min(0, "Kilometres can't be negative"),
+    .number({ error: "Enter the odometer" })
+    .min(0, "Distances can't be negative"),
   totalCost: z.preprocess(
     blankToUndefined,
     z.coerce.number({ error: "Cost must be a number" }).min(0, "Cost can't be negative").optional(),
@@ -61,8 +63,13 @@ export async function saveServiceRound(
   });
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
 
-  const input = parsed.data;
-  if (!getOwnedBike(user.id, input.bikeId)) return { ok: false, error: "Bike not found" };
+  const bike = getOwnedBike(user.id, parsed.data.bikeId);
+  if (!bike) return { ok: false, error: "Bike not found" };
+  // The form starts at the bike's odometer; left as it is, that reading is kept exactly.
+  const input = {
+    ...parsed.data,
+    odometerKm: inputToKm(parsed.data.odometerKm, user.distanceUnit, bike.odometerKm),
+  };
   if (input.parts.length === 0 && !input.notes && !input.shop) {
     return { ok: false, error: "Select the parts that were serviced, or add a note" };
   }

@@ -29,7 +29,7 @@ BikePro keeps it for you. Add your bike once and it tracks every part's age and 
 - **Every part at a glance.** An interactive drawing of your bike colours each part green, orange or red by condition. Tap a part to jump to it in the list.
 - **Service and replacement intervals.** Each part has two clocks: how often it needs servicing, counted from the last service, and how long it lasts, counted from when it was fitted. Defaults come from published maintenance guides (sources in [`default-parts.ts`](src/lib/default-parts.ts)), and every value can be changed per part.
 - **Full history.** Log cleaning, servicing and adjustments per part, record a shop visit covering many parts at once as a service round, and replace parts while keeping the old one's lifetime km, age and price.
-- **Costs.** Purchase price, part prices and service bills add up to a total cost per bike, with cost per year of ownership, maintenance per 1,000 km, and charts per year and category.
+- **Costs.** Purchase price, part prices and service bills add up to a total cost per bike, with cost per year of ownership, maintenance per 1,000 km (or miles), and charts per year and category.
 - **Strava sync (optional).** Link each bike to its Strava bike and the odometer follows Strava's total automatically. BikePro reads only your bikes' total distance, never your rides.
 - **Guided setup.** A five-step wizard picks sensible parts for road, gravel or TT bikes, with disc or rim brakes, and ages parts you've already replaced correctly.
 - **Made for phones and desktops.** Large tap targets on phones, a two-column layout on desktop.
@@ -129,16 +129,15 @@ Each user can also download their own data as JSON under **Settings → Your dat
 
 ## Good to know
 
-- Distances are in kilometres and amounts in euros; there's no setting for miles or other currencies yet.
+- Each user picks kilometres or miles, and the currency amounts are shown in, under **Settings → Preferences**. Switching never changes your data: BikePro stores kilometres, and amounts aren't converted between currencies.
 - The interface is in English.
 - BikePro shows each part's condition in the app. It doesn't send notifications or emails.
-- Strava sync reads your bikes' totals only. It doesn't import rides, and there are no webhooks, so kilometres update when you open the app.
+- Strava sync reads your bikes' totals only. It doesn't import rides, and there are no webhooks, so distances update when you open the app.
 
 ## Roadmap
 
 Planned, roughly in this order:
 
-- **Miles and other currencies,** chosen per user.
 - **More languages,** starting with Dutch.
 - **Install it as an app** on your phone's home screen.
 

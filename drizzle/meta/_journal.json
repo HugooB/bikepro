@@ -71,6 +71,13 @@
       "when": 1792682389151,
       "tag": "0009_admin_and_app_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792747577949,
+      "tag": "0010_user_preferences",
+      "breakpoints": true
     }
   ]
 }

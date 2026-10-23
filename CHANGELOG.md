@@ -4,6 +4,24 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-23
+
+Miles and other currencies: every user picks how distances and amounts are shown, and nothing changes for existing users.
+
+### Added
+
+- Miles and other currencies, per user, under **Settings → Preferences**. Every screen follows the choice: odometers, part wear and status, intervals, history, costs ("per 1,000 mi") and charts, the add-bike wizard and Strava settings. Forms take values in your unit.
+- Default intervals are shown in miles rounded the way you'd write them (3000 km becomes 1,850 mi).
+- The JSON export now says what it's in: `distanceUnit` (always `km`) and `currency`.
+
+### Changed
+
+- Saving a form without changing a distance keeps the stored value exactly. Before, an odometer of 8412.4 km from Strava became 8412 km when a form was saved.
+
+### Upgrading
+
+- A database migration adds the two preferences; it runs on start. Existing accounts get kilometres and euros, so nothing changes until you pick something else.
+
 ## [0.2.0] - 2026-10-23
 
 Account management: you can now manage your own account in full and move your data between installs.
@@ -39,6 +57,7 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/HugooB/bikepro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/HugooB/bikepro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/HugooB/bikepro/releases/tag/v0.1.0

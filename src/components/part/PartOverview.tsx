@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import type { Part } from "@/db/schema";
-import { formatAge, formatDays, formatKm, kmSince, partLifetime } from "@/lib/age";
-import { formatCost } from "@/lib/format";
+import { formatAge, formatDays, kmSince, partLifetime } from "@/lib/age";
+import { getUnits } from "@/lib/auth/session";
+import type { Units } from "@/lib/units";
 import type { IntervalStatus, PartStatus } from "@/lib/status";
 import { StatusBar, statusTextClass } from "../StatusBadge";
 
 type Props = { part: Part; status: PartStatus; odometerKm: number };
 
-function intervalText(km: number | null, days: number | null) {
-  const bits = [km ? formatKm(km) : null, days ? formatDays(days) : null].filter(Boolean);
+function intervalText(u: Units, km: number | null, days: number | null) {
+  const bits = [km ? u.distance(km) : null, days ? formatDays(days) : null].filter(Boolean);
   return bits.length ? bits.join(" or ") : null;
 }
 
@@ -52,17 +53,18 @@ function IntervalRow({
   );
 }
 
-export function PartOverview({ part, status, odometerKm }: Props) {
+export async function PartOverview({ part, status, odometerKm }: Props) {
+  const u = await getUnits();
   const serviced =
     status.service !== null &&
     (status.service.since.date !== part.installedAt ||
       status.service.since.km !== part.installedKm);
-  const service = intervalText(part.serviceIntervalKm, part.serviceIntervalDays);
-  const replace = intervalText(part.replaceIntervalKm, part.replaceIntervalDays);
+  const service = intervalText(u, part.serviceIntervalKm, part.serviceIntervalDays);
+  const replace = intervalText(u, part.replaceIntervalKm, part.replaceIntervalDays);
 
   const stats = [
     { label: "Age", value: formatAge(part.installedAt) },
-    { label: "Ridden", value: formatKm(kmSince(part.installedKm, odometerKm)) },
+    { label: "Ridden", value: u.distance(kmSince(part.installedKm, odometerKm)) },
     { label: "Installed", value: format(parseISO(part.installedAt), "d MMM yyyy") },
   ];
 
@@ -92,17 +94,18 @@ export function PartOverview({ part, status, odometerKm }: Props) {
         ))}
       </dl>
       {part.cost != null && (
-        <p className="text-muted-foreground text-sm">Price: {formatCost(part.cost)}</p>
+        <p className="text-muted-foreground text-sm">Price: {u.money(part.cost)}</p>
       )}
     </section>
   );
 }
 
-export function RetiredPartOverview({ part, bikeId }: { part: Part; bikeId: number }) {
+export async function RetiredPartOverview({ part, bikeId }: { part: Part; bikeId: number }) {
+  const u = await getUnits();
   const lifetime = partLifetime(part);
   const stats = [
     { label: "In use for", value: formatDays(lifetime.days) },
-    { label: "Lifetime", value: formatKm(lifetime.km) },
+    { label: "Lifetime", value: u.distance(lifetime.km) },
     { label: "Installed", value: format(parseISO(part.installedAt), "d MMM yyyy") },
     { label: "Replaced", value: format(parseISO(part.retiredAt!), "d MMM yyyy") },
   ];
@@ -118,7 +121,7 @@ export function RetiredPartOverview({ part, bikeId }: { part: Part; bikeId: numb
         ))}
       </dl>
       <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-sm">
-        {part.cost != null ? <p>Price: {formatCost(part.cost)}</p> : <span />}
+        {part.cost != null ? <p>Price: {u.money(part.cost)}</p> : <span />}
         {part.replacedByPartId && (
           <Link
             href={`/bikes/${bikeId}/parts/${part.replacedByPartId}`}

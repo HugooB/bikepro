@@ -5,6 +5,7 @@ import { logout, logoutEverywhere } from "@/actions/auth";
 import { ChangePasswordForm, DeleteAccountForm } from "@/components/settings/AccountForms";
 import { BikeSettingsRow } from "@/components/settings/BikeSettingsRow";
 import { ImportDataForm } from "@/components/settings/ImportDataForm";
+import { PreferencesForm } from "@/components/settings/PreferencesForm";
 import { ResetPasswordButton } from "@/components/settings/ResetPasswordButton";
 import { StravaSettings } from "@/components/settings/StravaSettings";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,18 @@ export default async function SettingsPage({
           </div>
         </div>
         <ChangePasswordForm passwordMin={PASSWORD_MIN} />
+      </section>
+
+      <section aria-labelledby="preferences-heading" className="flex flex-col gap-3">
+        <div>
+          <h2 id="preferences-heading" className="text-lg font-semibold">
+            Preferences
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            How distances and amounts are shown and entered. Switching never changes your data.
+          </p>
+        </div>
+        <PreferencesForm prefs={{ distanceUnit: user.distanceUnit, currency: user.currency }} />
       </section>
 
       {user.isAdmin && <AdminSettings adminId={user.id} />}

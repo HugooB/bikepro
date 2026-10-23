@@ -3,11 +3,13 @@ import { cookies } from "next/headers";
 import { Wizard } from "@/components/wizard/Wizard";
 import { getBikes } from "@/db/queries";
 import type { StravaConnection } from "@/db/schema";
+import type { SessionUser } from "@/db/sessions";
 import { getStravaConnection } from "@/db/strava";
 import { lastBikeCookie } from "@/lib/last-bike";
 import { requireUser } from "@/lib/auth/session";
 import { getGearDetails, stravaConfig, type StravaConfig } from "@/lib/strava/api";
 import { getAccessToken } from "@/lib/strava/sync";
+import { toInput } from "@/lib/units";
 import type { WizardDraft } from "@/lib/wizard-schema";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +39,7 @@ export default async function NewBikePage({
   const prefillGear = linkable.find((g) => g.id === param);
   const prefill =
     prefillGear && config && connection
-      ? await stravaPrefill(user.id, config, connection, prefillGear.id)
+      ? await stravaPrefill(user, config, connection, prefillGear.id)
       : undefined;
 
   return (
@@ -58,7 +60,7 @@ export default async function NewBikePage({
 
 /** Name and km from the last sync, plus brand, model and type when Strava knows them. */
 async function stravaPrefill(
-  userId: number,
+  user: SessionUser,
   config: StravaConfig,
   connection: StravaConnection,
   gearId: string,
@@ -67,10 +69,10 @@ async function stravaPrefill(
   const prefill: Partial<WizardDraft> = {
     name: gear.name.slice(0, 40),
     stravaGearId: gear.id,
-    odometerKm: String(Math.round(gear.distanceKm)),
+    odometerKm: String(toInput(gear.distanceKm, user.distanceUnit)),
   };
   try {
-    const details = await getGearDetails(await getAccessToken(userId, config), gear.id);
+    const details = await getGearDetails(await getAccessToken(user.id, config), gear.id);
     return {
       ...prefill,
       brand: details.brand.slice(0, 60),

@@ -23,7 +23,7 @@ async function load(params: Params) {
   const user = await requireUser();
   const bike = await getBike(user.id, Number(bikeId));
   const part = bike ? await getPart(bike.id, Number(partId)) : undefined;
-  return bike && part ? { bike, part } : null;
+  return bike && part ? { user, bike, part } : null;
 }
 
 export default async function PartPage({
@@ -35,7 +35,7 @@ export default async function PartPage({
 }) {
   const data = await load(params);
   if (!data) notFound();
-  const { bike, part } = data;
+  const { user, bike, part } = data;
   const { log, replaced } = await searchParams;
 
   const retired = part.status === "retired";
@@ -43,7 +43,9 @@ export default async function PartPage({
   const detail = [part.brand, part.model].filter(Boolean).join(" ");
   const status = retired
     ? null
-    : computeStatus(part, getLastResets(bike.id).get(part.id) ?? null, bike.odometerKm);
+    : computeStatus(part, getLastResets(bike.id).get(part.id) ?? null, bike.odometerKm, {
+        unit: user.distanceUnit,
+      });
   const backHref = retired ? `/bikes/${bike.id}/history` : `/bikes/${bike.id}`;
 
   return (

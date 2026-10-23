@@ -7,12 +7,15 @@ import { z } from "zod";
 import { db } from "@/db";
 import { getOwnedBike, getOwnedEvent, getOwnedPart } from "@/db/access";
 import { bumpOdometer, PartEventError, recordPartEvent } from "@/db/part-events";
-import { partCategories, partEvents, parts } from "@/db/schema";
+import { partCategories, partEvents, parts, type DistanceUnit, type Part } from "@/db/schema";
 import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
 import { isoDate } from "@/lib/dates";
 import { loggableEventTypes } from "@/lib/event-types";
 import { monthsToDays } from "@/lib/format";
+import { inputToKm, intervalToKm } from "@/lib/units";
+
+// Distances arrive in the user's unit (km or mi) and are stored in km; see lib/units.
 
 const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
 const optionalText = (max: number) =>
@@ -25,8 +28,8 @@ const optionalNumber = (label: string) =>
       .min(0, `${label} can't be negative`)
       .optional(),
   );
-const kmField = (label: string) =>
-  z.coerce.number({ error: `Enter the ${label}` }).min(0, "Kilometres can't be negative");
+const distanceField = (label: string) =>
+  z.coerce.number({ error: `Enter the ${label}` }).min(0, "Distances can't be negative");
 
 /** Part pages, the bike page and history all show part data, so refresh the whole bike. */
 function revalidateBike(bikeId: number) {
@@ -38,7 +41,7 @@ const eventSchema = z.object({
   type: z.enum(loggableEventTypes, { error: "Choose what you did" }),
   description: optionalText(200),
   date: isoDate,
-  odometerKm: kmField("odometer in km"),
+  odometerKm: distanceField("odometer"),
   cost: optionalNumber("Cost"),
   resetsInterval: z.preprocess((v) => v === "on", z.boolean()),
   newBrand: optionalText(60),
@@ -53,6 +56,9 @@ export async function addPartEvent(_prev: ActionState, formData: FormData): Prom
 
   const part = getOwnedPart(user.id, input.partId);
   if (!part) return { ok: false, error: "Part not found" };
+  // The form starts at the bike's odometer; left as it is, that reading is kept exactly.
+  const bike = getOwnedBike(user.id, part.bikeId)!;
+  const odometerKm = inputToKm(input.odometerKm, user.distanceUnit, bike.odometerKm);
 
   const replacing = input.type === "replaced";
   let newPartId: number | undefined;
@@ -62,14 +68,14 @@ export async function addPartEvent(_prev: ActionState, formData: FormData): Prom
         type: input.type,
         description: input.description,
         date: input.date,
-        odometerKm: input.odometerKm,
+        odometerKm,
         // For a replacement the price belongs to the new part, not the event.
         cost: replacing ? null : input.cost,
         resetsInterval: input.resetsInterval,
         replacement: { brand: input.newBrand, model: input.newModel, cost: input.cost },
       });
       newPartId = fresh?.id;
-      bumpOdometer(tx, part.bikeId, input.odometerKm);
+      bumpOdometer(tx, part.bikeId, odometerKm);
     });
   } catch (e) {
     if (e instanceof PartEventError) return { ok: false, error: e.message };
@@ -109,24 +115,36 @@ const partFields = {
   brand: optionalText(60),
   model: optionalText(80),
   installedAt: isoDate,
-  installedKm: kmField("km at installation"),
-  serviceKm: optionalNumber("Service km"),
+  installedKm: distanceField("odometer at installation"),
+  serviceKm: optionalNumber("Service distance"),
   serviceMonths: optionalNumber("Service months"),
-  replaceKm: optionalNumber("Replacement km"),
+  replaceKm: optionalNumber("Replacement distance"),
   replaceMonths: optionalNumber("Replacement months"),
   cost: optionalNumber("Price"),
 };
 
-function partValues(input: z.infer<z.ZodObject<typeof partFields>>) {
+/**
+ * The row values for a part form. `current` holds what the form was filled with, so distances
+ * the user left alone keep their exact stored value.
+ */
+function partValues(
+  input: z.infer<z.ZodObject<typeof partFields>>,
+  unit: DistanceUnit,
+  current: Partial<Pick<Part, "installedKm" | "serviceIntervalKm" | "replaceIntervalKm">>,
+) {
   return {
     name: input.name,
     brand: input.brand ?? null,
     model: input.model ?? null,
     installedAt: input.installedAt,
-    installedKm: input.installedKm,
-    serviceIntervalKm: input.serviceKm ? Math.round(input.serviceKm) : null,
+    installedKm: inputToKm(input.installedKm, unit, current.installedKm),
+    serviceIntervalKm: input.serviceKm
+      ? intervalToKm(input.serviceKm, unit, current.serviceIntervalKm)
+      : null,
     serviceIntervalDays: input.serviceMonths ? monthsToDays(input.serviceMonths) : null,
-    replaceIntervalKm: input.replaceKm ? Math.round(input.replaceKm) : null,
+    replaceIntervalKm: input.replaceKm
+      ? intervalToKm(input.replaceKm, unit, current.replaceIntervalKm)
+      : null,
     replaceIntervalDays: input.replaceMonths ? monthsToDays(input.replaceMonths) : null,
     cost: input.cost ?? null,
   };
@@ -143,7 +161,10 @@ export async function updatePart(_prev: ActionState, formData: FormData): Promis
   const part = getOwnedPart(user.id, input.partId);
   if (!part) return { ok: false, error: "Part not found" };
 
-  db.update(parts).set(partValues(input)).where(eq(parts.id, part.id)).run();
+  db.update(parts)
+    .set(partValues(input, user.distanceUnit, part))
+    .where(eq(parts.id, part.id))
+    .run();
 
   revalidateBike(part.bikeId);
   return { ok: true, savedAt: Date.now() };
@@ -175,7 +196,8 @@ export async function createPart(_prev: ActionState, formData: FormData): Promis
     const created = tx
       .insert(parts)
       .values({
-        ...partValues(input),
+        // The form starts at the bike's odometer.
+        ...partValues(input, user.distanceUnit, { installedKm: bike.odometerKm }),
         bikeId: bike.id,
         category: input.category,
         kind: "custom",

@@ -5,7 +5,14 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { importData, ImportError } from "@/db/import";
 import { getStravaConnection } from "@/db/strava";
-import { AccountError, deleteAccount, findUserByEmail, setPasswordHash } from "@/db/users";
+import { distanceUnits } from "@/db/schema";
+import {
+  AccountError,
+  deleteAccount,
+  findUserByEmail,
+  setPasswordHash,
+  setPreferences,
+} from "@/db/users";
 import { firstError, type ActionState } from "@/lib/action-state";
 import { hashPassword, newPasswordSchema, PASSWORD_MAX, verifyPassword } from "@/lib/auth/password";
 import type { SessionUser } from "@/db/sessions";
@@ -13,6 +20,7 @@ import { endOtherSessions, endSession, requireUser } from "@/lib/auth/session";
 import { clearFailures, isThrottled, recordFailure } from "@/lib/auth/throttle";
 import { deauthorize, stravaConfig } from "@/lib/strava/api";
 import { getAccessToken } from "@/lib/strava/sync";
+import { isCurrency } from "@/lib/units";
 
 const currentPassword = z.string().min(1, "Enter your current password").max(PASSWORD_MAX);
 
@@ -113,4 +121,22 @@ export async function importMyData(_prev: ActionState, formData: FormData): Prom
     savedAt: Date.now(),
     message: `Imported ${n(summary.bikes, "bike")}, ${n(summary.parts, "part")} and ${n(summary.events, "event")}`,
   };
+}
+
+const preferencesSchema = z.object({
+  distanceUnit: z.enum(distanceUnits, { error: "Choose kilometres or miles" }),
+  currency: z.string().refine(isCurrency, "Choose a currency from the list"),
+});
+
+/** Settings → Preferences. Only changes how values are shown and entered, never the values. */
+export async function updatePreferences(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  const parsed = preferencesSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  setPreferences(user.id, parsed.data);
+  revalidatePath("/", "layout");
+  return { ok: true, savedAt: Date.now() };
 }

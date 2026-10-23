@@ -2,20 +2,11 @@
 
 import { useState } from "react";
 import { costCategoryLabels, type CostSummary } from "@/lib/costs";
-import { formatCost } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useUnits } from "../UnitsProvider";
 
 // Two single-series bar charts in the brand blue. Every value is also in a visually hidden
 // table (and in the cost list below the charts), so the tooltips never gate anything.
-
-const compact = new Intl.NumberFormat("en-IE", {
-  style: "currency",
-  currency: "EUR",
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-const formatCompact = (amount: number) =>
-  amount < 1000 ? formatCost(Math.round(amount)).replace(/\.00$/, "") : compact.format(amount);
 
 /** Value-first tooltip, shown for the hovered or focused mark. */
 function Tooltip({
@@ -43,6 +34,7 @@ function Tooltip({
 
 /** Columns per year, from the first cost to this year. */
 export function CostsByYearChart({ data }: { data: CostSummary["byYear"] }) {
+  const u = useUnits();
   const [active, setActive] = useState<number | null>(null);
   const max = Math.max(...data.map((d) => d.amount), 1);
   // Cap labels only while they fit; past that the tooltip and the table carry the values.
@@ -55,7 +47,7 @@ export function CostsByYearChart({ data }: { data: CostSummary["byYear"] }) {
           <div
             key={d.year}
             tabIndex={0}
-            aria-label={`${d.year}: ${formatCost(d.amount)}`}
+            aria-label={`${d.year}: ${u.money(d.amount)}`}
             onPointerEnter={() => setActive(i)}
             onFocus={() => setActive(i)}
             onBlur={() => setActive(null)}
@@ -63,14 +55,14 @@ export function CostsByYearChart({ data }: { data: CostSummary["byYear"] }) {
           >
             {active === i && (
               <Tooltip
-                value={formatCost(d.amount)}
+                value={u.money(d.amount)}
                 label={`Spent in ${d.year}`}
                 className="bottom-full mb-1"
               />
             )}
             {showCaps && d.amount > 0 && (
               <span className="text-muted-foreground mb-1 text-xs tabular-nums">
-                {formatCompact(d.amount)}
+                {u.moneyShort(d.amount)}
               </span>
             )}
             <div
@@ -104,7 +96,7 @@ export function CostsByYearChart({ data }: { data: CostSummary["byYear"] }) {
           {data.map((d) => (
             <tr key={d.year}>
               <th scope="row">{d.year}</th>
-              <td>{formatCost(d.amount)}</td>
+              <td>{u.money(d.amount)}</td>
             </tr>
           ))}
         </tbody>
@@ -121,6 +113,7 @@ export function CostsByCategoryChart({
   data: CostSummary["byCategory"];
   total: number;
 }) {
+  const u = useUnits();
   const [active, setActive] = useState<number | null>(null);
   const max = Math.max(...data.map((d) => d.amount), 1);
 
@@ -133,7 +126,7 @@ export function CostsByCategoryChart({
             <li
               key={d.category}
               tabIndex={0}
-              aria-label={`${costCategoryLabels[d.category]}: ${formatCost(d.amount)}, ${share}% of the total`}
+              aria-label={`${costCategoryLabels[d.category]}: ${u.money(d.amount)}, ${share}% of the total`}
               onPointerEnter={() => setActive(i)}
               onFocus={() => setActive(i)}
               onBlur={() => setActive(null)}
@@ -156,7 +149,7 @@ export function CostsByCategoryChart({
                   />
                 )}
               </div>
-              <span className="text-sm font-medium tabular-nums">{formatCost(d.amount)}</span>
+              <span className="text-sm font-medium tabular-nums">{u.money(d.amount)}</span>
             </li>
           );
         })}
