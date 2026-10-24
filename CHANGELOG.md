@@ -4,6 +4,10 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-24
+
+A ready-made Docker image: install BikePro on a regular computer or a Raspberry Pi from two downloaded files.
+
 ### Added
 
 - A ready-made Docker image for amd64 and arm64, so BikePro runs on regular computers, Apple Silicon Macs and the Raspberry Pi without cloning or building: `ghcr.io/hugoob/bikepro`. Every release publishes it as `x.y.z`, `x.y` and `latest`.
@@ -110,7 +114,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/HugooB/bikepro/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/HugooB/bikepro/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/HugooB/bikepro/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/HugooB/bikepro/compare/v0.2.0...v0.3.0
