@@ -1,9 +1,11 @@
+# Runs the published image (amd64 and arm64). Pin a version for predictable updates, for example
+# ghcr.io/hugoob/bikepro:0.6. To build from source instead, add docker-compose.build.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 name: "bikepro"
 
 services:
   bikepro:
-    build: .
-    image: bikepro:latest
+    image: ghcr.io/hugoob/bikepro:latest
     ports:
       - "3000:3000"
     env_file:

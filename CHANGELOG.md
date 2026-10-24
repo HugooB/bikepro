@@ -4,6 +4,23 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- A ready-made Docker image for amd64 and arm64, so BikePro runs on regular computers, Apple Silicon Macs and the Raspberry Pi without cloning or building: `ghcr.io/hugoob/bikepro`. Every release publishes it as `x.y.z`, `x.y` and `latest`.
+- A "Running on a Raspberry Pi" section in the README.
+
+### Changed
+
+- `docker-compose.yml` runs the published image. Updating is now `docker compose pull && docker compose up -d`. Building from source moved to `docker-compose.build.yml`.
+
+### Fixed
+
+- `npm run build` no longer opens the database, so it can't fail with "database is locked" when Next.js collects page data in parallel, and it leaves your local database alone.
+
+### Upgrading
+
+- Running from a clone: `git pull`, then `docker compose pull && docker compose up -d`. The compose project and its data volume stay the same, so your data carries over.
+
 ## [0.5.0] - 2026-10-24
 
 Install BikePro as an app on your phone or computer.

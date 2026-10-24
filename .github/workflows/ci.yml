@@ -37,7 +37,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
-      # Build only: publishing an image is a future idea (see the roadmap).
+      # Build only, to catch a broken Dockerfile in pull requests. Release tags publish the image
+      # through docker.yml.
       - uses: docker/build-push-action@v7
         with:
           context: .

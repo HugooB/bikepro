@@ -169,3 +169,11 @@ The draft is kept in a reducer and mirrored to `sessionStorage`, so it survives 
 `GET /api/export` (`src/db/export.ts`) downloads all of a user's data as JSON: bikes, parts, events, service rounds and the Strava athlete name. The file has a format `version` (currently `1`). Distances are always in km (`distanceUnit: "km"`), and `currency` says what the amounts are in, whatever the user's display settings. It leaves out passwords, sessions and Strava tokens.
 
 Settings → Your data imports such a file (`src/db/import.ts`). A zod schema that mirrors the export checks it first, and a file from a newer format version is refused. The bikes are then added to the signed-in account as new rows in one transaction, so a bad file writes nothing. Every id is new, and the links between records (events to parts and service rounds, a retired part to the part that replaced it) are remapped. Strava links are left out, because the Strava bikes belong to the old install's connection; odometer readings are kept. Server actions accept bodies up to 6 MB (`next.config.ts`) to leave room for a 5 MB import.
+
+## Docker image
+
+The `Dockerfile` builds the `standalone` server in three stages (dependencies, build, a slim runner as a non-root user) and copies in `drizzle/` for the migrations and `scripts/` for the command-line tools. Data lives in `/app/data`.
+
+Release tags publish it through `.github/workflows/docker.yml`: amd64 and arm64 build on native GitHub runners, each image must start and answer `/api/health` before it's pushed by digest, and a final job tags both architectures together on `ghcr.io/hugoob/bikepro` with provenance and SBOM attestations. The actions are pinned to commit SHAs; Dependabot updates them.
+
+`next build` imports every route in parallel workers, so `src/db/index.ts` gives the build an in-memory database instead of a file (`NEXT_PHASE`). Workers opening the same file at once could fail with "database is locked".

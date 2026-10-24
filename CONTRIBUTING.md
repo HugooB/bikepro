@@ -68,6 +68,15 @@ BikePro's translations are plain TypeScript files, one per language, with no tra
 
 Plurals are objects such as `{ one: "{count} bike", other: "{count} bikes" }`. Use the forms your language needs (`zero`, `one`, `two`, `few`, `many`, `other`), as `Intl.PluralRules` names them. Sentences that include a part name are tricky in languages with grammatical gender or articles: it's fine to leave the name out, as the Dutch file does in a few places.
 
+## Releases
+
+1. Move the changes under "Unreleased" in `CHANGELOG.md` to a new version, and bump `version` in `package.json` (`npm version <x.y.z> --no-git-tag-version`).
+2. Commit, then tag and push: `git tag -a v<x.y.z> -m "BikePro v<x.y.z>" && git push origin main v<x.y.z>`.
+3. The tag starts the **Publish Docker image** workflow (`.github/workflows/docker.yml`). It builds the image for amd64 and arm64 on native runners, checks that each one starts and reports healthy, and only then pushes them to `ghcr.io/hugoob/bikepro` as `x.y.z`, `x.y` and `latest`. A pre-release tag such as `v0.7.0-rc.1` gets its own tag but never `latest`.
+4. Create the GitHub release from the changelog section.
+
+To build an image for an existing tag, for example after a failed run, open **Actions → Publish Docker image → Run workflow** and enter the tag.
+
 ## Pull requests
 
 - Keep each PR to one change. A PR that fixes a bug and refactors something else is harder to review.

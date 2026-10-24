@@ -45,18 +45,21 @@ BikePro keeps it for you. Add your bike once and it tracks every part's age and 
 
 ## Quick start
 
-You need [Docker](https://docs.docker.com/get-docker/) with Docker Compose.
+You need [Docker](https://docs.docker.com/get-docker/) with Docker Compose. BikePro runs from a ready-made image for regular computers (amd64) and ARM machines such as Apple Silicon Macs and the [Raspberry Pi](#running-on-a-raspberry-pi) (arm64), so there's nothing to clone or build.
 
 ```bash
-git clone https://github.com/HugooB/bikepro.git
-cd bikepro
-cp .env.example .env    # then set ADMIN_EMAIL and ADMIN_PASSWORD in .env
-docker compose up -d --build
+mkdir bikepro && cd bikepro
+curl -fsSLO https://raw.githubusercontent.com/HugooB/bikepro/main/docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/HugooB/bikepro/main/.env.example -o .env
+# set ADMIN_EMAIL and ADMIN_PASSWORD in .env, then:
+docker compose up -d
 ```
 
 BikePro creates your admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` on its first start. Open <http://localhost:3000>, sign in, and the wizard walks you through adding your first bike.
 
 The database lives in the `bikepro-data` Docker volume, so it survives restarts and updates. `GET /api/health` reports whether the app and database are up.
+
+`docker-compose.yml` uses `ghcr.io/hugoob/bikepro:latest`. For updates only when you choose, pin a version instead, such as `ghcr.io/hugoob/bikepro:0.6` (bug fixes within 0.6) or `:0.6.0` (exactly that release).
 
 ## Configuration
 
@@ -79,6 +82,16 @@ Linked bikes take their kilometers from Strava's total for that bike. BikePro sy
 3. In BikePro, go to **Settings → Strava → Connect with Strava**, then choose which Strava bike belongs to each of your bikes. You can also link a bike while adding it.
 
 If a bike's odometer differs from Strava's total when you link it, you choose: keep your reading and add new Strava kilometers on top, or switch to Strava's total. Strava tokens are stored encrypted with a key derived from `STRAVA_CLIENT_SECRET`; if you change the secret, connect Strava again.
+
+## Running on a Raspberry Pi
+
+Any Raspberry Pi with a **64-bit** operating system runs the same image; a Pi 4 or Pi 5 is comfortable.
+
+1. Install Raspberry Pi OS (64-bit) or another 64-bit Linux.
+2. Install Docker: `curl -fsSL https://get.docker.com | sh`.
+3. Follow the [Quick start](#quick-start). Docker picks the arm64 image by itself.
+
+SD cards wear out under a database's steady small writes. For an install you rely on, keep Docker's data on a USB SSD: set `"data-root"` in `/etc/docker/daemon.json` to a folder on the SSD before the first start. Either way, use the [backup](#updating-and-backups) command now and then.
 
 ## Running it on your own domain
 
@@ -107,8 +120,16 @@ Android and desktop browsers only offer this over HTTPS, so set up [your own dom
 **Update** to the latest version. Database migrations run automatically on start:
 
 ```bash
-git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
+```
+
+Running BikePro from a clone of this repository, from before the ready-made image existed? `git pull`, then the two commands above. The new `docker-compose.yml` uses the image, and your data volume stays as it is.
+
+**Build it yourself** instead of using the image, from a clone of this repository:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
 **Back up** the database while BikePro runs:
@@ -147,11 +168,7 @@ Each user can also download their own data as JSON under **Settings → Your dat
 
 ## Roadmap
 
-Planned next:
-
-- **A ready-made Docker image** for regular servers and the Raspberry Pi, so installing and updating don't need a build.
-
-Ideas for later: automatic backups, notifications when a part needs attention, and more bike types such as MTB and city bikes. Suggestions are welcome as [feature requests](https://github.com/HugooB/bikepro/issues/new/choose).
+Ideas for what comes next: choosing between tubeless tires and inner tubes per bike, automatic backups, notifications when a part needs attention, and more bike types such as MTB and city bikes. Suggestions are welcome as [feature requests](https://github.com/HugooB/bikepro/issues/new/choose).
 
 ## Contributing
 
