@@ -4,10 +4,23 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-24
+
+Install BikePro as an app on your phone or computer.
+
+### Added
+
+- Install BikePro as an app: on a phone's home screen, or from Chrome or Edge on a computer. It opens full screen with its own icon. Android and desktop browsers need HTTPS for this; see "Install it as an app" in the README.
+
 ### Changed
 
 - The English text uses American spelling throughout: "tires", "color" and "kilometers". It used to mix British and American.
 - The README lists what BikePro can do today, including units, currencies, languages, accounts and import.
+
+### Fixed
+
+- Opening the service round sheet on a phone no longer pops up the date picker straight away.
+- The Strava card in Settings shows the connected athlete's name on its own line, and its buttons move below it on phones instead of squeezing the text.
 
 ## [0.4.0] - 2026-10-24
 
@@ -80,7 +93,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/HugooB/bikepro/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/HugooB/bikepro/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/HugooB/bikepro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/HugooB/bikepro/compare/v0.1.0...v0.2.0

@@ -15,9 +15,16 @@ const archivo = Archivo({
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
-  return { title: t("common.appName"), description: t("meta.description") };
+  return {
+    title: t("common.appName"),
+    description: t("meta.description"),
+    // iOS reads these instead of the manifest: open full screen from the home screen, named
+    // BikePro, with an opaque status bar above the app's light header.
+    appleWebApp: { capable: true, title: t("common.appName"), statusBarStyle: "default" },
+  };
 }
 
+// Matches the header and manifest.ts, so the status bar blends with the app.
 export const viewport: Viewport = {
   themeColor: "#f8f9fb",
 };

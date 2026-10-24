@@ -56,6 +56,12 @@ Every distance in the database is in km, and every amount is a plain number. Eac
 - **Wizard:** a draft records the unit its numbers are in, and `planBike()` converts them to km. Default intervals are shown rounded the way a person would write them (3000 km becomes 1,850 mi). A saved draft in the other unit is discarded rather than shown with the wrong label.
 - **Amounts** are never converted between currencies. Switching currency relabels the same numbers.
 
+## Installable app
+
+`src/app/manifest.ts` is served as `/manifest.webmanifest` and makes BikePro installable: standalone display, start URL `/`, and icons in `public/` (192 and 512 px with rounded corners, plus a full-bleed 512 px `maskable` one whose bike stays inside the 80% safe zone). They're rendered from `docs/logo/app-icon.svg`. iOS ignores most of the manifest, so the root layout's metadata adds the `apple-mobile-web-app-*` tags, and `src/app/apple-icon.png` is its home-screen icon. The proxy's matcher skips `.webmanifest` and image files, so the manifest and icons load without a session. Its text stays English: browsers fetch it without the user's cookies.
+
+There's no service worker: BikePro needs the server for everything it shows, so there's nothing useful to do offline yet.
+
 ## Languages
 
 The interface text lives in one dictionary per language in `src/i18n`, without a library. `en.ts` is the source of truth, and every other language is typed as its `Dictionary`, so a missing key fails the type check. `t(key, vars)` fills in `{placeholders}` and picks plural forms with `Intl.PluralRules`. Keys are typed, so a misspelled key is a type error too. A key missing at runtime falls back to English.

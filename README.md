@@ -35,7 +35,7 @@ BikePro keeps it for you. Add your bike once and it tracks every part's age and 
 - **Your units, your language.** Each rider picks kilometers or miles, any currency, and English or Dutch. Switching never changes the data: BikePro stores kilometers, and amounts aren't converted between currencies. New languages are welcome: see [Adding a language](CONTRIBUTING.md#adding-a-language).
 - **For the whole household.** One install holds several accounts, each seeing only their own bikes. The admin decides who can sign up and can reset a forgotten password.
 - **Your data stays yours.** Download everything as a JSON file, import it into another BikePro, or delete your account and all its data.
-- **Made for phones and desktops.** Large tap targets on phones, a two-column layout on desktop.
+- **Made for phones and desktops.** Install it on your home screen and it opens like an app, full screen with its own icon. Large tap targets on phones, a two-column layout on desktop.
 
 <div align="center">
 <img src="docs/screenshots/mobile.png" alt="On a phone: a chain's condition with service and replacement progress bars, and the add-bike wizard" width="80%">
@@ -92,6 +92,16 @@ bikes.example.com {
 
 Then set `APP_URL=https://bikes.example.com` in `.env`, restart, and use `bikes.example.com` as the Strava callback domain. nginx, Traefik or a Cloudflare Tunnel work the same way: terminate HTTPS and forward to port 3000.
 
+## Install it as an app
+
+BikePro can live on your phone's home screen, or in your computer's dock or start menu, and opens full screen without the browser's address bar.
+
+- **iPhone and iPad:** open BikePro in Safari, tap **Share**, then **Add to Home Screen**.
+- **Android:** open it in Chrome, tap the **⋮** menu, then **Add to Home screen** or **Install app**.
+- **Desktop:** in Chrome or Edge, use the install icon at the right of the address bar.
+
+Android and desktop browsers only offer this over HTTPS, so set up [your own domain](#running-it-on-your-own-domain) first. On your own computer, `http://localhost:3000` works too. The app always shows the current version: there's nothing to update on the phone.
+
 ## Updating and backups
 
 **Update** to the latest version. Database migrations run automatically on start:
@@ -137,9 +147,8 @@ Each user can also download their own data as JSON under **Settings → Your dat
 
 ## Roadmap
 
-Planned, roughly in this order:
+Planned next:
 
-- **Install it as an app** on your phone's home screen.
 - **A ready-made Docker image** for regular servers and the Raspberry Pi, so installing and updating don't need a build.
 
 Ideas for later: automatic backups, notifications when a part needs attention, and more bike types such as MTB and city bikes. Suggestions are welcome as [feature requests](https://github.com/HugooB/bikepro/issues/new/choose).

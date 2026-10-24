@@ -397,7 +397,7 @@ export const nl: Dictionary = {
     notConfigured:
       "Om Strava te koppelen, zet je <code>STRAVA_CLIENT_ID</code> en <code>STRAVA_CLIENT_SECRET</code> in <code>.env</code> en start je BikePro opnieuw. De README legt uit hoe je ze krijgt.",
     readsOnly: "BikePro leest alleen je fietsen en hun totale afstand, nooit je ritten.",
-    connectedAs: "Gekoppeld als {name}",
+    connectedLabel: "Gekoppeld met Strava",
     synced: "Gesynchroniseerd {ago}",
     notSynced: "Nog niet gesynchroniseerd",
     disconnect: "Ontkoppelen",

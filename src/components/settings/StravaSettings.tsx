@@ -84,10 +84,11 @@ export async function StravaSettings({
         <>
           <div className="bg-card flex flex-col gap-3 rounded-xl border px-4 py-3">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold">
-                  {t("strava.connectedAs", { name: connection.athleteName })}
-                </p>
+              {/* Like the Account card: on phones the buttons wrap below rather than squeezing
+                  the name into a narrow column. */}
+              <div className="min-w-48 flex-1">
+                <p className="text-muted-foreground text-xs">{t("strava.connectedLabel")}</p>
+                <p className="truncate font-semibold">{connection.athleteName}</p>
                 <p className="text-muted-foreground text-sm">
                   {connection.syncedAt
                     ? t("strava.synced", {

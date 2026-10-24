@@ -386,7 +386,7 @@ export const en = {
     notConfigured:
       "To connect Strava, set <code>STRAVA_CLIENT_ID</code> and <code>STRAVA_CLIENT_SECRET</code> in <code>.env</code> and restart BikePro. The README explains how to get them.",
     readsOnly: "BikePro only reads your bikes and their total distance, never your rides.",
-    connectedAs: "Connected as {name}",
+    connectedLabel: "Connected to Strava",
     synced: "Synced {ago}",
     notSynced: "Not synced yet",
     disconnect: "Disconnect",

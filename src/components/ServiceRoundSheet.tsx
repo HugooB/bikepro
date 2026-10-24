@@ -64,8 +64,16 @@ export function ServiceRoundSheet(props: Props) {
         side={isDesktop ? "right" : "bottom"}
         className={cn(
           "gap-0 p-0",
+          "outline-none",
           isDesktop ? "w-full sm:max-w-lg" : "max-h-[92dvh] rounded-t-2xl",
         )}
+        // Opening focuses the first field by default: the date, whose picker then pops up on
+        // phones. Focus the sheet itself instead, so keyboard and screen-reader users still
+        // start inside it and hear its title.
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          (e.currentTarget as HTMLElement).focus();
+        }}
       >
         <SheetHeader className="border-b pr-12">
           <SheetTitle className="text-lg font-semibold">{t("serviceRound.title")}</SheetTitle>
