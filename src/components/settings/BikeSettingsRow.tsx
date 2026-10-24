@@ -140,7 +140,7 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
         </div>
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">{t("bikeForm.frameColour")}</legend>
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.frameColor")}</legend>
         <FrameColorPicker value={color} onChange={setColor} />
       </fieldset>
       {state.error && (

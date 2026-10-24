@@ -104,9 +104,9 @@ export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
         />
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">{t("bikeForm.frameColour")}</legend>
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.frameColor")}</legend>
         <FrameColorPicker value={draft.color} onChange={(color) => patch({ color })} />
-        <p className="text-muted-foreground text-xs">{t("wizard.basics.colourHint")}</p>
+        <p className="text-muted-foreground text-xs">{t("wizard.basics.colorHint")}</p>
       </fieldset>
     </>
   );
@@ -542,7 +542,7 @@ export function StepReview({
     ...(makeModel
       ? [{ label: t("wizard.review.make"), value: makeModel, step: "basics" as const }]
       : []),
-    { label: t("bikeForm.frameColour"), value: colorName, step: "basics" },
+    { label: t("bikeForm.frameColor"), value: colorName, step: "basics" },
     {
       label: t("odometer.label"),
       value: stravaBike

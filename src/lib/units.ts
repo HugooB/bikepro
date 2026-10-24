@@ -152,8 +152,8 @@ export function unitsFor(prefs: Prefs) {
     locale,
     /** "km" or "mi". */
     unitLabel: unitName(unit),
-    /** "kilometres" or "miles", in the user's language. */
-    unitLong: translate(locale, unit === "mi" ? "units.miles" : "units.kilometres"),
+    /** "kilometers" or "miles", in the user's language. */
+    unitLong: translate(locale, unit === "mi" ? "units.miles" : "units.kilometers"),
     currencySymbol: currencySymbol(currency),
     distance: (km: number) => formatDistance(km, unit, locale),
     money: (amount: number) => formatMoney(amount, currency, locale),

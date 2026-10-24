@@ -29,7 +29,7 @@ export const nl: Dictionary = {
     gotItOn: "In bezit sinds",
     pricePaid: "Aankoopprijs {currency}",
     pricePaidOptional: "Aankoopprijs {currency} (optioneel)",
-    frameColour: "Framekleur",
+    frameColor: "Framekleur",
   },
   nav: {
     yourBikes: "Je fietsen",
@@ -180,7 +180,7 @@ export const nl: Dictionary = {
         "Je taal, en hoe afstanden en bedragen worden getoond en ingevuld. Wisselen verandert nooit je gegevens.",
       language: "Taal",
       distances: "Afstanden",
-      kilometres: "Kilometers",
+      kilometers: "Kilometers",
       miles: "Mijlen",
       currency: "Valuta",
       currencyHint:
@@ -473,7 +473,7 @@ export const nl: Dictionary = {
       brandPlaceholder: "bijv. Canyon",
       model: "Model (optioneel)",
       modelPlaceholder: "bijv. Ultimate CF SL",
-      colourHint: "Voor de tekening van je fiets.",
+      colorHint: "Voor de tekening van je fiets.",
     },
     distance: {
       title: "Hoe ver is hij al gereden?",
@@ -573,7 +573,7 @@ export const nl: Dictionary = {
     replacementBeforeInstall: "De vervangdatum ligt vóór de montage van dit onderdeel",
   },
   units: {
-    kilometres: "kilometers",
+    kilometers: "kilometers",
     miles: "mijlen",
   },
   age: {

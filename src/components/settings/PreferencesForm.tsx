@@ -15,7 +15,7 @@ import { allCurrencies, COMMON_CURRENCIES, formatMoney, type Prefs } from "@/lib
 const selectClass =
   "border-input bg-background focus-visible:ring-ring/50 h-9 rounded-lg border px-2.5 text-sm outline-none focus-visible:ring-3";
 
-/** Settings → Preferences: the language, kilometres or miles, and the currency. */
+/** Settings → Preferences: the language, kilometers or miles, and the currency. */
 export function PreferencesForm({ prefs }: { prefs: Prefs }) {
   const t = useT();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
@@ -77,7 +77,7 @@ export function PreferencesForm({ prefs }: { prefs: Prefs }) {
             checked={unit === "km"}
             onChange={() => setUnit("km")}
           >
-            {t("settings.preferences.kilometres")}
+            {t("settings.preferences.kilometers")}
           </ChoiceChip>
           <ChoiceChip
             name="distanceUnitChoice"

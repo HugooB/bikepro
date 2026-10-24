@@ -43,7 +43,7 @@ type LinkBike = {
   stravaGearId: string | null;
 };
 
-/** One BikePro bike in Settings: which Strava bike it takes its kilometres from. */
+/** One BikePro bike in Settings: which Strava bike it takes its kilometers from. */
 export function StravaBikeLink({
   bike,
   gear,

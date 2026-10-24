@@ -4,6 +4,11 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Changed
+
+- The English text uses American spelling throughout: "tires", "color" and "kilometers". It used to mix British and American.
+- The README lists what BikePro can do today, including units, currencies, languages, accounts and import.
+
 ## [0.4.0] - 2026-10-24
 
 Dutch: every screen in English or Dutch, picked per user, and a setup that makes adding a language a matter of translating one file.

@@ -1,6 +1,6 @@
-// Bike type names and hints are in the dictionary under bikeTypes, colour names under colors.
+// Bike type names and hints are in the dictionary under bikeTypes, color names under colors.
 
-/** Frame colours offered for the bike drawing; an empty value uses the brand colour. */
+/** Frame colors offered for the bike drawing; an empty value uses the brand color. */
 export const frameColors = [
   { value: "", id: "cobalt" },
   { value: "#1a1d24", id: "black" },

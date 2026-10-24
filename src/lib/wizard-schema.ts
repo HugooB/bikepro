@@ -45,7 +45,7 @@ export type WizardDraft = {
   brakeType: BrakeType;
   brand: string;
   model: string;
-  /** Frame colour for the drawing; empty uses the brand colour. */
+  /** Frame color for the drawing; empty uses the brand color. */
   color: string;
   odometerKm: string;
   purchasedAt: string;

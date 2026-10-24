@@ -98,7 +98,7 @@ export function FrameColorPicker({
   name?: string;
 }) {
   const t = useT();
-  // A colour set outside the palette stays selectable, so saving doesn't drop it.
+  // A color set outside the palette stays selectable, so saving doesn't drop it.
   const custom = value && !frameColors.some((c) => c.value === value.toLowerCase());
   const palette = frameColors.map((c) => ({ value: c.value, name: t(`colors.${c.id}`) }));
   const options = custom
@@ -106,7 +106,7 @@ export function FrameColorPicker({
     : palette;
 
   return (
-    <div role="radiogroup" aria-label={t("bikeForm.frameColour")} className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label={t("bikeForm.frameColor")} className="flex flex-wrap gap-2">
       {options.map((c) => {
         const selected = value.toLowerCase() === c.value;
         return (

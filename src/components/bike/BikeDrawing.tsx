@@ -9,7 +9,7 @@ import { useT } from "@/i18n/client";
 import { useZones } from "./zone-context";
 
 // Side view, drive side, front wheel on the right. Coordinates are in drawing units; the
-// view box crops to the bike itself (tyres left/right/bottom, saddle on top).
+// view box crops to the bike itself (tires left/right/bottom, saddle on top).
 // Frame points follow the Canyon Ultimate CF SL in size M (stack 560, reach 393, head angle
 // 73.25°, seat angle 73.5°, chainstay 410, wheelbase 987, BB drop 72) at 0.446 units per mm.
 const VIEW = { x: 25, y: 25, w: 765, h: 455 };
@@ -386,7 +386,7 @@ function Frame({ color }: { color: string }) {
 
 type Props = {
   parts: ZonePart[];
-  /** Frame colour; defaults to the brand ink. */
+  /** Frame color; defaults to the brand ink. */
   color?: string | null;
   /** Disc brakes show rotors at the hubs; rim brakes show calipers with pads on the rims. */
   brakeType?: BrakeType;

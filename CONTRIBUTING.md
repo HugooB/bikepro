@@ -76,4 +76,4 @@ Plurals are objects such as `{ one: "{count} bike", other: "{count} bikes" }`. U
 - Add a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for anything a user would notice.
 - Write commit messages in the imperative, as the existing history does ("Add …", "Fix …").
 
-By contributing, you agree that your contribution is licensed under the [MIT licence](LICENSE).
+By contributing, you agree that your contribution is licensed under the [MIT license](LICENSE).

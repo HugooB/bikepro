@@ -29,7 +29,7 @@ function months12(months: number, t: T) {
     : t("age.yearsMonths", { years, months: rest });
 }
 
-/** Kilometres ridden since a part was installed, never negative. */
+/** Kilometers ridden since a part was installed, never negative. */
 export function kmSince(installedKm: number, odometerKm: number): number {
   return Math.max(0, Math.round(odometerKm - installedKm));
 }

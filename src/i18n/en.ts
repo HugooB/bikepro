@@ -31,7 +31,7 @@ export const en = {
     gotItOn: "Got it on",
     pricePaid: "Price you paid {currency}",
     pricePaidOptional: "Price you paid {currency} (optional)",
-    frameColour: "Frame colour",
+    frameColor: "Frame color",
   },
   nav: {
     yourBikes: "Your bikes",
@@ -170,7 +170,7 @@ export const en = {
         "Your language, and how distances and amounts are shown and entered. Switching never changes your data.",
       language: "Language",
       distances: "Distances",
-      kilometres: "Kilometres",
+      kilometers: "Kilometers",
       miles: "Miles",
       currency: "Currency",
       currencyHint:
@@ -180,7 +180,7 @@ export const en = {
       save: "Save preferences",
       saved: "Preferences saved",
       errors: {
-        unit: "Choose kilometres or miles",
+        unit: "Choose kilometers or miles",
         currency: "Choose a currency from the list",
         language: "Choose a language from the list",
       },
@@ -420,7 +420,7 @@ export const en = {
     },
     outcomes: {
       connected: "Strava is connected. Link your bikes below.",
-      denied: "Connecting Strava was cancelled.",
+      denied: "Connecting Strava was canceled.",
       scope:
         "BikePro needs to see your bikes on Strava to read their distances. Connect again and leave every permission ticked.",
       taken: "That Strava account is already connected to another BikePro account.",
@@ -451,7 +451,7 @@ export const en = {
     },
     basics: {
       title: "Let's add your bike",
-      intro: "Give it a name you'll recognise. The type picks a sensible list of parts.",
+      intro: "Give it a name you'll recognize. The type picks a sensible list of parts.",
       namePlaceholder: "e.g. My Canyon",
       bikeType: "Bike type",
       discTracked: "Pads, rotors and brake fluid are tracked.",
@@ -460,7 +460,7 @@ export const en = {
       brandPlaceholder: "e.g. Canyon",
       model: "Model (optional)",
       modelPlaceholder: "e.g. Ultimate CF SL",
-      colourHint: "Used for your bike's drawing.",
+      colorHint: "Used for your bike's drawing.",
     },
     distance: {
       title: "How far has it been ridden?",
@@ -525,7 +525,7 @@ export const en = {
       nameTooLong: "Keep the name under 40 characters",
       chooseType: "Choose a bike type",
       chooseBrakes: "Choose the brakes",
-      pickColor: "Pick a colour",
+      pickColor: "Pick a color",
       purchaseInFuture: "The purchase date can't be in the future",
       enterPurchaseOdometer: "Enter the odometer when you bought it",
       moreThanOdometer: "That's more than the bike's odometer now",
@@ -555,7 +555,7 @@ export const en = {
     replacementBeforeInstall: "The replacement date is before this part was installed",
   },
   units: {
-    kilometres: "kilometres",
+    kilometers: "kilometers",
     miles: "miles",
   },
   age: {
@@ -587,8 +587,8 @@ export const en = {
     rim: "Rim brakes",
   },
   bikeTypes: {
-    road: { name: "Road", hint: "Drop bars, slick tyres" },
-    gravel: { name: "Gravel", hint: "Drop bars, wide knobbly tyres" },
+    road: { name: "Road", hint: "Drop bars, slick tires" },
+    gravel: { name: "Gravel", hint: "Drop bars, wide knobby tires" },
     tt: { name: "TT", hint: "Aero bars, built for speed" },
     other: { name: "Other", hint: "Anything else with two wheels" },
   },
@@ -601,7 +601,7 @@ export const en = {
     petrol: "Petrol",
     purple: "Purple",
     carbon: "Raw carbon",
-    current: "Current colour",
+    current: "Current color",
     custom: "Custom",
   },
   /** Template part names; parts store the English name and show these (see partName). */

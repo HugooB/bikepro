@@ -2,7 +2,7 @@ import { asc, eq, inArray } from "drizzle-orm";
 import { db } from "./index";
 import { bikes, partEvents, parts, serviceRounds, stravaConnections, users } from "./schema";
 
-/** Bump when the shape below changes, so an old backup can still be recognised. */
+/** Bump when the shape below changes, so an old backup can still be recognized. */
 export const EXPORT_VERSION = 1;
 
 /**

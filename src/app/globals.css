@@ -54,7 +54,7 @@
 }
 
 :root {
-  /* BikePro: cobalt "blueprint ink" accent on cool paper white; status colours stay distinct from it */
+  /* BikePro: cobalt "blueprint ink" accent on cool paper white; status colors stay distinct from it */
   --brand: #2f49d1;
   --brand-foreground: #ffffff;
   /* Strava's orange, for its connect button only. */

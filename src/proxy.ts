@@ -16,7 +16,7 @@ function contentSecurityPolicy(nonce: string, https: boolean) {
     "default-src 'self'",
     // Development needs eval for React's debugging tools.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
-    // Style attributes (Radix positioning, bike colours) can't carry a nonce.
+    // Style attributes (Radix positioning, bike colors) can't carry a nonce.
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",

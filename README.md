@@ -4,36 +4,38 @@
 
 # BikePro
 
-**Know when your chain, tyres and brake pads need attention, before they let you down.**
+**Know when your chain, tires and brake pads need attention, before they let you down.**
 
 A self-hosted maintenance tracker for your bikes: part wear, service history and costs,<br>
-with kilometres synced from Strava.
+with distances synced from Strava. In English or Dutch, in kilometers or miles.
 
 [![Latest release](https://img.shields.io/github/v/release/HugooB/bikepro?label=version&color=2f49d1)](https://github.com/HugooB/bikepro/releases/latest)
 [![CI](https://github.com/HugooB/bikepro/actions/workflows/ci.yml/badge.svg)](https://github.com/HugooB/bikepro/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2f49d1.svg)](LICENSE)
 [![Self-hosted with Docker](https://img.shields.io/badge/self--hosted-Docker-2f49d1.svg)](#quick-start)
 
-<img src="docs/screenshots/bike.png" alt="BikePro showing a road bike drawing with every part coloured by condition, next to the list of parts" width="100%">
+<img src="docs/screenshots/bike.png" alt="BikePro showing a road bike drawing with every part colored by condition, next to the list of parts" width="100%">
 
 </div>
 
 ## Why BikePro?
 
-Every part of a bike wears at its own pace. A chain wants cleaning every few hundred kilometres and replacing after a few thousand. Tyres age even when you don't ride, and brake fluid needs a yearly bleed. Most riders keep this in their head, or don't keep it at all.
+Every part of a bike wears at its own pace. A chain wants cleaning every few hundred kilometers and replacing after a few thousand. Tires age even when you don't ride, and brake fluid needs a yearly bleed. Most riders keep this in their head, or don't keep it at all.
 
-BikePro keeps it for you. Add your bike once and it tracks every part's age and kilometres, and tells you in plain words which ones are in good condition, which need a service, and which need replacing. It runs on your own server, keeps everything in a single SQLite file, and needs no subscription.
+BikePro keeps it for you. Add your bike once and it tracks every part's age and distance, and tells you in plain words which ones are in good condition, which need a service, and which need replacing. It runs on your own server, keeps everything in a single SQLite file, and needs no subscription.
 
 ## Features
 
-- **Every part at a glance.** An interactive drawing of your bike colours each part green, orange or red by condition. Tap a part to jump to it in the list.
+- **Every part at a glance.** An interactive drawing of your bike colors each part green, orange or red by condition. Tap a part to jump to it in the list.
 - **Service and replacement intervals.** Each part has two clocks: how often it needs servicing, counted from the last service, and how long it lasts, counted from when it was fitted. Defaults come from published maintenance guides (sources in [`default-parts.ts`](src/lib/default-parts.ts)), and every value can be changed per part.
-- **Full history.** Log cleaning, servicing and adjustments per part, record a shop visit covering many parts at once as a service round, and replace parts while keeping the old one's lifetime km, age and price.
-- **Costs.** Purchase price, part prices and service bills add up to a total cost per bike, with cost per year of ownership, maintenance per 1,000 km (or miles), and charts per year and category.
+- **Full history.** Log cleaning, servicing and adjustments per part, record a shop visit covering many parts at once as a service round, and replace parts while keeping the old one's lifetime distance, age and price.
+- **Costs.** Purchase price, part prices and service bills add up to a total cost per bike, with cost per year of ownership, maintenance per 1,000 km or miles, and charts per year and category.
 - **Strava sync (optional).** Link each bike to its Strava bike and the odometer follows Strava's total automatically. BikePro reads only your bikes' total distance, never your rides.
-- **Guided setup.** A five-step wizard picks sensible parts for road, gravel or TT bikes, with disc or rim brakes, and ages parts you've already replaced correctly.
+- **Guided setup.** A five-step wizard adds your bike with a standard list of parts that matches its disc or rim brakes. Untick what your bike doesn't have, and parts you've replaced since buying it get the right age from day one.
+- **Your units, your language.** Each rider picks kilometers or miles, any currency, and English or Dutch. Switching never changes the data: BikePro stores kilometers, and amounts aren't converted between currencies. New languages are welcome: see [Adding a language](CONTRIBUTING.md#adding-a-language).
+- **For the whole household.** One install holds several accounts, each seeing only their own bikes. The admin decides who can sign up and can reset a forgotten password.
+- **Your data stays yours.** Download everything as a JSON file, import it into another BikePro, or delete your account and all its data.
 - **Made for phones and desktops.** Large tap targets on phones, a two-column layout on desktop.
-- **Your data stays yours.** Multiple accounts on one install, each seeing only their own bikes. Every user can download a JSON copy of their data.
 
 <div align="center">
 <img src="docs/screenshots/mobile.png" alt="On a phone: a chain's condition with service and replacement progress bars, and the add-bike wizard" width="80%">
@@ -70,13 +72,13 @@ All settings go in `.env`. Restart after changing them (`docker compose up -d`).
 
 ## Strava
 
-Linked bikes take their kilometres from Strava's total for that bike. BikePro syncs when you open it, at most once an hour, or straight away with **Sync now** in Settings.
+Linked bikes take their kilometers from Strava's total for that bike. BikePro syncs when you open it, at most once an hour, or straight away with **Sync now** in Settings.
 
 1. Create an API application at [strava.com/settings/api](https://www.strava.com/settings/api). Set **Authorization Callback Domain** to the host you run BikePro on, without `http://` or a port: `localhost` on your own machine, or for example `bikes.example.com`.
 2. Copy its **Client ID** and **Client Secret** into `.env` as `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET`, set `APP_URL`, and restart.
 3. In BikePro, go to **Settings → Strava → Connect with Strava**, then choose which Strava bike belongs to each of your bikes. You can also link a bike while adding it.
 
-If a bike's odometer differs from Strava's total when you link it, you choose: keep your reading and add new Strava kilometres on top, or switch to Strava's total. Strava tokens are stored encrypted with a key derived from `STRAVA_CLIENT_SECRET`; if you change the secret, connect Strava again.
+If a bike's odometer differs from Strava's total when you link it, you choose: keep your reading and add new Strava kilometers on top, or switch to Strava's total. Strava tokens are stored encrypted with a key derived from `STRAVA_CLIENT_SECRET`; if you change the secret, connect Strava again.
 
 ## Running it on your own domain
 
@@ -129,8 +131,7 @@ Each user can also download their own data as JSON under **Settings → Your dat
 
 ## Good to know
 
-- Each user picks kilometres or miles, and the currency amounts are shown in, under **Settings → Preferences**. Switching never changes your data: BikePro stores kilometres, and amounts aren't converted between currencies.
-- The interface is in English and Dutch. Each user picks a language under **Settings → Preferences**; before signing in, BikePro follows the browser's language. New languages are welcome: see [Adding a language](CONTRIBUTING.md#adding-a-language).
+- Units, currency and language are set per user under **Settings → Preferences**. Before signing in, BikePro follows the browser's language.
 - BikePro shows each part's condition in the app. It doesn't send notifications or emails.
 - Strava sync reads your bikes' totals only. It doesn't import rides, and there are no webhooks, so distances update when you open the app.
 
