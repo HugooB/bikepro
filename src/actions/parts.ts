@@ -6,56 +6,62 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
 import { getOwnedBike, getOwnedEvent, getOwnedPart } from "@/db/access";
-import { bumpOdometer, PartEventError, recordPartEvent } from "@/db/part-events";
+import { bumpOdometer, recordPartEvent } from "@/db/part-events";
 import { partCategories, partEvents, parts, type DistanceUnit, type Part } from "@/db/schema";
+import type { T } from "@/i18n";
+import { getT } from "@/i18n/server";
 import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
-import { isoDate } from "@/lib/dates";
+import { dateField } from "@/lib/dates";
+import { partNameToStore } from "@/lib/default-parts";
 import { loggableEventTypes } from "@/lib/event-types";
 import { monthsToDays } from "@/lib/format";
 import { inputToKm, intervalToKm } from "@/lib/units";
+import { UserError } from "@/lib/user-error";
 
 // Distances arrive in the user's unit (km or mi) and are stored in km; see lib/units.
 
 const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
 const optionalText = (max: number) =>
   z.preprocess(blankToUndefined, z.string().trim().max(max).optional());
-const optionalNumber = (label: string) =>
+const optionalNumber = (t: T, label: string) =>
   z.preprocess(
     blankToUndefined,
     z.coerce
-      .number({ error: `${label} must be a number` })
-      .min(0, `${label} can't be negative`)
+      .number({ error: t("validation.mustBeNumber", { label }) })
+      .min(0, t("validation.cannotBeNegative", { label }))
       .optional(),
   );
-const distanceField = (label: string) =>
-  z.coerce.number({ error: `Enter the ${label}` }).min(0, "Distances can't be negative");
+const distanceField = (t: T, enter: string) =>
+  z.coerce.number({ error: enter }).min(0, t("validation.distanceNegative"));
 
 /** Part pages, the bike page and history all show part data, so refresh the whole bike. */
 function revalidateBike(bikeId: number) {
   revalidatePath(`/bikes/${bikeId}`, "layout");
 }
 
-const eventSchema = z.object({
-  partId: z.coerce.number().int().positive(),
-  type: z.enum(loggableEventTypes, { error: "Choose what you did" }),
-  description: optionalText(200),
-  date: isoDate,
-  odometerKm: distanceField("odometer"),
-  cost: optionalNumber("Cost"),
-  resetsInterval: z.preprocess((v) => v === "on", z.boolean()),
-  newBrand: optionalText(60),
-  newModel: optionalText(80),
-});
+const eventSchema = (t: T) =>
+  z.object({
+    partId: z.coerce.number().int().positive(),
+    type: z.enum(loggableEventTypes, { error: t("part.errors.chooseType") }),
+    description: optionalText(200),
+    date: dateField(t),
+    odometerKm: distanceField(t, t("validation.enterOdometer")),
+    cost: optionalNumber(t, t("validation.labels.cost")),
+    resetsInterval: z.preprocess((v) => v === "on", z.boolean()),
+    newBrand: optionalText(60),
+    newModel: optionalText(80),
+  });
 
 export async function addPartEvent(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
-  const parsed = eventSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const t = await getT();
+  const parsed = eventSchema(t).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error, t) };
   const input = parsed.data;
 
   const part = getOwnedPart(user.id, input.partId);
-  if (!part) return { ok: false, error: "Part not found" };
+  if (!part) return { ok: false, error: t("common.partNotFound") };
   // The form starts at the bike's odometer; left as it is, that reading is kept exactly.
   const bike = getOwnedBike(user.id, part.bikeId)!;
   const odometerKm = inputToKm(input.odometerKm, user.distanceUnit, bike.odometerKm);
@@ -64,21 +70,26 @@ export async function addPartEvent(_prev: ActionState, formData: FormData): Prom
   let newPartId: number | undefined;
   try {
     db.transaction((tx) => {
-      const fresh = recordPartEvent(tx, part, {
-        type: input.type,
-        description: input.description,
-        date: input.date,
-        odometerKm,
-        // For a replacement the price belongs to the new part, not the event.
-        cost: replacing ? null : input.cost,
-        resetsInterval: input.resetsInterval,
-        replacement: { brand: input.newBrand, model: input.newModel, cost: input.cost },
-      });
+      const fresh = recordPartEvent(
+        tx,
+        part,
+        {
+          type: input.type,
+          description: input.description,
+          date: input.date,
+          odometerKm,
+          // For a replacement the price belongs to the new part, not the event.
+          cost: replacing ? null : input.cost,
+          resetsInterval: input.resetsInterval,
+          replacement: { brand: input.newBrand, model: input.newModel, cost: input.cost },
+        },
+        t,
+      );
       newPartId = fresh?.id;
       bumpOdometer(tx, part.bikeId, odometerKm);
     });
   } catch (e) {
-    if (e instanceof PartEventError) return { ok: false, error: e.message };
+    if (e instanceof UserError) return { ok: false, error: t(e.key, e.vars) };
     throw e;
   }
 
@@ -110,30 +121,32 @@ export async function deletePartEvent(formData: FormData) {
   revalidateBike(event.part.bikeId);
 }
 
-const partFields = {
-  name: z.string().trim().min(1, "Give the part a name").max(80),
+const partFields = (t: T) => ({
+  name: z.string().trim().min(1, t("part.errors.nameRequired")).max(80),
   brand: optionalText(60),
   model: optionalText(80),
-  installedAt: isoDate,
-  installedKm: distanceField("odometer at installation"),
-  serviceKm: optionalNumber("Service distance"),
-  serviceMonths: optionalNumber("Service months"),
-  replaceKm: optionalNumber("Replacement distance"),
-  replaceMonths: optionalNumber("Replacement months"),
-  cost: optionalNumber("Price"),
-};
+  installedAt: dateField(t),
+  installedKm: distanceField(t, t("part.errors.enterInstallOdometer")),
+  serviceKm: optionalNumber(t, t("validation.labels.serviceDistance")),
+  serviceMonths: optionalNumber(t, t("validation.labels.serviceMonths")),
+  replaceKm: optionalNumber(t, t("validation.labels.replaceDistance")),
+  replaceMonths: optionalNumber(t, t("validation.labels.replaceMonths")),
+  cost: optionalNumber(t, t("validation.labels.price")),
+});
 
 /**
- * The row values for a part form. `current` holds what the form was filled with, so distances
- * the user left alone keep their exact stored value.
+ * The row values for a part form. `current` holds what the form was filled with, so values
+ * the user left alone keep exactly what's stored: distances, and a template name shown in
+ * the user's language.
  */
 function partValues(
-  input: z.infer<z.ZodObject<typeof partFields>>,
+  input: z.infer<z.ZodObject<ReturnType<typeof partFields>>>,
   unit: DistanceUnit,
-  current: Partial<Pick<Part, "installedKm" | "serviceIntervalKm" | "replaceIntervalKm">>,
+  t: T,
+  current: Partial<Pick<Part, "kind" | "installedKm" | "serviceIntervalKm" | "replaceIntervalKm">>,
 ) {
   return {
-    name: input.name,
+    name: current.kind ? partNameToStore(current.kind, input.name, t) : input.name,
     brand: input.brand ?? null,
     model: input.model ?? null,
     installedAt: input.installedAt,
@@ -150,19 +163,21 @@ function partValues(
   };
 }
 
-const updatePartSchema = z.object({ partId: z.coerce.number().int().positive(), ...partFields });
+const updatePartSchema = (t: T) =>
+  z.object({ partId: z.coerce.number().int().positive(), ...partFields(t) });
 
 export async function updatePart(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
-  const parsed = updatePartSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const t = await getT();
+  const parsed = updatePartSchema(t).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error, t) };
   const input = parsed.data;
 
   const part = getOwnedPart(user.id, input.partId);
-  if (!part) return { ok: false, error: "Part not found" };
+  if (!part) return { ok: false, error: t("common.partNotFound") };
 
   db.update(parts)
-    .set(partValues(input, user.distanceUnit, part))
+    .set(partValues(input, user.distanceUnit, t, part))
     .where(eq(parts.id, part.id))
     .run();
 
@@ -170,20 +185,22 @@ export async function updatePart(_prev: ActionState, formData: FormData): Promis
   return { ok: true, savedAt: Date.now() };
 }
 
-const createPartSchema = z.object({
-  bikeId: z.coerce.number().int().positive(),
-  category: z.enum(partCategories, { error: "Choose a category" }),
-  ...partFields,
-});
+const createPartSchema = (t: T) =>
+  z.object({
+    bikeId: z.coerce.number().int().positive(),
+    category: z.enum(partCategories, { error: t("part.errors.chooseCategory") }),
+    ...partFields(t),
+  });
 
 export async function createPart(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
-  const parsed = createPartSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const t = await getT();
+  const parsed = createPartSchema(t).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error, t) };
   const input = parsed.data;
 
   const bike = getOwnedBike(user.id, input.bikeId);
-  if (!bike) return { ok: false, error: "Bike not found" };
+  if (!bike) return { ok: false, error: t("common.bikeNotFound") };
 
   const part = db.transaction((tx) => {
     // Custom parts go to the end of their category.
@@ -197,7 +214,7 @@ export async function createPart(_prev: ActionState, formData: FormData): Promis
       .insert(parts)
       .values({
         // The form starts at the bike's odometer.
-        ...partValues(input, user.distanceUnit, { installedKm: bike.odometerKm }),
+        ...partValues(input, user.distanceUnit, t, { installedKm: bike.odometerKm }),
         bikeId: bike.id,
         category: input.category,
         kind: "custom",

@@ -19,9 +19,11 @@ import {
   getLastServiceRound,
 } from "@/db/queries";
 import { getStravaConnection } from "@/db/strava";
-import { summarizeCosts } from "@/lib/costs";
-import { computeStatus } from "@/lib/status";
+import { getT, getUnits } from "@/i18n/server";
 import { getCurrentUser, requireUser } from "@/lib/auth/session";
+import { summarizeCosts } from "@/lib/costs";
+import { partName } from "@/lib/default-parts";
+import { computeStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +35,15 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
   const user = await requireUser();
   const bike = await getBike(user.id, id);
   if (!bike) notFound();
-  const parts = await getActiveParts(bike.id);
+  const [t, u] = await Promise.all([getT(), getUnits()]);
+  // Template part names in the user's language, everywhere on this page.
+  const parts = (await getActiveParts(bike.id)).map((p) => ({ ...p, name: partName(p, t) }));
   const resets = getLastResets(bike.id);
   const rows = parts.map((part) => ({
     part,
     status: computeStatus(part, resets.get(part.id) ?? null, bike.odometerKm, {
-      unit: user.distanceUnit,
+      unit: u.unit,
+      locale: u.locale,
     }),
   }));
   const lastRound = await getLastServiceRound(bike.id);
@@ -46,7 +51,10 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
   const strava = connection && {
     gearName: connection.gear.find((g) => g.id === bike.stravaGearId)?.name ?? null,
     syncedAgo: connection.syncedAt
-      ? formatDistanceToNowStrict(connection.syncedAt, { addSuffix: true })
+      ? formatDistanceToNowStrict(connection.syncedAt, {
+          addSuffix: true,
+          locale: u.dateFnsLocale,
+        })
       : null,
   };
   const summaryParts = rows.map(({ part, status }) => ({
@@ -75,7 +83,7 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
             <OdometerForm bikeId={bike.id} odometerKm={bike.odometerKm} strava={strava} />
             <CostTotalCard
               bikeId={bike.id}
-              summary={summarizeCosts(getCostEntries(bike), new Date().getFullYear())}
+              summary={summarizeCosts(getCostEntries(bike, t), new Date().getFullYear())}
             />
             <StatusSummary statuses={rows.map((r) => r.status)} />
           </div>
@@ -99,5 +107,6 @@ export default async function BikePage({ params }: { params: Promise<{ bikeId: s
 export async function generateMetadata({ params }: { params: Promise<{ bikeId: string }> }) {
   const user = await getCurrentUser();
   const bike = user && (await getBike(user.id, Number((await params).bikeId)));
-  return { title: bike ? `${bike.name} · BikePro` : "BikePro" };
+  const t = await getT();
+  return { title: bike ? t("meta.title", { page: bike.name }) : t("common.appName") };
 }

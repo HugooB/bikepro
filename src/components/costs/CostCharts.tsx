@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { costCategoryLabels, type CostSummary } from "@/lib/costs";
+import type { CostSummary } from "@/lib/costs";
 import { cn } from "@/lib/utils";
-import { useUnits } from "../UnitsProvider";
+import { useT, useUnits } from "@/i18n/client";
 
 // Two single-series bar charts in the brand blue. Every value is also in a visually hidden
 // table (and in the cost list below the charts), so the tooltips never gate anything.
@@ -34,6 +34,7 @@ function Tooltip({
 
 /** Columns per year, from the first cost to this year. */
 export function CostsByYearChart({ data }: { data: CostSummary["byYear"] }) {
+  const t = useT();
   const u = useUnits();
   const [active, setActive] = useState<number | null>(null);
   const max = Math.max(...data.map((d) => d.amount), 1);
@@ -56,7 +57,7 @@ export function CostsByYearChart({ data }: { data: CostSummary["byYear"] }) {
             {active === i && (
               <Tooltip
                 value={u.money(d.amount)}
-                label={`Spent in ${d.year}`}
+                label={t("costs.charts.spentIn", { year: d.year })}
                 className="bottom-full mb-1"
               />
             )}
@@ -91,7 +92,7 @@ export function CostsByYearChart({ data }: { data: CostSummary["byYear"] }) {
         ))}
       </div>
       <table className="sr-only">
-        <caption>Costs per year</caption>
+        <caption>{t("costs.charts.perYearCaption")}</caption>
         <tbody>
           {data.map((d) => (
             <tr key={d.year}>
@@ -113,6 +114,7 @@ export function CostsByCategoryChart({
   data: CostSummary["byCategory"];
   total: number;
 }) {
+  const t = useT();
   const u = useUnits();
   const [active, setActive] = useState<number | null>(null);
   const max = Math.max(...data.map((d) => d.amount), 1);
@@ -126,13 +128,17 @@ export function CostsByCategoryChart({
             <li
               key={d.category}
               tabIndex={0}
-              aria-label={`${costCategoryLabels[d.category]}: ${u.money(d.amount)}, ${share}% of the total`}
+              aria-label={t("costs.charts.ofTotal", {
+                category: t(`costs.categories.${d.category}`),
+                amount: u.money(d.amount),
+                share,
+              })}
               onPointerEnter={() => setActive(i)}
               onFocus={() => setActive(i)}
               onBlur={() => setActive(null)}
               className="focus-visible:ring-ring/50 relative grid grid-cols-[7.5rem_1fr_auto] items-center gap-3 rounded-md py-1.5 outline-none focus-visible:ring-3 sm:grid-cols-[9rem_1fr_auto]"
             >
-              <span className="truncate text-sm">{costCategoryLabels[d.category]}</span>
+              <span className="truncate text-sm">{t(`costs.categories.${d.category}`)}</span>
               <div className="relative h-4">
                 <div
                   className={cn(
@@ -144,7 +150,7 @@ export function CostsByCategoryChart({
                 {active === i && (
                   <Tooltip
                     value={`${share}%`}
-                    label="of maintenance costs"
+                    label={t("costs.charts.ofMaintenance")}
                     className="bottom-full left-0 mb-1"
                   />
                 )}

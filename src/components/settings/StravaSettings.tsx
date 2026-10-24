@@ -4,31 +4,28 @@ import { Plus } from "lucide-react";
 import { disconnectStrava } from "@/actions/strava";
 import { Button } from "@/components/ui/button";
 import type { Bike, StravaConnection } from "@/db/schema";
-import { getUnits } from "@/lib/auth/session";
+import type { MessageKey } from "@/i18n";
+import { rich } from "@/i18n/rich";
+import { getT, getUnits } from "@/i18n/server";
 import { StravaBikeLink, SyncNowButton } from "./StravaControls";
 
-const outcomes: Record<string, { text: string; error?: boolean }> = {
-  connected: { text: "Strava is connected. Link your bikes below." },
-  denied: { text: "Connecting Strava was cancelled.", error: true },
-  scope: {
-    text: "BikePro needs to see your bikes on Strava to read their distances. Connect again and leave every permission ticked.",
-    error: true,
-  },
-  taken: {
-    text: "That Strava account is already connected to another BikePro account.",
-    error: true,
-  },
-  failed: { text: "Couldn't connect to Strava. Try again.", error: true },
+const outcomes: Record<string, { key: MessageKey; error?: boolean }> = {
+  connected: { key: "strava.outcomes.connected" },
+  denied: { key: "strava.outcomes.denied", error: true },
+  scope: { key: "strava.outcomes.scope", error: true },
+  taken: { key: "strava.outcomes.taken", error: true },
+  failed: { key: "strava.outcomes.failed", error: true },
 };
 
-export function ConnectStravaButton({ next }: { next?: string }) {
+export async function ConnectStravaButton({ next }: { next?: string }) {
+  const t = await getT();
   const href = next
     ? `/api/strava/connect?next=${encodeURIComponent(next)}`
     : "/api/strava/connect";
   return (
     <Button asChild className="bg-strava hover:bg-strava/90 text-white">
       {/* A plain link: the connect route redirects to strava.com. */}
-      <a href={href}>Connect with Strava</a>
+      <a href={href}>{t("strava.connect")}</a>
     </Button>
   );
 }
@@ -45,7 +42,7 @@ export async function StravaSettings({
   bikes: Bike[];
   outcome?: string;
 }) {
-  const u = await getUnits();
+  const [t, u] = await Promise.all([getT(), getUnits()]);
   const message = outcome ? outcomes[outcome] : undefined;
   // Archived bikes are listed elsewhere, but keep their Strava bike taken.
   const active = bikes.filter((b) => !b.archivedAt);
@@ -61,7 +58,7 @@ export async function StravaSettings({
           Strava
         </h2>
         <p className="text-muted-foreground text-sm">
-          Linked bikes take their {u.unitLong} from Strava, updated when you open BikePro.
+          {t("strava.intro", { distances: u.unitLong })}
         </p>
       </div>
 
@@ -70,20 +67,17 @@ export async function StravaSettings({
           role={message.error ? "alert" : "status"}
           className={message.error ? "text-destructive text-sm" : "text-sm"}
         >
-          {message.text}
+          {t(message.key)}
         </p>
       )}
 
       {!configured ? (
         <p className="bg-card text-muted-foreground rounded-xl border px-4 py-3 text-sm">
-          To connect Strava, set <code>STRAVA_CLIENT_ID</code> and <code>STRAVA_CLIENT_SECRET</code>{" "}
-          in <code>.env</code> and restart BikePro. The README explains how to get them.
+          {rich(t("strava.notConfigured"), { code: (text) => <code>{text}</code> })}
         </p>
       ) : !connection ? (
         <div className="bg-card flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border px-4 py-3">
-          <p className="text-muted-foreground min-w-0 flex-1 text-sm">
-            BikePro only reads your bikes and their total distance, never your rides.
-          </p>
+          <p className="text-muted-foreground min-w-0 flex-1 text-sm">{t("strava.readsOnly")}</p>
           <ConnectStravaButton />
         </div>
       ) : (
@@ -91,18 +85,25 @@ export async function StravaSettings({
           <div className="bg-card flex flex-col gap-3 rounded-xl border px-4 py-3">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
               <div className="min-w-0 flex-1">
-                <p className="font-semibold">Connected as {connection.athleteName}</p>
+                <p className="font-semibold">
+                  {t("strava.connectedAs", { name: connection.athleteName })}
+                </p>
                 <p className="text-muted-foreground text-sm">
                   {connection.syncedAt
-                    ? `Synced ${formatDistanceToNowStrict(connection.syncedAt, { addSuffix: true })}`
-                    : "Not synced yet"}
+                    ? t("strava.synced", {
+                        ago: formatDistanceToNowStrict(connection.syncedAt, {
+                          addSuffix: true,
+                          locale: u.dateFnsLocale,
+                        }),
+                      })
+                    : t("strava.notSynced")}
                 </p>
               </div>
               <div className="flex gap-2">
                 <SyncNowButton />
                 <form action={disconnectStrava}>
                   <Button type="submit" variant="ghost">
-                    Disconnect
+                    {t("strava.disconnect")}
                   </Button>
                 </form>
               </div>
@@ -110,20 +111,20 @@ export async function StravaSettings({
             {connection.syncError === "revoked" && (
               <div className="flex flex-wrap items-center gap-3 border-t pt-3">
                 <p role="alert" className="text-destructive min-w-0 flex-1 text-sm">
-                  Strava no longer gives BikePro access, so {u.unitLong} aren&apos;t updating.
+                  {t("strava.revoked", { distances: u.unitLong })}
                 </p>
                 <ConnectStravaButton />
               </div>
             )}
             {connection.syncError === "failed" && (
               <p className="text-muted-foreground border-t pt-3 text-sm">
-                The last sync couldn&apos;t reach Strava. BikePro tries again next time you open it.
+                {t("strava.syncFailed")}
               </p>
             )}
           </div>
 
           {active.length > 0 && (
-            <ul className="flex flex-col gap-2" aria-label="Link your bikes">
+            <ul className="flex flex-col gap-2" aria-label={t("strava.linkYourBikes")}>
               {active.map((bike) => (
                 <StravaBikeLink
                   key={bike.id}
@@ -143,7 +144,7 @@ export async function StravaSettings({
 
           {unlinkedGear.length > 0 && (
             <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-medium">On Strava, not in BikePro yet</h3>
+              <h3 className="text-sm font-medium">{t("strava.notInBikePro")}</h3>
               <ul className="flex flex-col gap-2">
                 {unlinkedGear.map((g) => (
                   <li
@@ -157,7 +158,7 @@ export async function StravaSettings({
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/bikes/new?strava=${encodeURIComponent(g.id)}`}>
                         <Plus aria-hidden />
-                        Add to BikePro
+                        {t("strava.addToBikePro")}
                       </Link>
                     </Button>
                   </li>
@@ -167,7 +168,7 @@ export async function StravaSettings({
           )}
         </>
       )}
-      {connection && <p className="text-muted-foreground text-xs">Powered by Strava</p>}
+      {connection && <p className="text-muted-foreground text-xs">{t("strava.poweredBy")}</p>}
     </section>
   );
 }

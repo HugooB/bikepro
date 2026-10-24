@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Check, ChevronsUpDown, LogOut, Plus, Settings } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { logout } from "@/actions/auth";
+import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 export type SwitcherBike = { id: number; name: string; color: string | null };
@@ -25,6 +26,7 @@ function Swatch({ color }: { color: string | null }) {
 
 /** Header dropdown to jump between bikes, add one, or open settings. */
 export function BikeSwitcher({ bikes, userName }: { bikes: SwitcherBike[]; userName: string }) {
+  const t = useT();
   const pathname = usePathname();
   const currentId = Number(pathname.match(/^\/bikes\/(\d+)/)?.[1]);
   const current = bikes.find((b) => b.id === currentId);
@@ -33,10 +35,10 @@ export function BikeSwitcher({ bikes, userName }: { bikes: SwitcherBike[]; userN
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
         className="hover:bg-muted focus-visible:ring-ring/50 data-[state=open]:bg-muted flex h-9 max-w-[55vw] items-center gap-2 rounded-lg px-2.5 text-sm font-medium outline-none focus-visible:ring-3 sm:max-w-xs"
-        aria-label={current ? `Bike: ${current.name}. Switch bike` : "Your bikes"}
+        aria-label={current ? t("nav.switchBike", { bike: current.name }) : t("nav.yourBikes")}
       >
         {current && <Swatch color={current.color} />}
-        <span className="truncate">{current ? current.name : "Your bikes"}</span>
+        <span className="truncate">{current ? current.name : t("nav.yourBikes")}</span>
         <ChevronsUpDown aria-hidden className="text-muted-foreground size-4 shrink-0" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -47,7 +49,7 @@ export function BikeSwitcher({ bikes, userName }: { bikes: SwitcherBike[]; userN
         >
           {bikes.length > 0 && (
             <DropdownMenu.Label className="text-muted-foreground px-2.5 pt-1.5 pb-1 text-xs font-medium">
-              Your bikes
+              {t("nav.yourBikes")}
             </DropdownMenu.Label>
           )}
           {bikes.map((bike) => (
@@ -66,13 +68,13 @@ export function BikeSwitcher({ bikes, userName }: { bikes: SwitcherBike[]; userN
           <DropdownMenu.Item asChild className={cn(itemClass, "text-brand font-medium")}>
             <Link href="/bikes/new">
               <Plus aria-hidden className="size-4" />
-              Add bike
+              {t("nav.addBike")}
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Item asChild className={itemClass}>
             <Link href="/settings">
               <Settings aria-hidden className="text-muted-foreground size-4" />
-              Settings
+              {t("nav.settings")}
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="bg-border my-1 h-px" />
@@ -80,7 +82,7 @@ export function BikeSwitcher({ bikes, userName }: { bikes: SwitcherBike[]; userN
               before it submits; call the action directly instead. */}
           <DropdownMenu.Item className={itemClass} onSelect={() => startTransition(logout)}>
             <LogOut aria-hidden className="text-muted-foreground size-4" />
-            <span className="flex-1 truncate">Sign out</span>
+            <span className="flex-1 truncate">{t("nav.signOut")}</span>
             <span className="text-muted-foreground max-w-28 truncate text-xs">{userName}</span>
           </DropdownMenu.Item>
         </DropdownMenu.Content>

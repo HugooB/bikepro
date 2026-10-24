@@ -62,11 +62,11 @@ describe("buildExport", () => {
       currency: "EUR",
     });
     const before = buildExport(alice);
-    setPreferences(alice, { distanceUnit: "mi", currency: "USD" });
+    setPreferences(alice, { distanceUnit: "mi", currency: "USD", locale: "en" });
     const after = buildExport(alice);
     expect(after).toMatchObject({ distanceUnit: "km", currency: "USD" });
     expect(after.bikes).toEqual(before.bikes);
-    setPreferences(alice, { distanceUnit: "km", currency: "EUR" });
+    setPreferences(alice, { distanceUnit: "km", currency: "EUR", locale: "en" });
   });
 
   it("leaves out other users' data and every secret", () => {

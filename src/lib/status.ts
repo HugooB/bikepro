@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { DistanceUnit } from "@/db/schema";
+import { DEFAULT_LOCALE, makeT, type Locale, type T } from "@/i18n";
 import { formatDays } from "./age";
 import { formatDistance } from "./units";
 
@@ -35,13 +36,6 @@ export const DUE_SOON_RATIO = 0.75;
 /** Below this ratio a part is in good condition; up to DUE_SOON_RATIO it's fair. */
 const FAIR_RATIO = 0.5;
 
-export const NO_INTERVALS = "No intervals set";
-
-const conditions = {
-  service: { due: "Service soon", overdue: "Needs a service" },
-  replace: { due: "Replace soon", overdue: "Needs replacing" },
-} as const;
-
 export type IntervalInput = {
   installedAt: string;
   installedKm: number;
@@ -62,6 +56,8 @@ function track(
   odometerKm: number,
   now: Date,
   unit: DistanceUnit,
+  locale: Locale,
+  t: T,
 ): IntervalStatus | null {
   const usedKm = Math.max(0, odometerKm - since.km);
   const usedDays = Math.max(0, differenceInCalendarDays(now, parseISO(since.date)));
@@ -74,9 +70,15 @@ function track(
   const ratio = byKm ? kmRatio! : dayRatio!;
   const level = ratio >= 1 ? "overdue" : ratio >= DUE_SOON_RATIO ? "due" : "ok";
   const remaining = byKm ? intervalKm! - usedKm : intervalDays! - usedDays;
-  const amount = byKm ? formatDistance(Math.abs(remaining), unit) : formatDays(Math.abs(remaining));
+  const amount = byKm
+    ? formatDistance(Math.abs(remaining), unit, locale)
+    : formatDays(Math.abs(remaining), t);
   const hint =
-    remaining < 0 ? `overdue by ${amount}` : remaining === 0 ? "due now" : `in ${amount}`;
+    remaining < 0
+      ? t("status.overdueBy", { amount })
+      : remaining === 0
+        ? t("status.dueNow")
+        : t("status.dueIn", { amount });
   return { level, ratio, hint, since };
 }
 
@@ -85,8 +87,13 @@ export function computeStatus(
   part: IntervalInput,
   lastService: ResetPoint | null,
   odometerKm: number,
-  { now = new Date(), unit = "km" }: { now?: Date; unit?: DistanceUnit } = {},
+  {
+    now = new Date(),
+    unit = "km",
+    locale = DEFAULT_LOCALE,
+  }: { now?: Date; unit?: DistanceUnit; locale?: Locale } = {},
 ): PartStatus {
+  const t = makeT(locale);
   const installed = { date: part.installedAt, km: part.installedKm };
   const serviced =
     lastService && lastService.date >= part.installedAt
@@ -100,6 +107,8 @@ export function computeStatus(
     odometerKm,
     now,
     unit,
+    locale,
+    t,
   );
   const replace = track(
     installed,
@@ -108,8 +117,12 @@ export function computeStatus(
     odometerKm,
     now,
     unit,
+    locale,
+    t,
   );
-  if (!service && !replace) return { level: "none", condition: NO_INTERVALS, service, replace };
+  if (!service && !replace) {
+    return { level: "none", condition: t("status.noIntervals"), service, replace };
+  }
 
   // The more urgent interval decides; on a tie, replacing matters more than servicing.
   const [kind, driver] =
@@ -120,9 +133,9 @@ export function computeStatus(
   const condition =
     driver.level === "ok"
       ? worstRatio < FAIR_RATIO
-        ? "Good condition"
-        : "Fair condition"
-      : conditions[kind][driver.level];
+        ? t("status.good")
+        : t("status.fair")
+      : t(`status.${kind}.${driver.level}`);
 
   return { level: driver.level, condition, service, replace };
 }

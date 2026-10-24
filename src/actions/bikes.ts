@@ -8,10 +8,13 @@ import { db } from "@/db";
 import { getOwnedBike } from "@/db/access";
 import { createBike, setOdometer } from "@/db/bikes";
 import { bikes } from "@/db/schema";
-import { findLinkableGear, StravaLinkError } from "@/db/strava";
+import { findLinkableGear } from "@/db/strava";
+import type { T } from "@/i18n";
+import { getT } from "@/i18n/server";
 import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
-import { isoDate } from "@/lib/dates";
+import { dateField } from "@/lib/dates";
+import { UserError } from "@/lib/user-error";
 import { inputToKm, toInput } from "@/lib/units";
 import {
   basicsSchema,
@@ -23,23 +26,25 @@ import {
   type WizardStep,
 } from "@/lib/wizard-schema";
 
-const odometerSchema = z.object({
-  bikeId: z.coerce.number().int().positive(),
-  /** In the user's distance unit. */
-  odometerKm: distanceField("the odometer"),
-});
+const odometerSchema = (t: T) =>
+  z.object({
+    bikeId: z.coerce.number().int().positive(),
+    /** In the user's distance unit. */
+    odometerKm: distanceField(t, t("validation.enterOdometer")),
+  });
 
 export async function updateOdometer(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
-  const parsed = odometerSchema.safeParse({
+  const t = await getT();
+  const parsed = odometerSchema(t).safeParse({
     bikeId: formData.get("bikeId"),
     odometerKm: formData.get("odometerKm"),
   });
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error, t) };
 
   const { bikeId, odometerKm } = parsed.data;
   const bike = getOwnedBike(user.id, bikeId);
-  if (!bike) return { ok: false, error: "Bike not found" };
+  if (!bike) return { ok: false, error: t("common.bikeNotFound") };
   const km = inputToKm(odometerKm, user.distanceUnit, bike.odometerKm);
   db.transaction((tx) => setOdometer(tx, bike, km));
   revalidatePath(`/bikes/${bikeId}`);
@@ -52,6 +57,7 @@ export type CreateBikeResult =
 /** Last step of the add-bike wizard: creates the bike, its parts and their install events. */
 export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBikeResult> {
   const user = await requireUser();
+  const t = await getT();
   const today = format(new Date(), "yyyy-MM-dd");
   let bike;
   try {
@@ -61,6 +67,7 @@ export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBi
       const plan = planBike(
         gear ? { ...draft, odometerKm: String(toInput(gear.distanceKm, draft.unit)) } : draft,
         today,
+        t,
       );
       if (gear) {
         // Exactly Strava's total, not the rounded figure the wizard showed.
@@ -71,11 +78,11 @@ export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBi
           stravaDistanceKm: gear.distanceKm,
         };
       }
-      return createBike(tx, plan, user.id);
+      return createBike(tx, plan, user.id, t);
     });
   } catch (e) {
     if (e instanceof WizardDraftError) return { ok: false, error: e.message, step: e.step };
-    if (e instanceof StravaLinkError) return { ok: false, error: e.message, step: "odometer" };
+    if (e instanceof UserError) return { ok: false, error: t(e.key, e.vars), step: "odometer" };
     throw e;
   }
   // The header's bike switcher is part of the root layout.
@@ -83,20 +90,22 @@ export async function createBikeFromWizard(draft: WizardDraft): Promise<CreateBi
   return { ok: true, bikeId: bike.id };
 }
 
-const bikeSchema = basicsSchema.extend({
-  bikeId: z.coerce.number().int().positive(),
-  purchasedAt: z.union([z.literal(""), isoDate]),
-  purchasePrice: optionalPrice,
-});
+const bikeSchema = (t: T) =>
+  basicsSchema(t).extend({
+    bikeId: z.coerce.number().int().positive(),
+    purchasedAt: z.union([z.literal(""), dateField(t)]),
+    purchasePrice: optionalPrice(t),
+  });
 
 export async function updateBike(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
-  const parsed = bikeSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const t = await getT();
+  const parsed = bikeSchema(t).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error, t) };
 
   const { bikeId, name, type, brakeType, brand, model, color, purchasedAt, purchasePrice } =
     parsed.data;
-  if (!getOwnedBike(user.id, bikeId)) return { ok: false, error: "Bike not found" };
+  if (!getOwnedBike(user.id, bikeId)) return { ok: false, error: t("common.bikeNotFound") };
   db.update(bikes)
     .set({
       name,

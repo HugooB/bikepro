@@ -1,7 +1,6 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { DEFAULT_PREFS, unitsFor, type Units } from "@/lib/units";
 import {
   createSession,
   deleteOtherSessions,
@@ -23,12 +22,6 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   return token ? validateSession(token) : null;
 });
-
-/** The signed-in user's units and currency, for server components (see lib/units). */
-export async function getUnits(): Promise<Units> {
-  const user = await getCurrentUser();
-  return unitsFor(user ?? DEFAULT_PREFS);
-}
 
 /** For pages and server actions that need an account: sends visitors to the sign-in page. */
 export async function requireUser(): Promise<SessionUser> {

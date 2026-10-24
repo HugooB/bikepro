@@ -3,16 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getOwnedBike } from "@/db/access";
-import {
-  deleteStravaConnection,
-  linkBikeToStrava,
-  StravaLinkError,
-  unlinkBikeFromStrava,
-} from "@/db/strava";
+import { deleteStravaConnection, linkBikeToStrava, unlinkBikeFromStrava } from "@/db/strava";
+import type { T } from "@/i18n";
+import { getT } from "@/i18n/server";
 import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
 import { deauthorize, stravaConfig } from "@/lib/strava/api";
 import { getAccessToken, syncStrava } from "@/lib/strava/sync";
+import { UserError } from "@/lib/user-error";
 
 /** Runs when the app is opened; syncs at most once an hour and refreshes the page on news. */
 export async function autoSyncStrava() {
@@ -25,15 +23,14 @@ export async function autoSyncStrava() {
 
 export async function syncStravaNow(): Promise<ActionState> {
   const user = await requireUser();
+  const t = await getT();
   const result = await syncStrava(user.id, { manual: true });
   revalidatePath("/", "layout");
   if (result.status === "error") {
     return {
       ok: false,
       error:
-        result.error === "revoked"
-          ? "Strava no longer gives BikePro access. Connect it again."
-          : "Couldn't reach Strava. Try again in a bit.",
+        result.error === "revoked" ? t("strava.errors.revoked") : t("strava.errors.unreachable"),
     };
   }
   return { ok: true, savedAt: Date.now() };
@@ -53,23 +50,25 @@ export async function disconnectStrava() {
   revalidatePath("/", "layout");
 }
 
-const linkSchema = z.object({
-  bikeId: z.coerce.number().int().positive(),
-  gearId: z.string().min(1, "Pick a Strava bike").max(40),
-  keep: z.enum(["strava", "mine"]).default("strava"),
-});
+const linkSchema = (t: T) =>
+  z.object({
+    bikeId: z.coerce.number().int().positive(),
+    gearId: z.string().min(1, t("strava.errors.pickBike")).max(40),
+    keep: z.enum(["strava", "mine"]).default("strava"),
+  });
 
 export async function linkStravaBike(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
-  const parsed = linkSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const t = await getT();
+  const parsed = linkSchema(t).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error, t) };
 
   const bike = getOwnedBike(user.id, parsed.data.bikeId);
-  if (!bike) return { ok: false, error: "Bike not found" };
+  if (!bike) return { ok: false, error: t("common.bikeNotFound") };
   try {
     linkBikeToStrava(bike, parsed.data.gearId, parsed.data.keep === "mine");
   } catch (e) {
-    if (e instanceof StravaLinkError) return { ok: false, error: e.message };
+    if (e instanceof UserError) return { ok: false, error: t(e.key, e.vars) };
     throw e;
   }
   revalidatePath("/", "layout");

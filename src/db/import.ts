@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { UserError } from "@/lib/user-error";
 import { EXPORT_VERSION } from "./export";
 import { db } from "./index";
 import {
@@ -14,7 +15,7 @@ import {
 } from "./schema";
 
 /** A user-facing reason the file couldn't be imported. Nothing has been written. */
-export class ImportError extends Error {}
+export class ImportError extends UserError {}
 
 // Mirrors what buildExport (./export.ts) writes. Keys that aren't listed, such as ids of the
 // old install's users, are dropped by zod.
@@ -99,15 +100,14 @@ export type ImportSummary = { bikes: number; parts: number; events: number };
 /** Checks the file and says what's wrong with it in words a user can act on. */
 export function parseImport(data: unknown): z.infer<typeof importSchema> {
   const head = z.object({ app: z.literal("BikePro"), version: z.number() }).safeParse(data);
-  if (!head.success) throw new ImportError("This file isn't a BikePro export.");
+  if (!head.success) throw new ImportError("errors.importNotExport");
   if (head.data.version > EXPORT_VERSION) {
-    throw new ImportError("This export comes from a newer BikePro. Update this one first.");
+    throw new ImportError("errors.importNewer");
   }
   const parsed = importSchema.safeParse(data);
   if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    const where = issue?.path.length ? ` (at ${issue.path.join(".")})` : "";
-    throw new ImportError(`The export is damaged or incomplete${where}: ${issue?.message}.`);
+    const path = parsed.error.issues[0]?.path.join(".") || "?";
+    throw new ImportError("errors.importDamaged", { path });
   }
   return parsed.data;
 }

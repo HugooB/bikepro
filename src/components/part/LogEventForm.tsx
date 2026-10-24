@@ -5,15 +5,10 @@ import { addPartEvent } from "@/actions/parts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUnits } from "@/components/UnitsProvider";
+import { useT, useUnits } from "@/i18n/client";
 import { initialActionState, type ActionState } from "@/lib/action-state";
-import {
-  descriptionPlaceholders,
-  eventTypeLabels,
-  loggableEventTypes,
-  resetsByDefault,
-  type LoggableEventType,
-} from "@/lib/event-types";
+import { loggableEventTypes, resetsByDefault, type LoggableEventType } from "@/lib/event-types";
+import { rich } from "@/i18n/rich";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -26,6 +21,7 @@ type Props = {
 };
 
 export function LogEventForm({ partId, partName, odometerKm, today, initialType }: Props) {
+  const t = useT();
   const u = useUnits();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     addPartEvent,
@@ -63,14 +59,14 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
       <input type="hidden" name="partId" value={partId} />
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">What did you do?</legend>
+        <legend className="mb-2 text-sm font-medium">{t("part.log.whatDidYouDo")}</legend>
         <div className="flex flex-wrap gap-2">
-          {loggableEventTypes.map((t) => (
+          {loggableEventTypes.map((option) => (
             <label
-              key={t}
+              key={option}
               className={cn(
                 "has-focus-visible:ring-ring cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors select-none has-focus-visible:ring-2",
-                type === t
+                type === option
                   ? "border-foreground bg-foreground text-background"
                   : "bg-background hover:bg-muted",
               )}
@@ -78,12 +74,12 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
               <input
                 type="radio"
                 name="type"
-                value={t}
-                checked={type === t}
-                onChange={() => chooseType(t)}
+                value={option}
+                checked={type === option}
+                onChange={() => chooseType(option)}
                 className="sr-only"
               />
-              {eventTypeLabels[t]}
+              {t(`events.types.${option}`)}
             </label>
           ))}
         </div>
@@ -92,39 +88,50 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
       {replacing && (
         <div className="bg-muted/60 flex flex-col gap-3 rounded-lg p-3">
           <p className="text-sm">
-            The current {lowerName} moves to <span className="font-medium">History</span> and a new
-            one takes its place with the same intervals.
+            {rich(t("part.log.replaceExplainer", { part: lowerName }), {
+              b: (text) => <span className="font-medium">{text}</span>,
+            })}
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="newBrand">New brand</Label>
-              <Input id="newBrand" name="newBrand" maxLength={60} placeholder="e.g. Continental" />
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="newBrand">{t("part.log.newBrand")}</Label>
+              <Input
+                id="newBrand"
+                name="newBrand"
+                maxLength={60}
+                placeholder={t("part.log.newBrandPlaceholder")}
+              />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="newModel">New model</Label>
-              <Input id="newModel" name="newModel" maxLength={80} placeholder="e.g. GP5000" />
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="newModel">{t("part.log.newModel")}</Label>
+              <Input
+                id="newModel"
+                name="newModel"
+                maxLength={80}
+                placeholder={t("part.log.newModelPlaceholder")}
+              />
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="description">Details (optional)</Label>
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <Label htmlFor="description">{t("part.log.details")}</Label>
         <Input
           id="description"
           name="description"
           maxLength={200}
-          placeholder={descriptionPlaceholders[type]}
+          placeholder={t(`events.placeholders.${type}`)}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="date">Date</Label>
+      <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor="date">{t("serviceRound.date")}</Label>
           <Input id="date" name="date" type="date" defaultValue={today} max={today} required />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="odometerKm">Odometer ({u.unitLabel})</Label>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor="odometerKm">{t("odometer.labelWithUnit", { unit: u.unitLabel })}</Label>
           <Input
             id="odometerKm"
             name="odometerKm"
@@ -136,11 +143,11 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
             required
           />
         </div>
-        <div className="col-span-2 flex flex-col gap-1.5 sm:col-span-1">
+        <div className="flex min-w-0 flex-col gap-1.5 min-[360px]:col-span-2 sm:col-span-1">
           <Label htmlFor="cost">
             {replacing
-              ? `Price of new part ${u.currencySymbol}`
-              : `Cost ${u.currencySymbol} (optional)`}
+              ? t("part.log.newPartPrice", { currency: u.currencySymbol })
+              : t("part.log.cost", { currency: u.currencySymbol })}
           </Label>
           <Input id="cost" name="cost" type="number" inputMode="decimal" min={0} step="0.01" />
         </div>
@@ -159,10 +166,8 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
             className="accent-brand mt-0.5 size-4"
           />
           <span>
-            <span className="font-medium">Restart the service interval</span>
-            <span className="text-muted-foreground block">
-              Count the next service from this date and odometer reading.
-            </span>
+            <span className="font-medium">{t("part.log.restart")}</span>
+            <span className="text-muted-foreground block">{t("part.log.restartHint")}</span>
           </span>
         </label>
       )}
@@ -174,7 +179,11 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
       )}
 
       <Button type="submit" disabled={pending} className="w-full sm:w-fit">
-        {pending ? "Saving…" : replacing ? `Replace ${lowerName}` : "Add to history"}
+        {pending
+          ? t("common.saving")
+          : replacing
+            ? t("part.log.replaceButton", { part: lowerName })
+            : t("part.log.addToHistory")}
       </Button>
     </form>
   );

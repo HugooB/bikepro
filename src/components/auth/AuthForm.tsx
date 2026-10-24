@@ -6,12 +6,14 @@ import { login, register } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useT } from "@/i18n/client";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 
 type Props =
   { mode: "login"; next?: string } | { mode: "register"; next?: undefined; passwordMin: number };
 
 export function AuthForm(props: Props) {
+  const t = useT();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     props.mode === "login" ? login : register,
     initialActionState,
@@ -24,7 +26,7 @@ export function AuthForm(props: Props) {
       {props.next && <input type="hidden" name="next" value={props.next} />}
       {registering && (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="auth-name">Your name</Label>
+          <Label htmlFor="auth-name">{t("auth.yourName")}</Label>
           <Input
             id="auth-name"
             name="name"
@@ -36,7 +38,7 @@ export function AuthForm(props: Props) {
         </div>
       )}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="auth-email">Email</Label>
+        <Label htmlFor="auth-email">{t("auth.email")}</Label>
         <Input
           id="auth-email"
           name="email"
@@ -48,7 +50,7 @@ export function AuthForm(props: Props) {
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="auth-password">Password</Label>
+        <Label htmlFor="auth-password">{t("auth.password")}</Label>
         <div className="relative">
           <Input
             id="auth-password"
@@ -66,7 +68,7 @@ export function AuthForm(props: Props) {
             variant="ghost"
             size="icon"
             className="absolute top-1.5 right-1.5"
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
             aria-pressed={showPassword}
             onClick={() => setShowPassword((v) => !v)}
           >
@@ -75,8 +77,7 @@ export function AuthForm(props: Props) {
         </div>
         {registering && (
           <p id="auth-password-hint" className="text-muted-foreground text-xs">
-            At least {props.passwordMin} characters. A short sentence is easy to remember and hard
-            to guess.
+            {t("auth.passwordHint", { count: props.passwordMin })}
           </p>
         )}
       </div>
@@ -93,11 +94,11 @@ export function AuthForm(props: Props) {
       >
         {registering
           ? pending
-            ? "Creating account…"
-            : "Create account"
+            ? t("auth.creatingAccount")
+            : t("auth.createAccountButton")
           : pending
-            ? "Signing in…"
-            : "Sign in"}
+            ? t("auth.signingIn")
+            : t("auth.signIn")}
       </Button>
     </form>
   );

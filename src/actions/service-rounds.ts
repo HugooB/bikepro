@@ -5,38 +5,46 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { getOwnedBike, getOwnedServiceRound } from "@/db/access";
-import { PartEventError } from "@/db/part-events";
 import { serviceRounds } from "@/db/schema";
 import { createServiceRound } from "@/db/service-rounds";
+import type { T } from "@/i18n";
+import { getT } from "@/i18n/server";
 import { firstError, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/auth/session";
-import { isoDate } from "@/lib/dates";
+import { dateField } from "@/lib/dates";
 import { serviceActions } from "@/lib/event-types";
 import { inputToKm } from "@/lib/units";
+import { UserError } from "@/lib/user-error";
 
 const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
 
-const roundSchema = z.object({
-  bikeId: z.coerce.number().int().positive(),
-  date: isoDate,
-  shop: z.preprocess(blankToUndefined, z.string().trim().max(80).optional()),
-  /** In the user's distance unit. */
-  odometerKm: z.coerce
-    .number({ error: "Enter the odometer" })
-    .min(0, "Distances can't be negative"),
-  totalCost: z.preprocess(
-    blankToUndefined,
-    z.coerce.number({ error: "Cost must be a number" }).min(0, "Cost can't be negative").optional(),
-  ),
-  notes: z.preprocess(blankToUndefined, z.string().trim().max(1000).optional()),
-  parts: z.array(
-    z.object({
-      partId: z.coerce.number().int().positive(),
-      type: z.enum(serviceActions),
-      note: z.preprocess(blankToUndefined, z.string().trim().max(200).optional()),
-    }),
-  ),
-});
+const roundSchema = (t: T) => {
+  const cost = t("validation.labels.cost");
+  return z.object({
+    bikeId: z.coerce.number().int().positive(),
+    date: dateField(t),
+    shop: z.preprocess(blankToUndefined, z.string().trim().max(80).optional()),
+    /** In the user's distance unit. */
+    odometerKm: z.coerce
+      .number({ error: t("validation.enterOdometer") })
+      .min(0, t("validation.distanceNegative")),
+    totalCost: z.preprocess(
+      blankToUndefined,
+      z.coerce
+        .number({ error: t("validation.mustBeNumber", { label: cost }) })
+        .min(0, t("validation.cannotBeNegative", { label: cost }))
+        .optional(),
+    ),
+    notes: z.preprocess(blankToUndefined, z.string().trim().max(1000).optional()),
+    parts: z.array(
+      z.object({
+        partId: z.coerce.number().int().positive(),
+        type: z.enum(serviceActions),
+        note: z.preprocess(blankToUndefined, z.string().trim().max(200).optional()),
+      }),
+    ),
+  });
+};
 
 /**
  * Form fields: bikeId, date, shop, odometerKm, totalCost, notes, plus for each covered part a
@@ -47,8 +55,9 @@ export async function saveServiceRound(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
+  const t = await getT();
   const partIds = formData.getAll("partId").map(String);
-  const parsed = roundSchema.safeParse({
+  const parsed = roundSchema(t).safeParse({
     bikeId: formData.get("bikeId"),
     date: formData.get("date"),
     shop: formData.get("shop"),
@@ -61,24 +70,24 @@ export async function saveServiceRound(
       note: formData.get(`note-${id}`),
     })),
   });
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error, t) };
 
   const bike = getOwnedBike(user.id, parsed.data.bikeId);
-  if (!bike) return { ok: false, error: "Bike not found" };
+  if (!bike) return { ok: false, error: t("common.bikeNotFound") };
   // The form starts at the bike's odometer; left as it is, that reading is kept exactly.
   const input = {
     ...parsed.data,
     odometerKm: inputToKm(parsed.data.odometerKm, user.distanceUnit, bike.odometerKm),
   };
   if (input.parts.length === 0 && !input.notes && !input.shop) {
-    return { ok: false, error: "Select the parts that were serviced, or add a note" };
+    return { ok: false, error: t("serviceRound.errors.nothingSelected") };
   }
 
   try {
-    createServiceRound(input);
+    createServiceRound(input, t);
   } catch (e) {
-    if (e instanceof PartEventError) return { ok: false, error: e.message };
-    return { ok: false, error: "Couldn't save the service round. Please try again." };
+    if (e instanceof UserError) return { ok: false, error: t(e.key, e.vars) };
+    return { ok: false, error: t("serviceRound.errors.saveFailed") };
   }
 
   revalidatePath(`/bikes/${input.bikeId}`, "layout");

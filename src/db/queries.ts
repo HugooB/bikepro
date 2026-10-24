@@ -1,7 +1,8 @@
 import { format } from "date-fns";
 import { and, asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { tEn, type T } from "@/i18n";
 import type { CostEntry } from "@/lib/costs";
-import { eventTypeLabels } from "@/lib/event-types";
+import { partName } from "@/lib/default-parts";
 import { db } from "./index";
 import { bikes, partEvents, parts, serviceRounds, type Bike } from "./schema";
 
@@ -98,7 +99,7 @@ export function getServiceRounds(bikeId: number) {
     with: {
       events: {
         columns: { id: true, type: true, description: true },
-        with: { part: { columns: { id: true, name: true, sortOrder: true } } },
+        with: { part: { columns: { id: true, kind: true, name: true, sortOrder: true } } },
       },
     },
   });
@@ -106,8 +107,8 @@ export function getServiceRounds(bikeId: number) {
 
 export type ServiceRoundWithParts = Awaited<ReturnType<typeof getServiceRounds>>[number];
 
-/** Every cost recorded on a bike, newest first. See lib/costs for what counts where. */
-export function getCostEntries(bike: Bike): CostEntry[] {
+/** Every cost recorded on a bike, newest first, labelled with `t`. See lib/costs. */
+export function getCostEntries(bike: Bike, t: T = tEn): CostEntry[] {
   const bikeId = bike.id;
   const purchase: CostEntry[] =
     bike.purchasePrice != null
@@ -117,7 +118,7 @@ export function getCostEntries(bike: Bike): CostEntry[] {
             date: bike.purchasedAt ?? format(bike.createdAt, "yyyy-MM-dd"),
             amount: bike.purchasePrice,
             category: "bike",
-            label: `Bought ${bike.name}`,
+            label: t("costs.entryBought", { bike: bike.name }),
             source: "purchase",
             partId: null,
           },
@@ -133,7 +134,9 @@ export function getCostEntries(bike: Bike): CostEntry[] {
       date: p.installedAt,
       amount: p.cost!,
       category: p.category,
-      label: [p.name, [p.brand, p.model].filter(Boolean).join(" ")].filter(Boolean).join(" · "),
+      label: [partName(p, t), [p.brand, p.model].filter(Boolean).join(" ")]
+        .filter(Boolean)
+        .join(" · "),
       source: "part",
       partId: p.id,
     }));
@@ -148,7 +151,10 @@ export function getCostEntries(bike: Bike): CostEntry[] {
       date: event.date,
       amount: event.cost!,
       category: part.category,
-      label: `${part.name} ${eventTypeLabels[event.type].toLowerCase()}`,
+      label: t("costs.entryEvent", {
+        part: partName(part, t),
+        event: t(`events.typesLower.${event.type}`),
+      }),
       source: "event",
       partId: part.id,
     }));
@@ -162,7 +168,7 @@ export function getCostEntries(bike: Bike): CostEntry[] {
       date: r.date,
       amount: r.totalCost!,
       category: "service",
-      label: r.shop ? `Service round at ${r.shop}` : "Service round",
+      label: r.shop ? t("costs.entryRoundAt", { shop: r.shop }) : t("costs.entryRound"),
       source: "round",
       partId: null,
     }));

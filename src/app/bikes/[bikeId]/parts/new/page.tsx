@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ChevronLeft } from "lucide-react";
 import { AddPartForm } from "@/components/part/AddPartForm";
 import { getBike } from "@/db/queries";
+import { getT } from "@/i18n/server";
 import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export default async function NewPartPage({ params }: { params: Promise<{ bikeId
   const user = await requireUser();
   const bike = await getBike(user.id, Number((await params).bikeId));
   if (!bike) notFound();
+  const t = await getT();
 
   return (
     <div className="flex flex-col gap-6">
@@ -23,10 +25,8 @@ export default async function NewPartPage({ params }: { params: Promise<{ bikeId
         {bike.name}
       </Link>
       <header className="flex flex-col gap-1">
-        <h1 className="font-display text-3xl leading-tight sm:text-4xl">Add a part</h1>
-        <p className="text-muted-foreground">
-          Track something that isn&apos;t in the default list, like a power meter or bottle cages.
-        </p>
+        <h1 className="font-display text-3xl leading-tight sm:text-4xl">{t("bike.addPart")}</h1>
+        <p className="text-muted-foreground">{t("part.addIntro")}</p>
       </header>
       <AddPartForm
         bikeId={bike.id}
@@ -37,4 +37,7 @@ export default async function NewPartPage({ params }: { params: Promise<{ bikeId
   );
 }
 
-export const metadata = { title: "Add a part · BikePro" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.title", { page: t("bike.addPart") }) };
+}

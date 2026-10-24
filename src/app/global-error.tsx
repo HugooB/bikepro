@@ -1,9 +1,14 @@
 "use client";
 
-// Last resort when the root layout itself fails, so it can't use the app's styles or header.
+import { localeFromHeader, makeT } from "@/i18n";
+
+// Last resort when the root layout itself fails, so it can't use the app's styles, header or
+// preferences. It speaks the browser's language instead.
 export default function GlobalError({ reset }: { error: Error; reset: () => void }) {
+  const locale = localeFromHeader(typeof navigator === "undefined" ? "" : navigator.language);
+  const t = makeT(locale);
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body
         style={{
           fontFamily: "system-ui, sans-serif",
@@ -13,8 +18,8 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
           color: "#1a1d24",
         }}
       >
-        <h1 style={{ fontSize: 24 }}>BikePro couldn&apos;t load</h1>
-        <p style={{ color: "#5b6070" }}>Your data is safe. Try again in a moment.</p>
+        <h1 style={{ fontSize: 24 }}>{t("errorPage.globalTitle")}</h1>
+        <p style={{ color: "#5b6070" }}>{t("errorPage.globalBody")}</p>
         <button
           onClick={reset}
           style={{
@@ -27,7 +32,7 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
             cursor: "pointer",
           }}
         >
-          Try again
+          {t("errorPage.tryAgain")}
         </button>
       </body>
     </html>

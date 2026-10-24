@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { partCategories, type Part } from "@/db/schema";
-import { categoryLabels } from "@/lib/default-parts";
+import { getT } from "@/i18n/server";
 import type { PartStatus } from "@/lib/status";
 import { PartRow } from "./PartRow";
 
@@ -12,7 +12,8 @@ type Props = {
   odometerKm: number;
 };
 
-export function PartList({ bikeId, rows, odometerKm }: Props) {
+export async function PartList({ bikeId, rows, odometerKm }: Props) {
+  const t = await getT();
   return (
     <div className="flex flex-col gap-6">
       {partCategories.map((category) => {
@@ -26,7 +27,7 @@ export function PartList({ bikeId, rows, odometerKm }: Props) {
             className="flex flex-col gap-2"
           >
             <h2 id={`cat-${category}`} className="px-1 text-sm font-semibold">
-              {categoryLabels[category]}
+              {t(`categories.${category}`)}
             </h2>
             <ul className="bg-card divide-y overflow-hidden rounded-xl border">
               {items.map(({ part, status }) => (
@@ -39,7 +40,7 @@ export function PartList({ bikeId, rows, odometerKm }: Props) {
       <Button asChild variant="outline" className="w-full border-dashed sm:w-fit">
         <Link href={`/bikes/${bikeId}/parts/new`}>
           <Plus aria-hidden />
-          Add a part
+          {t("bike.addPart")}
         </Link>
       </Button>
     </div>

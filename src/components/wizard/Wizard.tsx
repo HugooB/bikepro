@@ -15,7 +15,7 @@ import {
   type WizardDraft,
   type WizardStep,
 } from "@/lib/wizard-schema";
-import { useUnits } from "../UnitsProvider";
+import { useT, useUnits } from "@/i18n/client";
 import { ProgressBar } from "./ProgressBar";
 import {
   StepBasics,
@@ -34,14 +34,6 @@ import {
   wizardReducer,
 } from "./wizard-state";
 
-const stepLabels: Record<WizardStep, string> = {
-  basics: "Your bike",
-  odometer: "Distance",
-  purchase: "Purchase",
-  parts: "Parts",
-  review: "Review",
-};
-
 export function Wizard({
   today,
   cancelHref,
@@ -55,6 +47,7 @@ export function Wizard({
   prefill?: Partial<WizardDraft>;
 }) {
   const router = useRouter();
+  const t = useT();
   const { unit } = useUnits();
   const [state, dispatch] = useReducer(wizardReducer, undefined, () => {
     const draft = { ...emptyDraft(today, unit), ...prefill };
@@ -108,7 +101,7 @@ export function Wizard({
   };
 
   const next = () => {
-    const errors = validateStep(state.step, state.draft, today);
+    const errors = validateStep(state.step, state.draft, today, t);
     if (errors) {
       dispatch({ type: "errors", errors });
       // Bring the first problem into view.
@@ -159,7 +152,7 @@ export function Wizard({
             <ProgressBar
               current={index + 1}
               total={wizardSteps.length}
-              label={stepLabels[state.step]}
+              label={t(`wizard.steps.${state.step}`)}
             />
           </div>
           {cancelHref && (
@@ -168,7 +161,7 @@ export function Wizard({
               onClick={clearSavedWizard}
               className="text-muted-foreground hover:text-foreground -mt-1 text-sm"
             >
-              Cancel
+              {t("common.cancel")}
             </Link>
           )}
         </div>
@@ -203,7 +196,7 @@ export function Wizard({
               disabled={pending}
             >
               <ArrowLeft aria-hidden />
-              Back
+              {t("common.back")}
             </Button>
           )}
           <Button
@@ -215,7 +208,7 @@ export function Wizard({
               index === 0 && "sm:ml-auto sm:max-w-56",
             )}
           >
-            {isLast ? (pending ? "Adding bike…" : "Add bike") : "Next"}
+            {isLast ? (pending ? t("wizard.addingBike") : t("nav.addBike")) : t("wizard.next")}
             {!isLast && <ArrowRight aria-hidden />}
           </Button>
         </div>
@@ -225,6 +218,7 @@ export function Wizard({
 }
 
 function Success({ name }: { name: string }) {
+  const t = useT();
   return (
     <div
       role="status"
@@ -234,8 +228,10 @@ function Success({ name }: { name: string }) {
         <Check aria-hidden className="size-10" strokeWidth={3} />
       </div>
       <div className="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both flex flex-col gap-1 delay-150 duration-500 motion-reduce:animate-none">
-        <p className="font-display text-3xl leading-tight">{name} is in your garage</p>
-        <p className="text-muted-foreground">Taking you to its parts…</p>
+        <p className="font-display text-3xl leading-tight">
+          {t("wizard.success.title", { bike: name })}
+        </p>
+        <p className="text-muted-foreground">{t("wizard.success.body")}</p>
       </div>
     </div>
   );

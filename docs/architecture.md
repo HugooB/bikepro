@@ -21,6 +21,7 @@ src/
   lib/            logic with no database access: status, ages, units, costs, default parts, wizard rules
   lib/auth/       passwords, sessions, sign-in throttling, safe redirects
   lib/strava/     Strava API client, sync, token encryption, OAuth state
+  i18n/           the dictionary per language (en.ts is the source), t(), and how to get it
   proxy.ts        sends signed-out visitors to /login and sets the Content Security Policy
   instrumentation.ts  runs the migrations and creates the admin account on start
 drizzle/          generated SQL migrations (never edit by hand)
@@ -48,12 +49,23 @@ Deleting a bike deletes its parts, events and service rounds (`ON DELETE CASCADE
 
 ## Units and currency
 
-Every distance in the database is in km, and every amount is a plain number. Each user picks `km` or `mi` and a currency in Settings → Preferences. `src/lib/units.ts` holds the conversion and formatting: server components call `getUnits()` (`src/lib/auth/session.ts`), and client components call `useUnits()`, which reads the preferences the root layout passes to `UnitsProvider`. Nothing formats a distance or an amount any other way.
+Every distance in the database is in km, and every amount is a plain number. Each user picks `km` or `mi` and a currency in Settings → Preferences. `src/lib/units.ts` holds the conversion and formatting, including dates and numbers in the user's language: server components call `getUnits()` (`src/i18n/server.ts`), and client components call `useUnits()`, which reads the preferences the root layout passes to `PrefsProvider` (`src/i18n/client.tsx`). Nothing formats a distance or an amount any other way.
 
 - **Display:** whole numbers in the user's unit, and amounts with `Intl.NumberFormat` in their currency. Euro amounts look exactly as they did before currencies existed (`€1,234.50`).
 - **Forms:** fields show `toInput(km)`, and server actions turn what comes back into km with `inputToKm()` or `intervalToKm()`. When a field still shows the value it was filled with, the stored value is kept as it is. A rounded display value never overwrites a precise one (8412.37 km shows as 5,227 mi), so saving a form unchanged changes nothing.
 - **Wizard:** a draft records the unit its numbers are in, and `planBike()` converts them to km. Default intervals are shown rounded the way a person would write them (3000 km becomes 1,850 mi). A saved draft in the other unit is discarded rather than shown with the wrong label.
 - **Amounts** are never converted between currencies. Switching currency relabels the same numbers.
+
+## Languages
+
+The interface text lives in one dictionary per language in `src/i18n`, without a library. `en.ts` is the source of truth, and every other language is typed as its `Dictionary`, so a missing key fails the type check. `t(key, vars)` fills in `{placeholders}` and picks plural forms with `Intl.PluralRules`. Keys are typed, so a misspelled key is a type error too. A key missing at runtime falls back to English.
+
+- **Which language:** `users.locale`, picked in Settings → Preferences. Visitors who aren't signed in get the best match for their browser's `Accept-Language` header, and a new account starts in that language. Accounts from before languages existed stay English.
+- **Server and client:** server components, server actions and route handlers call `getT()` from `src/i18n/server.ts`. Client components call `useT()` from `src/i18n/client.tsx`. Both dictionaries are part of the client bundle, so only the preferences cross from the server.
+- **Rich text:** `rich()` (`src/i18n/rich.tsx`) turns tags in a translation, such as `<b>…</b>` or `<link>…</link>`, into elements. Links and emphasis stay in the components, and word order stays in the translation.
+- **Validation and errors:** zod schemas are functions of `t`, so their messages are translated. Errors thrown below the actions are `UserError`s that carry a dictionary key, and the action translates them for the user.
+- **Stored text:** parts keep the name they were created with, and template parts store the English template name. `partName()` shows a template name in the user's language while it's unchanged; a name the user typed is shown as typed. The edit form turns an unchanged translated name back into the template name before saving. The history entries BikePro writes itself ("Came with the bike") are stored in the language of the user who created them.
+- **Dates and numbers:** `Intl.NumberFormat` and date-fns use the user's language through `src/lib/units.ts`. English keeps `en-IE` for numbers and amounts, so they look as before.
 
 ## Part status
 

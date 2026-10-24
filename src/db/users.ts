@@ -1,18 +1,20 @@
 import { asc, count, eq, isNull } from "drizzle-orm";
+import type { Locale } from "@/i18n";
+import { UserError } from "@/lib/user-error";
 import { getAppSetting, setAppSetting } from "./app-settings";
 import { db } from "./index";
 import { bikes, sessions, users, type DistanceUnit, type User } from "./schema";
 
 /** A user-facing reason the account couldn't be created. */
-export class RegistrationError extends Error {}
+export class RegistrationError extends UserError {}
 
 /** A user-facing reason an account change was refused. */
-export class AccountError extends Error {}
+export class AccountError extends UserError {}
 
 /** Thrown when someone who isn't an admin tries to change the install's settings. */
-export class NotAdminError extends Error {
+export class NotAdminError extends UserError {
   constructor() {
-    super("Only an admin can do that");
+    super("errors.notAdmin");
   }
 }
 
@@ -44,17 +46,17 @@ export function findUserByEmail(email: string): User | undefined {
  * `bootstrap` creates the admin from ADMIN_EMAIL, whether or not registration is open.
  */
 export function createUser(
-  input: { email: string; name: string; passwordHash: string },
+  input: { email: string; name: string; passwordHash: string; locale?: Locale },
   { bootstrap = false } = {},
 ): User {
   return db.transaction((tx) => {
     const existing = tx.select({ n: count() }).from(users).get()!.n;
     if (!bootstrap && !registrationOpen()) {
-      throw new RegistrationError("Registration is closed. Ask the owner of this BikePro.");
+      throw new RegistrationError("errors.registrationClosed");
     }
     const email = normalizeEmail(input.email);
     if (tx.select({ id: users.id }).from(users).where(eq(users.email, email)).get()) {
-      throw new RegistrationError("There's already an account with this email. Sign in instead.");
+      throw new RegistrationError("errors.emailTaken");
     }
     const hasAdmin = !!tx.select({ id: users.id }).from(users).where(eq(users.isAdmin, true)).get();
 
@@ -64,6 +66,7 @@ export function createUser(
         email,
         name: input.name.trim(),
         passwordHash: input.passwordHash,
+        locale: input.locale,
         isAdmin: bootstrap || !hasAdmin,
       })
       .returning()
@@ -105,10 +108,10 @@ export function listUsers() {
     .all();
 }
 
-/** How the user sees distances and amounts. Stored values never change with it. */
+/** How the user sees text, distances and amounts. Stored values never change with it. */
 export function setPreferences(
   userId: number,
-  prefs: { distanceUnit: DistanceUnit; currency: string },
+  prefs: { distanceUnit: DistanceUnit; currency: string; locale: Locale },
 ) {
   db.update(users).set(prefs).where(eq(users.id, userId)).run();
 }
@@ -123,7 +126,7 @@ export function setPasswordHash(userId: number, passwordHash: string) {
  */
 export function resetPassword(actorId: number, targetId: number, passwordHash: string): User {
   if (!isAdmin(actorId)) throw new NotAdminError();
-  if (actorId === targetId) throw new AccountError("Change your own password under Account.");
+  if (actorId === targetId) throw new AccountError("errors.resetOwnPassword");
   return db.transaction((tx) => {
     const target = tx
       .update(users)
@@ -131,7 +134,7 @@ export function resetPassword(actorId: number, targetId: number, passwordHash: s
       .where(eq(users.id, targetId))
       .returning()
       .get();
-    if (!target) throw new AccountError("That account no longer exists.");
+    if (!target) throw new AccountError("errors.accountGone");
     tx.delete(sessions).where(eq(sessions.userId, targetId)).run();
     return target;
   });
@@ -151,7 +154,7 @@ export function deleteAccount(userId: number) {
       .where(eq(users.id, userId))
       .get();
     if (!user) return;
-    if (user.isAdmin) throw new AccountError("The admin account can't be deleted.");
+    if (user.isAdmin) throw new AccountError("errors.adminCantBeDeleted");
     tx.delete(bikes).where(eq(bikes.userId, userId)).run();
     tx.delete(users).where(eq(users.id, userId)).run();
   });

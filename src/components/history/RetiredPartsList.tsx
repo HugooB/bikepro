@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { format, parseISO } from "date-fns";
 import { ChevronRight } from "lucide-react";
 import type { Part } from "@/db/schema";
+import { getT, getUnits } from "@/i18n/server";
 import { formatDays, partLifetime } from "@/lib/age";
-import { getUnits } from "@/lib/auth/session";
+import { partName } from "@/lib/default-parts";
 
 export async function RetiredPartsList({ parts }: { parts: Part[] }) {
-  const u = await getUnits();
+  const [t, u] = await Promise.all([getT(), getUnits()]);
   if (parts.length === 0) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-        No parts replaced yet. When you replace a part, the old one shows up here.
+        {t("history.noRetired")}
       </p>
     );
   }
@@ -28,19 +28,18 @@ export async function RetiredPartsList({ parts }: { parts: Part[] }) {
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">
-                  {part.name}
+                  {partName(part, t)}
                   {detail && <span className="text-muted-foreground font-normal"> · {detail}</span>}
                 </p>
                 <p className="text-muted-foreground text-sm">
-                  {format(parseISO(part.installedAt), "MMM yyyy")} –{" "}
-                  {format(parseISO(part.retiredAt!), "MMM yyyy")}
+                  {u.date(part.installedAt, "MMM yyyy")} – {u.date(part.retiredAt!, "MMM yyyy")}
                   {part.cost != null && ` · ${u.money(part.cost)}`}
                 </p>
               </div>
               <div className="shrink-0 text-right">
                 <p className="font-medium tabular-nums">{u.distance(lifetime.km)}</p>
                 <p className="text-muted-foreground text-sm tabular-nums">
-                  {formatDays(lifetime.days)}
+                  {formatDays(lifetime.days, t)}
                 </p>
               </div>
               <ChevronRight className="text-muted-foreground/60 size-4 shrink-0" aria-hidden />

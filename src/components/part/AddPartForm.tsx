@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { partCategories } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/lib/action-state";
-import { categoryLabels } from "@/lib/default-parts";
+import { useT } from "@/i18n/client";
 import { PartFields } from "./PartFields";
 
 type Props = { bikeId: number; today: string; odometerKm: number };
 
 export function AddPartForm({ bikeId, today, odometerKm }: Props) {
+  const t = useT();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     createPart,
     initialActionState,
@@ -21,7 +22,7 @@ export function AddPartForm({ bikeId, today, odometerKm }: Props) {
     <form action={formAction} className="bg-card flex flex-col gap-4 rounded-xl border p-4">
       <input type="hidden" name="bikeId" value={bikeId} />
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="category">Category</Label>
+        <Label htmlFor="category">{t("part.fields.category")}</Label>
         <select
           id="category"
           name="category"
@@ -30,7 +31,7 @@ export function AddPartForm({ bikeId, today, odometerKm }: Props) {
         >
           {partCategories.map((c) => (
             <option key={c} value={c}>
-              {categoryLabels[c]}
+              {t(`categories.${c}`)}
             </option>
           ))}
         </select>
@@ -42,7 +43,7 @@ export function AddPartForm({ bikeId, today, odometerKm }: Props) {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full sm:w-fit">
-        {pending ? "Adding…" : "Add part"}
+        {pending ? t("part.fields.adding") : t("part.fields.add")}
       </Button>
     </form>
   );

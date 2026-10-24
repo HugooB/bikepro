@@ -8,11 +8,14 @@ import {
   OctagonXIcon,
   Loader2Icon,
 } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 const Toaster = ({ ...props }: ToasterProps) => {
+  const t = useT();
   return (
     <Sonner
       theme="light"
+      containerAriaLabel={t("common.notifications")}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

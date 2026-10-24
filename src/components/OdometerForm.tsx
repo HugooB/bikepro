@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ActionState } from "@/lib/action-state";
-import { useUnits } from "./UnitsProvider";
+import { useT, useUnits } from "@/i18n/client";
 
 /** Set when the bike takes its km from Strava. */
 export type OdometerStrava = { gearName: string | null; syncedAgo: string | null };
@@ -22,6 +22,7 @@ export function OdometerForm({
   odometerKm: number;
   strava?: OdometerStrava | null;
 }) {
+  const t = useT();
   const u = useUnits();
   const [editing, setEditing] = useState(false);
   const [state, formAction, pending] = useActionState<ActionState, FormData>(updateOdometer, {
@@ -46,14 +47,14 @@ export function OdometerForm({
         <div className="flex items-center gap-3">
           <Gauge className="text-muted-foreground size-5" aria-hidden />
           <div>
-            <p className="text-muted-foreground text-xs">Odometer</p>
+            <p className="text-muted-foreground text-xs">{t("odometer.label")}</p>
             <p className="text-lg font-semibold tabular-nums">{u.distance(odometerKm)}</p>
             {strava && <StravaNote strava={strava} />}
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
           <Pencil aria-hidden />
-          Update
+          {t("odometer.update")}
         </Button>
       </div>
     );
@@ -66,7 +67,7 @@ export function OdometerForm({
     >
       <input type="hidden" name="bikeId" value={bikeId} />
       <div className="flex flex-1 flex-col gap-1.5">
-        <Label htmlFor="odometerKm">Odometer ({u.unitLabel})</Label>
+        <Label htmlFor="odometerKm">{t("odometer.labelWithUnit", { unit: u.unitLabel })}</Label>
         <Input
           ref={inputRef}
           id="odometerKm"
@@ -86,17 +87,15 @@ export function OdometerForm({
           </p>
         )}
         {strava && !state.error && (
-          <p className="text-muted-foreground text-xs">
-            New rides on Strava are added on top of this.
-          </p>
+          <p className="text-muted-foreground text-xs">{t("odometer.stravaAddsOnTop")}</p>
         )}
       </div>
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? t("common.saving") : t("common.save")}
         </Button>
         <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
-          Cancel
+          {t("common.cancel")}
         </Button>
       </div>
     </form>
@@ -104,19 +103,22 @@ export function OdometerForm({
 }
 
 function StravaNote({ strava }: { strava: OdometerStrava }) {
+  const t = useT();
   if (!strava.gearName) {
     return (
       <p className="text-destructive text-xs">
-        Its Strava bike is gone.{" "}
+        {t("odometer.stravaBikeGone")}{" "}
         <Link href="/settings" className="underline underline-offset-2">
-          Link it again
+          {t("odometer.linkAgain")}
         </Link>
       </p>
     );
   }
   return (
     <p className="text-muted-foreground text-xs">
-      From Strava{strava.syncedAgo && `, synced ${strava.syncedAgo}`}
+      {strava.syncedAgo
+        ? t("odometer.fromStravaSynced", { ago: strava.syncedAgo })
+        : t("odometer.fromStrava")}
     </p>
   );
 }

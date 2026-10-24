@@ -141,6 +141,23 @@
   html {
     @apply font-sans;
   }
+  /* Mobile browsers give date fields a wide built-in minimum width (the date plus its picker
+     icon), so in a two-column row they overflow into the next field. Let them shrink like any
+     other input. */
+  input[type="date"] {
+    min-width: 0;
+  }
+  /* iOS Safari only respects the width without its native styling; keep the date left-aligned
+     there, like every other value. */
+  @supports (-webkit-touch-callout: none) {
+    input[type="date"] {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input[type="date"]::-webkit-date-and-time-value {
+      text-align: start;
+    }
+  }
   /* Bike and page names use Archivo's wide cut, like a race number. */
   .font-display {
     font-family: var(--font-archivo);

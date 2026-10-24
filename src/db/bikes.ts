@@ -1,4 +1,6 @@
 import { eq } from "drizzle-orm";
+import { tEn, type T } from "@/i18n";
+import { partName } from "@/lib/default-parts";
 import type { BikePlan } from "@/lib/wizard-schema";
 import type { Tx } from "./part-events";
 import { bikes, partEvents, parts, type Bike } from "./schema";
@@ -18,8 +20,11 @@ export function setOdometer(tx: Tx, bike: Bike, odometerKm: number) {
     .run();
 }
 
-/** Creates a bike for `userId` with its parts, each starting with an "installed" event. */
-export function createBike(tx: Tx, plan: BikePlan, userId: number): Bike {
+/**
+ * Creates a bike for `userId` with its parts, each starting with an "installed" event. Those
+ * entries are written in the user's language (`t`).
+ */
+export function createBike(tx: Tx, plan: BikePlan, userId: number, t: T = tEn): Bike {
   const bike = tx
     .insert(bikes)
     .values({ ...plan.bike, userId })
@@ -54,8 +59,8 @@ export function createBike(tx: Tx, plan: BikePlan, userId: number): Bike {
         odometerKm: p.installedKm,
         resetsInterval: true,
         description: p.replaced
-          ? `New ${p.name.toLowerCase()} fitted after buying the bike`
-          : "Came with the bike",
+          ? t("events.fittedAfterBuying", { part: partName(p, t).toLowerCase() })
+          : t("events.cameWithBike"),
       })
       .run();
   }

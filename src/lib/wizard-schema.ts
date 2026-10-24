@@ -9,13 +9,15 @@ import {
   type DistanceUnit,
   type PartCategory,
 } from "@/db/schema";
+import { tEn, type T } from "@/i18n";
 import { defaultPartsFor, type PartTemplate } from "./default-parts";
-import { isoDate } from "./dates";
+import { dateField, isoDate } from "./dates";
 import { daysToMonths, monthsToDays } from "./format";
 import { fromUnit, niceInterval, unitName } from "./units";
 
 // The add-bike wizard collects a draft over five steps; nothing is saved until the last one.
 // Each step validates its own slice of the draft, and the server re-validates the whole thing.
+// Schemas take `t`, so their messages are in the user's language.
 // Distances in a draft are in its `unit`, as the user typed them; planBike converts them to km.
 
 export const wizardSteps = ["basics", "odometer", "purchase", "parts", "review"] as const;
@@ -148,74 +150,86 @@ export function emptyDraft(today: string, unit: DistanceUnit = "km"): WizardDraf
   };
 }
 
-/** A distance someone types, in whichever unit they use. */
-export const distanceField = (label: string) =>
+const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
+
+/** A distance someone types, in whichever unit they use. `enter` asks for it when it's missing. */
+export const distanceField = (t: T, enter: string) =>
   z.coerce
-    .number({ error: `Enter ${label}` })
-    .min(0, "Distances can't be negative")
-    .max(1_000_000, "That's a lot of riding");
-const optionalWhole = (label: string) =>
+    .number({ error: enter })
+    .min(0, t("validation.distanceNegative"))
+    .max(1_000_000, t("validation.distanceTooLarge"));
+
+/** An optional whole number, such as an interval; `label` names it in messages. */
+const optionalWhole = (t: T, label: string) =>
   z.preprocess(
-    (v) => (v === "" || v === null ? undefined : v),
+    blankToUndefined,
     z.coerce
-      .number({ error: `${label} must be a number` })
-      .int(`${label} must be a whole number`)
-      .positive(`${label} must be more than 0`)
+      .number({ error: t("validation.mustBeNumber", { label }) })
+      .int(t("validation.mustBeWhole", { label }))
+      .positive(t("validation.mustBePositive", { label }))
       .optional(),
   );
 
-/** An optional price in euros: empty means not given. */
-export const optionalPrice = z.preprocess(
-  (v) => (v === "" || v === null ? undefined : v),
-  z.coerce
-    .number({ error: "Enter the price as a number" })
-    .min(0, "The price can't be negative")
-    .max(1_000_000, "That's a lot for a bike")
-    .optional(),
-);
+/** An optional price: empty means not given. */
+export const optionalPrice = (t: T) =>
+  z.preprocess(
+    blankToUndefined,
+    z.coerce
+      .number({ error: t("validation.priceNumber") })
+      .min(0, t("validation.priceNegative"))
+      .max(1_000_000, t("validation.priceTooLarge"))
+      .optional(),
+  );
 
-export const basicsSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, "Give your bike a name")
-    .max(40, "Keep the name under 40 characters"),
-  type: z.enum(bikeTypes, { error: "Choose a bike type" }),
-  brakeType: z.enum(brakeTypes, { error: "Choose the brakes" }),
-  brand: z.string().trim().max(60),
-  model: z.string().trim().max(80),
-  color: z.union([z.literal(""), z.string().regex(/^#[0-9a-f]{6}$/i, "Pick a colour")]),
-});
+export const basicsSchema = (t: T) =>
+  z.object({
+    name: z
+      .string()
+      .trim()
+      .min(1, t("wizard.errors.nameRequired"))
+      .max(40, t("wizard.errors.nameTooLong")),
+    type: z.enum(bikeTypes, { error: t("wizard.errors.chooseType") }),
+    brakeType: z.enum(brakeTypes, { error: t("wizard.errors.chooseBrakes") }),
+    brand: z.string().trim().max(60),
+    model: z.string().trim().max(80),
+    color: z.union([
+      z.literal(""),
+      z.string().regex(/^#[0-9a-f]{6}$/i, t("wizard.errors.pickColor")),
+    ]),
+  });
 
-export const odometerSchema = z.object({ odometerKm: distanceField("the odometer") });
+export const odometerSchema = (t: T) =>
+  z.object({ odometerKm: distanceField(t, t("validation.enterOdometer")) });
 
-export const purchaseSchema = (today: string) =>
+export const purchaseSchema = (t: T, today: string) =>
   z
     .object({
-      purchasedAt: isoDate.refine((d) => d <= today, "The purchase date can't be in the future"),
+      purchasedAt: dateField(t).refine((d) => d <= today, t("wizard.errors.purchaseInFuture")),
       condition: z.enum(["new", "used"]),
-      purchaseKm: distanceField("the odometer when you bought it"),
-      odometerKm: distanceField("the odometer"),
-      purchasePrice: optionalPrice,
+      purchaseKm: distanceField(t, t("wizard.errors.enterPurchaseOdometer")),
+      odometerKm: distanceField(t, t("validation.enterOdometer")),
+      purchasePrice: optionalPrice(t),
     })
     .refine((d) => d.condition === "new" || d.purchaseKm <= d.odometerKm, {
-      message: "That's more than the bike's odometer now",
+      message: t("wizard.errors.moreThanOdometer"),
       path: ["purchaseKm"],
     });
 
-const partChoiceSchema = z.object({
-  kind: z.string(),
-  included: z.boolean(),
-  replaced: z.boolean(),
-  replacedAt: z.string(),
-  replacedKm: z.string(),
-  serviceKm: optionalWhole("Service distance"),
-  serviceMonths: optionalWhole("Service months"),
-  replaceKm: optionalWhole("Replacement distance"),
-  replaceMonths: optionalWhole("Replacement months"),
-});
+const partChoiceSchema = (t: T) =>
+  z.object({
+    kind: z.string(),
+    included: z.boolean(),
+    replaced: z.boolean(),
+    replacedAt: z.string(),
+    replacedKm: z.string(),
+    serviceKm: optionalWhole(t, t("validation.labels.serviceDistance")),
+    serviceMonths: optionalWhole(t, t("validation.labels.serviceMonths")),
+    replaceKm: optionalWhole(t, t("validation.labels.replaceDistance")),
+    replaceMonths: optionalWhole(t, t("validation.labels.replaceMonths")),
+  });
 
 export const partsSchema = (
+  t: T,
   today: string,
   purchasedAt: string,
   startKm: number,
@@ -224,8 +238,8 @@ export const partsSchema = (
 ) =>
   z.object({
     parts: z
-      .array(partChoiceSchema)
-      .refine((parts) => parts.some((p) => p.included), "Keep at least one part")
+      .array(partChoiceSchema(t))
+      .refine((parts) => parts.some((p) => p.included), t("wizard.errors.keepOnePart"))
       .superRefine((parts, ctx) => {
         parts.forEach((p, i) => {
           if (!p.included || !p.replaced) return;
@@ -233,13 +247,13 @@ export const partsSchema = (
           if (!at.success) {
             ctx.addIssue({
               code: "custom",
-              message: "Pick when it was replaced",
+              message: t("wizard.errors.pickReplacedDate"),
               path: [i, "replacedAt"],
             });
           } else if (p.replacedAt < purchasedAt || p.replacedAt > today) {
             ctx.addIssue({
               code: "custom",
-              message: "Pick a date between buying the bike and today",
+              message: t("wizard.errors.replacedDateRange"),
               path: [i, "replacedAt"],
             });
           }
@@ -248,7 +262,11 @@ export const partsSchema = (
           if (!Number.isFinite(kmAt) || kmAt < startKm || kmAt > odometerKm) {
             ctx.addIssue({
               code: "custom",
-              message: `Enter ${unitName(unit)} between ${Math.round(startKm)} and ${Math.round(odometerKm)}`,
+              message: t("wizard.errors.replacedKmRange", {
+                unit: unitName(unit),
+                min: Math.round(startKm),
+                max: Math.round(odometerKm),
+              }),
               path: [i, "replacedKm"],
             });
           }
@@ -261,9 +279,12 @@ export function startKm(draft: Pick<WizardDraft, "condition" | "purchaseKm">): n
   return draft.condition === "used" ? Number(draft.purchaseKm) || 0 : 0;
 }
 
-/** Validates one step; returns field errors keyed by path ("name", "parts.3.replacedAt"). */
-export function validateStep(step: WizardStep, draft: WizardDraft, today: string) {
-  const result = stepSchema(step, draft, today).safeParse(draft);
+/**
+ * Validates one step; returns field errors keyed by path ("name", "parts.3.replacedAt"), in
+ * the language of `t`.
+ */
+export function validateStep(step: WizardStep, draft: WizardDraft, today: string, t: T = tEn) {
+  const result = stepSchema(step, draft, today, t).safeParse(draft);
   if (result.success) return null;
   const errors: Record<string, string> = {};
   for (const issue of result.error.issues) {
@@ -273,16 +294,17 @@ export function validateStep(step: WizardStep, draft: WizardDraft, today: string
   return errors;
 }
 
-function stepSchema(step: WizardStep, draft: WizardDraft, today: string): z.ZodType {
+function stepSchema(step: WizardStep, draft: WizardDraft, today: string, t: T): z.ZodType {
   switch (step) {
     case "basics":
-      return basicsSchema;
+      return basicsSchema(t);
     case "odometer":
-      return odometerSchema;
+      return odometerSchema(t);
     case "purchase":
-      return purchaseSchema(today);
+      return purchaseSchema(t, today);
     case "parts":
       return partsSchema(
+        t,
         today,
         draft.purchasedAt,
         startKm(draft),
@@ -322,6 +344,7 @@ export type BikePlan = {
 export class WizardDraftError extends Error {
   constructor(
     readonly step: WizardStep,
+    /** Already translated: the first problem on that step. */
     message: string,
   ) {
     super(message);
@@ -334,13 +357,15 @@ export class WizardDraftError extends Error {
  * fitted. A replacement without km gets an estimate from the average riding since purchase.
  * Distances are converted from the draft's unit to km.
  */
-export function planBike(draft: WizardDraft, today: string): BikePlan {
+export function planBike(draft: WizardDraft, today: string, t: T = tEn): BikePlan {
   for (const step of wizardSteps) {
-    const errors = validateStep(step, draft, today);
-    if (errors) throw new WizardDraftError(step, Object.values(errors)[0] ?? "Check this step");
+    const errors = validateStep(step, draft, today, t);
+    if (errors) {
+      throw new WizardDraftError(step, Object.values(errors)[0] ?? t("wizard.errors.checkStep"));
+    }
   }
 
-  const basics = basicsSchema.parse(draft);
+  const basics = basicsSchema(t).parse(draft);
   const km = (value: number) => fromUnit(value, draft.unit);
   const wholeKm = (value: number | undefined) => (value ? Math.round(km(value)) : undefined);
   const odometerKm = km(Number(draft.odometerKm));
@@ -351,7 +376,7 @@ export function planBike(draft: WizardDraft, today: string): BikePlan {
     (template, i): PlannedPart[] => {
       const choice = choices.get(template.kind);
       if (!choice?.included) return [];
-      const intervals = partChoiceSchema.parse(choice);
+      const intervals = partChoiceSchema(t).parse(choice);
       const replaced = choice.replaced;
       return [
         {
@@ -386,7 +411,7 @@ export function planBike(draft: WizardDraft, today: string): BikePlan {
       model: basics.model || null,
       color: basics.color || null,
       purchasedAt: draft.purchasedAt,
-      purchasePrice: optionalPrice.parse(draft.purchasePrice) ?? null,
+      purchasePrice: optionalPrice(t).parse(draft.purchasePrice) ?? null,
       odometerKm,
     },
     parts,

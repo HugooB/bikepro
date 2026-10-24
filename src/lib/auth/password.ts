@@ -1,5 +1,6 @@
 import { randomBytes, randomInt, scrypt, timingSafeEqual, type ScryptOptions } from "node:crypto";
 import { z } from "zod";
+import type { T } from "@/i18n";
 
 // Passwords are hashed with scrypt (built into Node) using OWASP's recommended cost:
 // N=2^17, r=8, p=1. The parameters are stored with each hash so they can be raised later.
@@ -12,10 +13,11 @@ export const PASSWORD_MIN = 8;
 export const PASSWORD_MAX = 128;
 
 /** Rules for a password someone chooses, when registering or changing it. */
-export const newPasswordSchema = z
-  .string()
-  .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters`)
-  .max(PASSWORD_MAX, `Use at most ${PASSWORD_MAX} characters`);
+export const newPasswordSchema = (t: T) =>
+  z
+    .string()
+    .min(PASSWORD_MIN, t("validation.passwordMin", { count: PASSWORD_MIN }))
+    .max(PASSWORD_MAX, t("validation.passwordMax", { count: PASSWORD_MAX }));
 
 function derive(password: string, salt: Buffer, opts: ScryptOptions): Promise<Buffer> {
   return new Promise((resolve, reject) =>

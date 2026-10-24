@@ -1,4 +1,3 @@
-import { format, parseISO } from "date-fns";
 import {
   NotebookPen,
   PackagePlus,
@@ -10,8 +9,7 @@ import {
 } from "lucide-react";
 import type { PartEventWithRound } from "@/db/queries";
 import type { PartEventType } from "@/db/schema";
-import { eventTypeLabels } from "@/lib/event-types";
-import { getUnits } from "@/lib/auth/session";
+import { getT, getUnits } from "@/i18n/server";
 import { DeleteEventButton } from "./DeleteEventButton";
 
 const icons: Record<PartEventType, LucideIcon> = {
@@ -26,11 +24,11 @@ const icons: Record<PartEventType, LucideIcon> = {
 type Props = { events: PartEventWithRound[]; readOnly?: boolean };
 
 export async function EventTimeline({ events, readOnly = false }: Props) {
-  const u = await getUnits();
+  const [t, u] = await Promise.all([getT(), getUnits()]);
   if (events.length === 0) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-        Nothing logged yet.
+        {t("part.timeline.empty")}
       </p>
     );
   }
@@ -40,7 +38,7 @@ export async function EventTimeline({ events, readOnly = false }: Props) {
       {events.map((event, i) => {
         const Icon = icons[event.type];
         const meta = [
-          format(parseISO(event.date), "d MMM yyyy"),
+          u.date(event.date, "d MMM yyyy"),
           event.odometerKm != null ? u.distance(event.odometerKm) : null,
           event.cost != null ? u.money(event.cost) : null,
         ].filter(Boolean);
@@ -59,16 +57,18 @@ export async function EventTimeline({ events, readOnly = false }: Props) {
             </span>
             <div className="min-w-0 flex-1 pt-1">
               <p className="font-medium">
-                {eventTypeLabels[event.type]}
+                {t(`events.types.${event.type}`)}
                 {event.resetsInterval && event.type !== "installed" && (
                   <span className="text-muted-foreground ml-2 align-middle text-xs font-normal">
-                    · interval restarted
+                    · {t("part.timeline.intervalRestarted")}
                   </span>
                 )}
               </p>
               {event.serviceRound && (
                 <p className="text-brand text-sm">
-                  Service round{event.serviceRound.shop && ` at ${event.serviceRound.shop}`}
+                  {event.serviceRound.shop
+                    ? t("costs.entryRoundAt", { shop: event.serviceRound.shop })
+                    : t("costs.entryRound")}
                 </p>
               )}
               {event.description && <p className="text-sm">{event.description}</p>}

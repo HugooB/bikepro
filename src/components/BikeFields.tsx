@@ -2,7 +2,8 @@
 
 import { Check } from "lucide-react";
 import { bikeTypes, type BikeType } from "@/db/schema";
-import { bikeTypeLabels, frameColors } from "@/lib/bikes";
+import { useT } from "@/i18n/client";
+import { frameColors } from "@/lib/bikes";
 import { cn } from "@/lib/utils";
 
 /** Small side-view glyph per bike type for the type picker. */
@@ -48,8 +49,13 @@ export function BikeTypePicker({
   onChange: (type: BikeType) => void;
   name?: string;
 }) {
+  const t = useT();
   return (
-    <div role="radiogroup" aria-label="Bike type" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div
+      role="radiogroup"
+      aria-label={t("wizard.basics.bikeType")}
+      className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+    >
       {bikeTypes.map((type) => {
         const selected = value === type;
         return (
@@ -70,10 +76,10 @@ export function BikeTypePicker({
             />
             <BikeTypeGlyph type={type} />
             <span className={cn("text-sm font-semibold", !selected && "text-foreground")}>
-              {bikeTypeLabels[type].name}
+              {t(`bikeTypes.${type}.name`)}
             </span>
             <span className="text-muted-foreground text-xs leading-snug">
-              {bikeTypeLabels[type].hint}
+              {t(`bikeTypes.${type}.hint`)}
             </span>
           </label>
         );
@@ -91,14 +97,16 @@ export function FrameColorPicker({
   onChange: (color: string) => void;
   name?: string;
 }) {
+  const t = useT();
   // A colour set outside the palette stays selectable, so saving doesn't drop it.
   const custom = value && !frameColors.some((c) => c.value === value.toLowerCase());
+  const palette = frameColors.map((c) => ({ value: c.value, name: t(`colors.${c.id}`) }));
   const options = custom
-    ? [{ value: value.toLowerCase(), name: "Current colour" }, ...frameColors]
-    : frameColors;
+    ? [{ value: value.toLowerCase(), name: t("colors.current") }, ...palette]
+    : palette;
 
   return (
-    <div role="radiogroup" aria-label="Frame colour" className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label={t("bikeForm.frameColour")} className="flex flex-wrap gap-2">
       {options.map((c) => {
         const selected = value.toLowerCase() === c.value;
         return (

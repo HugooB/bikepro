@@ -13,7 +13,19 @@ const securityHeaders = [
   },
 ];
 
+// `npm run dev` only serves its live-reload connection to localhost. Opened from a phone on
+// the same network (http://192.168.x.x:3000) the page then never hydrates, so every button
+// that needs JavaScript does nothing. Allow the private network ranges and .local names.
+// Development only: production builds ignore this.
+const privateNetworkOrigins = [
+  "192.168.*.*",
+  "10.*.*.*",
+  ...Array.from({ length: 16 }, (_, i) => `172.${16 + i}.*.*`),
+  "*.local",
+];
+
 const nextConfig: NextConfig = {
+  allowedDevOrigins: privateNetworkOrigins,
   output: "standalone",
   serverExternalPackages: ["better-sqlite3"],
   poweredByHeader: false,

@@ -19,6 +19,8 @@ npm install
 npm run dev           # http://localhost:3000
 ```
 
+To try it on your phone, open the address `npm run dev` prints under "Network" (such as `http://192.168.1.20:3000`) while the phone is on the same network. `next.config.ts` allows private network addresses for this; other hosts need adding to `allowedDevOrigins`.
+
 Local data lives in `data/bikepro.db`. Settings go in `.env.local` (copy [`.env.example`](.env.example)). None of them are needed to start.
 
 `npm run db:seed` adds a sample race bike with every default part, and `npm run db:seed -- --reset` starts over. It refuses to run in production.
@@ -52,8 +54,19 @@ npm run build
   - Logic without database access goes in `src/lib`, and database reads and writes go in `src/db`. Both should come with tests next to them (`*.test.ts`).
   - Pages and server actions stay thin: check the user, validate input with zod, and call into `src/lib` or `src/db`.
 - **Access control:** every server action starts with `requireUser()` and loads records through the ownership checks in `src/db/access.ts`.
-- **Text in the app:** short, plain English, written for riders rather than mechanics.
+- **Text in the app:** short, plain English, written for riders rather than mechanics. All of it lives in `src/i18n/en.ts`, never in components: add a key there and use `t("your.key")` (`getT()` on the server, `useT()` in client components). Add the same key to every other language file; the type check tells you which ones.
 - **Few dependencies:** prefer what the platform, Node or the existing libraries already offer, and explain in the PR why a new dependency is worth it.
+
+## Adding a language
+
+BikePro's translations are plain TypeScript files, one per language, with no translation platform or library.
+
+1. Copy `src/i18n/en.ts` to `src/i18n/<code>.ts`, using the two-letter language code (for example `de.ts`), and translate the text. Keep the keys, the `{placeholders}` and the `<tags>` exactly as they are; only the words around them change.
+2. Type the file as `Dictionary` (see `nl.ts`) and add it to `dictionaries` and `localeNames` in `src/i18n/index.ts`. Add its date and number formats to `intlLocales` and `dateFnsLocales` in `src/lib/units.ts`.
+3. Run `npm run typecheck`. It fails on every key that's missing or misspelled.
+4. Check the screens at phone width: a longer translation can break a button or a row.
+
+Plurals are objects such as `{ one: "{count} bike", other: "{count} bikes" }`. Use the forms your language needs (`zero`, `one`, `two`, `few`, `many`, `other`), as `Intl.PluralRules` names them. Sentences that include a part name are tricky in languages with grammatical gender or articles: it's fine to leave the name out, as the Dutch file does in a few places.
 
 ## Pull requests
 

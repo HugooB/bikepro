@@ -1,11 +1,13 @@
 import { Skeleton } from "@/components/states/Skeleton";
+import { getT } from "@/i18n/server";
 
 /** Same two columns as the bike page: drawing and odometer left, parts list right. */
-export default function Loading() {
+export default async function Loading() {
+  const t = await getT();
   return (
     <div
       role="status"
-      aria-label="Loading"
+      aria-label={t("common.loading")}
       className="grid gap-8 lg:grid-cols-[minmax(0,11fr)_minmax(0,10fr)] lg:gap-12"
     >
       <div className="flex flex-col gap-6">

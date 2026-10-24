@@ -3,6 +3,7 @@ import { BikeNav } from "@/components/BikeNav";
 import { RetiredPartsList } from "@/components/history/RetiredPartsList";
 import { ServiceRoundList } from "@/components/history/ServiceRoundList";
 import { getBike, getRetiredParts, getServiceRounds } from "@/db/queries";
+import { getT } from "@/i18n/server";
 import { getCurrentUser, requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export default async function HistoryPage({ params }: { params: Params }) {
   const user = await requireUser();
   const bike = await getBike(user.id, Number((await params).bikeId));
   if (!bike) notFound();
+  const t = await getT();
 
   const [rounds, retired] = await Promise.all([
     getServiceRounds(bike.id),
@@ -28,7 +30,7 @@ export default async function HistoryPage({ params }: { params: Params }) {
 
       <section aria-labelledby="rounds-heading" className="flex flex-col gap-3">
         <h2 id="rounds-heading" className="text-lg font-semibold">
-          Service rounds
+          {t("history.rounds")}
         </h2>
         <ServiceRoundList rounds={rounds} />
       </section>
@@ -36,11 +38,9 @@ export default async function HistoryPage({ params }: { params: Params }) {
       <section aria-labelledby="retired-heading" className="flex flex-col gap-3">
         <div>
           <h2 id="retired-heading" className="text-lg font-semibold">
-            Replaced parts
+            {t("history.retired")}
           </h2>
-          <p className="text-muted-foreground text-sm">
-            How long and how far each old part lasted.
-          </p>
+          <p className="text-muted-foreground text-sm">{t("history.retiredIntro")}</p>
         </div>
         <RetiredPartsList parts={retired} />
       </section>
@@ -51,5 +51,10 @@ export default async function HistoryPage({ params }: { params: Params }) {
 export async function generateMetadata({ params }: { params: Params }) {
   const user = await getCurrentUser();
   const bike = user && (await getBike(user.id, Number((await params).bikeId)));
-  return { title: bike ? `History · ${bike.name} · BikePro` : "BikePro" };
+  const t = await getT();
+  return {
+    title: bike
+      ? t("meta.title", { page: `${t("bike.tabs.history")} · ${bike.name}` })
+      : t("common.appName"),
+  };
 }

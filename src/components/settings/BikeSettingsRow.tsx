@@ -9,14 +9,13 @@ import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUnits } from "@/components/UnitsProvider";
+import { useT, useUnits } from "@/i18n/client";
 import { brakeTypes, type Bike, type BikeType, type BrakeType } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/lib/action-state";
-import { bikeTypeLabels } from "@/lib/bikes";
-import { brakeTypeLabels } from "@/lib/default-parts";
 import { ChoiceChip } from "@/components/wizard/fields";
 
 export function BikeSettingsRow({ bike }: { bike: Bike }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const makeModel = [bike.brand, bike.model].filter(Boolean).join(" ");
 
@@ -33,14 +32,14 @@ export function BikeSettingsRow({ bike }: { bike: Bike }) {
             {bike.name}
           </Link>
           <p className="text-muted-foreground truncate text-sm">
-            {bikeTypeLabels[bike.type].name}
+            {t(`bikeTypes.${bike.type}.name`)}
             {makeModel && ` · ${makeModel}`}
           </p>
         </div>
         {!editing && (
           <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
             <Pencil aria-hidden />
-            Edit
+            {t("common.edit")}
           </Button>
         )}
         <form action={setBikeArchived}>
@@ -48,7 +47,7 @@ export function BikeSettingsRow({ bike }: { bike: Bike }) {
           <input type="hidden" name="archived" value={String(!bike.archivedAt)} />
           <Button type="submit" variant="ghost" size="sm">
             {bike.archivedAt ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
-            {bike.archivedAt ? "Restore" : "Archive"}
+            {bike.archivedAt ? t("settings.bikes.restore") : t("settings.bikes.archive")}
           </Button>
         </form>
       </div>
@@ -58,6 +57,7 @@ export function BikeSettingsRow({ bike }: { bike: Bike }) {
 }
 
 function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
+  const t = useT();
   const u = useUnits();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     updateBike,
@@ -70,7 +70,7 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
 
   useEffect(() => {
     if (state.ok) {
-      toast.success("Bike saved");
+      toast.success(t("settings.bikes.saved"));
       onDone();
     }
     // Only react to a new save result.
@@ -80,19 +80,17 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
   return (
     <form action={formAction} className="flex flex-col gap-4 border-t px-4 py-4">
       <input type="hidden" name="bikeId" value={bike.id} />
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={id("name")}>Name</Label>
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <Label htmlFor={id("name")}>{t("bikeForm.name")}</Label>
         <Input id={id("name")} name="name" defaultValue={bike.name} required maxLength={40} />
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Type</legend>
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.type")}</legend>
         <BikeTypePicker value={type} onChange={setType} />
-        <p className="text-muted-foreground text-xs">
-          Changing the type doesn&apos;t change its parts.
-        </p>
+        <p className="text-muted-foreground text-xs">{t("settings.bikes.typeHint")}</p>
       </fieldset>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Brakes</legend>
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.brakes")}</legend>
         <input type="hidden" name="brakeType" value={brakeType} />
         <div className="grid grid-cols-2 gap-2">
           {brakeTypes.map((b) => (
@@ -102,25 +100,23 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
               checked={brakeType === b}
               onChange={() => setBrakeType(b)}
             >
-              {brakeTypeLabels[b]}
+              {t(`brakeTypes.${b}`)}
             </ChoiceChip>
           ))}
         </div>
-        <p className="text-muted-foreground text-xs">
-          Changes the drawing. Brake parts stay as they are: add or remove them on the bike page.
-        </p>
+        <p className="text-muted-foreground text-xs">{t("settings.bikes.brakesHint")}</p>
       </fieldset>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={id("brand")}>Brand</Label>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor={id("brand")}>{t("bikeForm.brand")}</Label>
           <Input id={id("brand")} name="brand" defaultValue={bike.brand ?? ""} maxLength={60} />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={id("model")}>Model</Label>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor={id("model")}>{t("bikeForm.model")}</Label>
           <Input id={id("model")} name="model" defaultValue={bike.model ?? ""} maxLength={80} />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={id("purchased")}>Got it on</Label>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor={id("purchased")}>{t("bikeForm.gotItOn")}</Label>
           <Input
             id={id("purchased")}
             name="purchasedAt"
@@ -128,8 +124,10 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
             defaultValue={bike.purchasedAt ?? ""}
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={id("price")}>Price you paid {u.currencySymbol}</Label>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor={id("price")}>
+            {t("bikeForm.pricePaid", { currency: u.currencySymbol })}
+          </Label>
           <Input
             id={id("price")}
             name="purchasePrice"
@@ -142,7 +140,7 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
         </div>
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Frame colour</legend>
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.frameColour")}</legend>
         <FrameColorPicker value={color} onChange={setColor} />
       </fieldset>
       {state.error && (
@@ -152,10 +150,10 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
       )}
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? t("common.saving") : t("common.save")}
         </Button>
         <Button type="button" variant="ghost" onClick={onDone}>
-          Cancel
+          {t("common.cancel")}
         </Button>
       </div>
     </form>

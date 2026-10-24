@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, ne } from "drizzle-orm";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@/i18n";
 import { db } from "./index";
 import { sessions, users, type DistanceUnit } from "./schema";
 
@@ -26,6 +27,7 @@ export type SessionUser = {
   isAdmin: boolean;
   distanceUnit: DistanceUnit;
   currency: string;
+  locale: Locale;
 };
 
 /**
@@ -44,6 +46,7 @@ export function validateSession(token: string, now = new Date()): SessionUser | 
         isAdmin: users.isAdmin,
         distanceUnit: users.distanceUnit,
         currency: users.currency,
+        locale: users.locale,
       },
     })
     .from(sessions)
@@ -62,7 +65,8 @@ export function validateSession(token: string, now = new Date()): SessionUser | 
       .where(eq(sessions.id, id))
       .run();
   }
-  return row.user;
+  // A language that was removed since it was picked falls back to the default.
+  return { ...row.user, locale: isLocale(row.user.locale) ? row.user.locale : DEFAULT_LOCALE };
 }
 
 export function deleteSession(token: string) {

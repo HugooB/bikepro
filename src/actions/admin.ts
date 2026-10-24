@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { AccountError, NotAdminError, resetPassword, setRegistrationOpen } from "@/db/users";
+import { resetPassword, setRegistrationOpen } from "@/db/users";
+import { getT } from "@/i18n/server";
 import type { ActionState } from "@/lib/action-state";
 import { hashPassword, temporaryPassword } from "@/lib/auth/password";
 import { requireUser } from "@/lib/auth/session";
+import { UserError } from "@/lib/user-error";
 
 /** Opens or closes registration (Settings → Admin). Refused for anyone who isn't an admin. */
 export async function updateRegistration(formData: FormData) {
@@ -26,9 +28,7 @@ export async function resetUserPassword(
   try {
     resetPassword(user.id, Number(formData.get("userId")), await hashPassword(password));
   } catch (e) {
-    if (e instanceof AccountError || e instanceof NotAdminError) {
-      return { ok: false, error: e.message };
-    }
+    if (e instanceof UserError) return { ok: false, error: (await getT())(e.key, e.vars) };
     throw e;
   }
   return { ok: true, savedAt: Date.now(), message: password };

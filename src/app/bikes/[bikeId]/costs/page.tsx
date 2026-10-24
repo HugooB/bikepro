@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ChevronRight } from "lucide-react";
 import { BikeNav } from "@/components/BikeNav";
 import { CostsByCategoryChart, CostsByYearChart } from "@/components/costs/CostCharts";
 import { getBike, getCostEntries } from "@/db/queries";
+import type { T } from "@/i18n";
+import { getT, getUnits } from "@/i18n/server";
 import { getCurrentUser, requireUser } from "@/lib/auth/session";
-import { costCategoryLabels, costPerYear, summarizeCosts, type CostEntry } from "@/lib/costs";
-import { toUnit, unitsFor, type Units } from "@/lib/units";
+import { costPerYear, summarizeCosts, type CostEntry } from "@/lib/costs";
+import { toUnit, type Units } from "@/lib/units";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -18,9 +20,9 @@ export default async function CostsPage({ params }: { params: Params }) {
   const user = await requireUser();
   const bike = await getBike(user.id, Number((await params).bikeId));
   if (!bike) notFound();
-  const u = unitsFor(user);
+  const [t, u] = await Promise.all([getT(), getUnits()]);
 
-  const entries = getCostEntries(bike);
+  const entries = getCostEntries(bike, t);
   const thisYear = new Date().getFullYear();
   const summary = summarizeCosts(entries, thisYear);
   const maintenanceThisYear = summary.byYear.find((y) => y.year === thisYear)?.amount ?? 0;
@@ -36,31 +38,41 @@ export default async function CostsPage({ params }: { params: Params }) {
 
       {entries.length === 0 ? (
         <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-          No costs yet. Add what you paid for the bike in Settings, a price when you add or replace
-          a part, or a cost when you log maintenance or a service round, and it adds up here.
+          {t("costs.page.empty")}
         </p>
       ) : (
         <>
-          <section aria-label="Totals" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <section
+            aria-label={t("costs.page.totals")}
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+          >
             <div className="bg-card col-span-full flex flex-col gap-1 rounded-xl border px-4 py-3">
-              <p className="text-muted-foreground text-sm">Total cost of {bike.name}</p>
+              <p className="text-muted-foreground text-sm">
+                {t("costs.page.totalOf", { bike: bike.name })}
+              </p>
               <p className="text-5xl font-semibold tracking-tight">{u.money(summary.total)}</p>
               <p className="text-muted-foreground text-sm">
                 {summary.purchase > 0
-                  ? `${u.money(summary.purchase)} to buy it + ${u.money(summary.maintenance)} on parts and maintenance`
-                  : "Parts and maintenance. Add what you paid for the bike in Settings to include it."}
+                  ? t("costs.page.split", {
+                      bike: u.money(summary.purchase),
+                      maintenance: u.money(summary.maintenance),
+                    })
+                  : t("costs.page.noPurchase")}
               </p>
             </div>
             {/* Full width on phones, so the two maintenance tiles below pair up. */}
             <Stat
-              label="Per year of ownership"
+              label={t("costs.page.perYear")}
               value={u.money(costPerYear(summary.total, ownedSince))}
               className="max-sm:col-span-2"
             />
-            <Stat label={`Maintenance in ${thisYear}`} value={u.money(maintenanceThisYear)} />
+            <Stat
+              label={t("costs.page.maintenanceIn", { year: thisYear })}
+              value={u.money(maintenanceThisYear)}
+            />
             {bike.odometerKm >= 100 && (
               <Stat
-                label={`Maintenance per 1,000 ${u.unitLabel}`}
+                label={t("costs.page.perThousand", { n: u.number(1000), unit: u.unitLabel })}
                 value={u.money((summary.maintenance / toUnit(bike.odometerKm, u.unit)) * 1000)}
               />
             )}
@@ -73,7 +85,7 @@ export default async function CostsPage({ params }: { params: Params }) {
                 className="bg-card flex flex-col gap-4 rounded-xl border p-4"
               >
                 <h2 id="per-year-heading" className="font-semibold">
-                  Maintenance per year
+                  {t("costs.page.perYearChart")}
                 </h2>
                 <CostsByYearChart data={summary.byYear} />
               </section>
@@ -82,25 +94,24 @@ export default async function CostsPage({ params }: { params: Params }) {
                 className="bg-card flex flex-col gap-4 rounded-xl border p-4"
               >
                 <h2 id="per-category-heading" className="font-semibold">
-                  Maintenance per category
+                  {t("costs.page.perCategoryChart")}
                 </h2>
                 <CostsByCategoryChart data={summary.byCategory} total={summary.maintenance} />
               </section>
             </div>
           ) : (
             <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-              No maintenance costs yet. Part prices and the costs of maintenance and service rounds
-              show up here per year and per category.
+              {t("costs.page.noMaintenance")}
             </p>
           )}
 
           <section aria-labelledby="all-costs-heading" className="flex flex-col gap-3">
             <h2 id="all-costs-heading" className="text-lg font-semibold">
-              Every cost
+              {t("costs.page.everyCost")}
             </h2>
             <ul className="bg-card divide-y overflow-hidden rounded-xl border">
               {entries.map((entry, i) => (
-                <CostRow key={i} entry={entry} bikeId={bike.id} u={u} />
+                <CostRow key={i} entry={entry} bikeId={bike.id} t={t} u={u} />
               ))}
             </ul>
           </section>
@@ -119,7 +130,7 @@ function Stat({ label, value, className }: { label: string; value: string; class
   );
 }
 
-function CostRow({ entry, bikeId, u }: { entry: CostEntry; bikeId: number; u: Units }) {
+function CostRow({ entry, bikeId, t, u }: { entry: CostEntry; bikeId: number; t: T; u: Units }) {
   // The purchase price is edited in Settings; service rounds are listed under History.
   const href =
     entry.source === "purchase"
@@ -137,8 +148,10 @@ function CostRow({ entry, bikeId, u }: { entry: CostEntry; bikeId: number; u: Un
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{entry.label}</p>
           <p className="text-muted-foreground text-sm">
-            {format(parseISO(entry.date), "d MMM yyyy")} · {costCategoryLabels[entry.category]}
-            {entry.source === "part" && <span className="max-sm:hidden"> · part price</span>}
+            {u.date(entry.date, "d MMM yyyy")} · {t(`costs.categories.${entry.category}`)}
+            {entry.source === "part" && (
+              <span className="max-sm:hidden"> · {t("costs.page.partPrice")}</span>
+            )}
           </p>
         </div>
         <p className="shrink-0 font-medium tabular-nums">{u.money(entry.amount)}</p>
@@ -151,5 +164,10 @@ function CostRow({ entry, bikeId, u }: { entry: CostEntry; bikeId: number; u: Un
 export async function generateMetadata({ params }: { params: Params }) {
   const user = await getCurrentUser();
   const bike = user && (await getBike(user.id, Number((await params).bikeId)));
-  return { title: bike ? `Costs · ${bike.name} · BikePro` : "BikePro" };
+  const t = await getT();
+  return {
+    title: bike
+      ? t("meta.title", { page: `${t("bike.tabs.costs")} · ${bike.name}` })
+      : t("common.appName"),
+  };
 }

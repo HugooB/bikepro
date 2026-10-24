@@ -7,6 +7,7 @@ import { changePassword, deleteMyAccount } from "@/actions/account";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useT } from "@/i18n/client";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 
 function PasswordField({
@@ -48,12 +49,13 @@ function PasswordField({
 
 /** Settings → Account: a "Change password" button that opens the form in place. */
 export function ChangePasswordForm({ passwordMin }: { passwordMin: number }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     async (prev, formData) => {
       const result = await changePassword(prev, formData);
       if (result.ok) {
-        toast.success("Password changed. Your other devices are signed out.");
+        toast.success(t("settings.password.changed"));
         setOpen(false);
       }
       return result;
@@ -64,31 +66,31 @@ export function ChangePasswordForm({ passwordMin }: { passwordMin: number }) {
   if (!open) {
     return (
       <Button variant="outline" className="self-start" onClick={() => setOpen(true)}>
-        Change password
+        {t("settings.password.change")}
       </Button>
     );
   }
 
   return (
     <form action={formAction} className="bg-card flex flex-col gap-4 rounded-xl border px-4 py-4">
-      <h3 className="font-semibold">Change password</h3>
+      <h3 className="font-semibold">{t("settings.password.change")}</h3>
       <PasswordField
         id="current-password"
-        label="Current password"
+        label={t("settings.password.current")}
         name="current"
         autoComplete="current-password"
       />
       <PasswordField
         id="new-password"
-        label="New password"
+        label={t("settings.password.new")}
         name="password"
         autoComplete="new-password"
         minLength={passwordMin}
-        hint={`At least ${passwordMin} characters. Your other devices are signed out afterwards.`}
+        hint={t("settings.password.newHint", { count: passwordMin })}
       />
       <PasswordField
         id="confirm-password"
-        label="New password again"
+        label={t("settings.password.again")}
         name="confirm"
         autoComplete="new-password"
         minLength={passwordMin}
@@ -100,10 +102,10 @@ export function ChangePasswordForm({ passwordMin }: { passwordMin: number }) {
       )}
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Change password"}
+          {pending ? t("common.saving") : t("settings.password.change")}
         </Button>
         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          {t("common.cancel")}
         </Button>
       </div>
     </form>
@@ -112,6 +114,7 @@ export function ChangePasswordForm({ passwordMin }: { passwordMin: number }) {
 
 /** Settings → Danger zone. Asks for the password, then deletes the account and signs out. */
 export function DeleteAccountForm() {
+  const t = useT();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     deleteMyAccount,
     initialActionState,
@@ -120,30 +123,27 @@ export function DeleteAccountForm() {
   return (
     <div className="border-destructive/40 flex flex-col gap-4 rounded-xl border px-4 py-4">
       <div className="flex flex-col gap-1">
-        <h3 className="font-semibold">Delete account</h3>
-        <p className="text-muted-foreground text-sm">
-          Deletes your account with all your bikes, parts, history and costs, and disconnects
-          Strava. This can&apos;t be undone, so download your data first if you might want it back.
-        </p>
+        <h3 className="font-semibold">{t("settings.danger.deleteTitle")}</h3>
+        <p className="text-muted-foreground text-sm">{t("settings.danger.deleteIntro")}</p>
       </div>
       <Button asChild variant="outline" className="self-start">
         <a href="/api/export" download>
           <Download aria-hidden />
-          Download my data
+          {t("settings.data.download")}
         </a>
       </Button>
       <form
         action={formAction}
         className="flex flex-col gap-4"
         onSubmit={(e) => {
-          if (!confirm("Delete your account and all your data? This can't be undone.")) {
+          if (!confirm(t("settings.danger.confirm"))) {
             e.preventDefault();
           }
         }}
       >
         <PasswordField
           id="delete-password"
-          label="Your password"
+          label={t("settings.danger.password")}
           name="password"
           autoComplete="current-password"
         />
@@ -154,7 +154,7 @@ export function DeleteAccountForm() {
         )}
         <Button type="submit" variant="destructive" disabled={pending} className="self-start">
           <Trash2 aria-hidden />
-          {pending ? "Deleting…" : "Delete my account"}
+          {pending ? t("settings.danger.deleting") : t("settings.danger.delete")}
         </Button>
       </form>
     </div>

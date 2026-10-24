@@ -38,6 +38,8 @@ export const users = sqliteTable("users", {
   distanceUnit: text("distance_unit", { enum: distanceUnits }).notNull().default("km"),
   /** ISO 4217 code amounts are shown in. Amounts are stored as plain numbers, never converted. */
   currency: text("currency").notNull().default("EUR"),
+  /** Interface language (see src/i18n). Accounts from before languages existed stay English. */
+  locale: text("locale").notNull().default("en"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

@@ -1,4 +1,7 @@
 import { eq } from "drizzle-orm";
+import { tEn, type T } from "@/i18n";
+import { partName } from "@/lib/default-parts";
+import { UserError } from "@/lib/user-error";
 import type { PartEventType } from "./schema";
 import { setOdometer } from "./bikes";
 import { bikes, partEvents, parts, type Part } from "./schema";
@@ -7,7 +10,7 @@ import type { db } from "./index";
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** A user-facing problem with the requested change (shown as a form error). */
-export class PartEventError extends Error {}
+export class PartEventError extends UserError {}
 
 export type NewPartEvent = {
   type: Exclude<PartEventType, "installed">;
@@ -25,17 +28,27 @@ export type NewPartEvent = {
  * Records a maintenance event on a part. A replacement retires the part and installs a new
  * one in its place; the new part is returned so callers can link to it.
  */
-export function recordPartEvent(tx: Tx, part: Part, event: NewPartEvent): Part | undefined {
-  if (part.status === "retired") throw new PartEventError("This part has already been replaced");
+export function recordPartEvent(
+  tx: Tx,
+  part: Part,
+  event: NewPartEvent,
+  t: T = tEn,
+): Part | undefined {
+  if (part.status === "retired") throw new PartEventError("errors.partAlreadyReplaced");
 
   if (event.type === "replaced") {
-    return replacePart(tx, part, {
-      date: event.date,
-      odometerKm: event.odometerKm,
-      note: event.description,
-      serviceRoundId: event.serviceRoundId,
-      ...event.replacement,
-    });
+    return replacePart(
+      tx,
+      part,
+      {
+        date: event.date,
+        odometerKm: event.odometerKm,
+        note: event.description,
+        serviceRoundId: event.serviceRoundId,
+        ...event.replacement,
+      },
+      t,
+    );
   }
 
   tx.insert(partEvents)
@@ -68,9 +81,10 @@ type Replacement = {
  * an "installed" event. Only the old part's event links to a service round, so a round lists
  * each replaced part once.
  */
-export function replacePart(tx: Tx, part: Part, r: Replacement): Part {
+/** `t` writes the new part's "replaces the previous …" entry in the user's language. */
+export function replacePart(tx: Tx, part: Part, r: Replacement, t: T = tEn): Part {
   if (r.date < part.installedAt) {
-    throw new PartEventError("The replacement date is before this part was installed");
+    throw new PartEventError("errors.replacementBeforeInstall");
   }
 
   const fresh = tx
@@ -120,7 +134,7 @@ export function replacePart(tx: Tx, part: Part, r: Replacement): Part {
         partId: fresh.id,
         type: "installed",
         // The note explains why the old part went; the new part just records what it replaced.
-        description: `Replaces the previous ${part.name.toLowerCase()}`,
+        description: t("events.replacesPrevious", { part: partName(part, t).toLowerCase() }),
         date: r.date,
         odometerKm: r.odometerKm,
         resetsInterval: true,

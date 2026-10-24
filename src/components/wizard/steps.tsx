@@ -1,20 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { format, formatISO, parseISO, startOfMonth, startOfYear } from "date-fns";
+import { formatISO, parseISO, startOfMonth, startOfYear } from "date-fns";
 import { ChevronDown } from "lucide-react";
 import { BikeDrawing } from "@/components/bike/BikeDrawing";
 import { ZoneProvider } from "@/components/bike/zone-context";
 import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
 import { brakeTypes } from "@/db/schema";
 import { Button } from "@/components/ui/button";
+import { useT, useUnits } from "@/i18n/client";
+import { rich } from "@/i18n/rich";
 import { formatAge } from "@/lib/age";
+import { frameColors } from "@/lib/bikes";
+import { defaultPartsFor, partName } from "@/lib/default-parts";
 import { formatDistance, fromUnit } from "@/lib/units";
-import { bikeTypeLabels, frameColors } from "@/lib/bikes";
-import { brakeTypeLabels, categoryLabels, defaultPartsFor } from "@/lib/default-parts";
 import { cn } from "@/lib/utils";
 import { partsByCategory, startKm, type WizardDraft, type WizardStep } from "@/lib/wizard-schema";
-import { useUnits } from "../UnitsProvider";
 import { ChoiceChip, StepHeading, WizardField } from "./fields";
 import type { WizardAction } from "./wizard-state";
 
@@ -38,33 +39,34 @@ export type StepProps = {
 };
 
 export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
+  const t = useT();
   const patch = (p: Partial<WizardDraft>) => dispatch({ type: "patch", patch: p });
   return (
     <>
       <StepHeading
         headingRef={headingRef}
-        title="Let's add your bike"
-        intro="Give it a name you'll recognise. The type picks a sensible list of parts."
+        title={t("wizard.basics.title")}
+        intro={t("wizard.basics.intro")}
       />
       <WizardField
         id="bike-name"
-        label="Name"
+        label={t("bikeForm.name")}
         value={draft.name}
         onChange={(e) => patch({ name: e.target.value })}
-        placeholder="e.g. My Canyon"
+        placeholder={t("wizard.basics.namePlaceholder")}
         maxLength={40}
         autoComplete="off"
         error={errors.name}
       />
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Type</legend>
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.type")}</legend>
         <BikeTypePicker
           value={draft.type}
           onChange={(bikeType) => dispatch({ type: "bikeType", bikeType })}
         />
       </fieldset>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Brakes</legend>
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.brakes")}</legend>
         <div className="grid grid-cols-2 gap-2">
           {brakeTypes.map((brakeType) => (
             <ChoiceChip
@@ -73,38 +75,38 @@ export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
               checked={draft.brakeType === brakeType}
               onChange={() => dispatch({ type: "brakeType", brakeType })}
             >
-              {brakeTypeLabels[brakeType]}
+              {t(`brakeTypes.${brakeType}`)}
             </ChoiceChip>
           ))}
         </div>
         <p className="text-muted-foreground text-xs">
           {draft.brakeType === "disc"
-            ? "Pads, rotors and brake fluid are tracked."
-            : "Pads and brake cables are tracked."}
+            ? t("wizard.basics.discTracked")
+            : t("wizard.basics.rimTracked")}
         </p>
       </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
         <WizardField
           id="bike-brand"
-          label="Brand (optional)"
+          label={t("wizard.basics.brand")}
           value={draft.brand}
           onChange={(e) => patch({ brand: e.target.value })}
-          placeholder="e.g. Canyon"
+          placeholder={t("wizard.basics.brandPlaceholder")}
           maxLength={60}
         />
         <WizardField
           id="bike-model"
-          label="Model (optional)"
+          label={t("wizard.basics.model")}
           value={draft.model}
           onChange={(e) => patch({ model: e.target.value })}
-          placeholder="e.g. Ultimate CF SL"
+          placeholder={t("wizard.basics.modelPlaceholder")}
           maxLength={80}
         />
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Frame colour</legend>
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.frameColour")}</legend>
         <FrameColorPicker value={draft.color} onChange={(color) => patch({ color })} />
-        <p className="text-muted-foreground text-xs">Used for your bike&apos;s drawing.</p>
+        <p className="text-muted-foreground text-xs">{t("wizard.basics.colourHint")}</p>
       </fieldset>
     </>
   );
@@ -112,6 +114,7 @@ export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
 
 /** Distance step: pick a Strava bike to take it from, or type the odometer reading. */
 export function StepStrava({ draft, errors, dispatch, headingRef, strava }: StepProps) {
+  const t = useT();
   const u = useUnits();
   const patch = (p: Partial<WizardDraft>) => dispatch({ type: "patch", patch: p });
   const offerStrava = strava.connected && strava.bikes.length > 0;
@@ -122,16 +125,16 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
     <>
       <StepHeading
         headingRef={headingRef}
-        title="How far has it been ridden?"
+        title={t("wizard.distance.title")}
         intro={
           offerStrava
-            ? `Take the ${u.unitLong} from Strava and they stay up to date, or enter the odometer yourself.`
-            : "Enter the odometer reading. Part wear is counted from this, and you can update it any time."
+            ? t("wizard.distance.introStrava", { distances: u.unitLong })
+            : t("wizard.distance.intro")
         }
       />
       {offerStrava && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-sm font-medium">Distance from</legend>
+          <legend className="mb-2 text-sm font-medium">{t("wizard.distance.from")}</legend>
           <div className="grid gap-2">
             {strava.bikes.map((b) => (
               <ChoiceChip
@@ -142,7 +145,10 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
                   patch({ stravaGearId: b.id, odometerKm: String(u.toInput(b.distanceKm)) })
                 }
               >
-                {b.name} on Strava · {u.distance(b.distanceKm)}
+                {t("wizard.distance.stravaBike", {
+                  bike: b.name,
+                  distance: u.distance(b.distanceKm),
+                })}
               </ChoiceChip>
             ))}
             <ChoiceChip
@@ -150,7 +156,7 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
               checked={!fromStrava}
               onChange={() => patch({ stravaGearId: "" })}
             >
-              Enter it by hand
+              {t("wizard.distance.byHand")}
             </ChoiceChip>
           </div>
         </fieldset>
@@ -158,7 +164,7 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
       {!fromStrava && (
         <WizardField
           id="bike-odometer"
-          label={`Odometer (${u.unitLabel})`}
+          label={t("odometer.labelWithUnit", { unit: u.unitLabel })}
           type="number"
           inputMode="decimal"
           min={0}
@@ -167,25 +173,26 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
           onChange={(e) => patch({ odometerKm: e.target.value })}
           onFocus={(e) => e.target.select()}
           error={errors.odometerKm}
-          hint="A brand-new bike starts at 0."
+          hint={t("wizard.distance.newStartsAtZero")}
         />
       )}
       {connectFailed && (
         <p role="alert" className="text-destructive text-sm">
-          Strava didn&apos;t connect. You can enter the odometer by hand, or try again from
-          Settings.
+          {t("wizard.distance.connectFailed")}
         </p>
       )}
       {strava.configured && !strava.connected && !connectFailed && (
         <p className="text-muted-foreground text-sm">
-          Ride with Strava?{" "}
-          <a
-            href={`/api/strava/connect?next=${encodeURIComponent("/bikes/new")}`}
-            className="text-foreground font-medium underline"
-          >
-            Connect Strava
-          </a>{" "}
-          to fill this in and keep it up to date. Your answers so far are kept.
+          {rich(t("wizard.distance.offerConnect"), {
+            link: (text) => (
+              <a
+                href={`/api/strava/connect?next=${encodeURIComponent("/bikes/new")}`}
+                className="text-foreground font-medium underline"
+              >
+                {text}
+              </a>
+            ),
+          })}
         </p>
       )}
     </>
@@ -193,18 +200,19 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
 }
 
 export function StepPurchase({ draft, errors, dispatch, today, headingRef }: StepProps) {
+  const t = useT();
   const u = useUnits();
   const patch = (p: Partial<WizardDraft>) => dispatch({ type: "patch", patch: p });
   const todayDate = parseISO(today);
   const quickPicks = [
     {
       key: "month",
-      label: "This month",
+      label: t("wizard.purchase.thisMonth"),
       value: formatISO(startOfMonth(todayDate), { representation: "date" }),
     },
     {
       key: "year",
-      label: "This year",
+      label: t("wizard.purchase.thisYear"),
       value: formatISO(startOfYear(todayDate), { representation: "date" }),
     },
   ];
@@ -216,11 +224,11 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
     <>
       <StepHeading
         headingRef={headingRef}
-        title="When did you get it?"
-        intro="Every part starts its life on this date, unless you tell us it was replaced since."
+        title={t("wizard.purchase.title")}
+        intro={t("wizard.purchase.intro")}
       />
       <fieldset className="flex flex-col gap-3">
-        <legend className="sr-only">Purchase date</legend>
+        <legend className="sr-only">{t("wizard.purchase.date")}</legend>
         <div className="grid grid-cols-3 gap-2">
           {quickPicks.map((q) => (
             <ChoiceChip
@@ -240,13 +248,13 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
             checked={mode === "date"}
             onChange={() => setCustom(true)}
           >
-            Pick a date
+            {t("wizard.purchase.pickDate")}
           </ChoiceChip>
         </div>
         {mode === "date" ? (
           <WizardField
             id="bike-purchased"
-            label="Purchase date"
+            label={t("wizard.purchase.date")}
             type="date"
             max={today}
             value={draft.purchasedAt}
@@ -255,33 +263,33 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
           />
         ) : (
           <p className="text-muted-foreground text-sm">
-            Counted from {format(parseISO(draft.purchasedAt), "d MMMM yyyy")}.
+            {t("wizard.purchase.countedFrom", { date: u.date(draft.purchasedAt, "d MMMM yyyy") })}
           </p>
         )}
       </fieldset>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-sm font-medium">Was it new?</legend>
+        <legend className="mb-2 text-sm font-medium">{t("wizard.purchase.wasItNew")}</legend>
         <div className="grid grid-cols-2 gap-2">
           <ChoiceChip
             name="condition"
             checked={draft.condition === "new"}
             onChange={() => patch({ condition: "new" })}
           >
-            New
+            {t("wizard.purchase.new")}
           </ChoiceChip>
           <ChoiceChip
             name="condition"
             checked={draft.condition === "used"}
             onChange={() => patch({ condition: "used" })}
           >
-            Second-hand
+            {t("wizard.purchase.used")}
           </ChoiceChip>
         </div>
         {draft.condition === "used" && (
           <WizardField
             id="bike-purchase-km"
-            label={`Odometer when you bought it (${u.unitLabel})`}
+            label={t("wizard.purchase.odometerAtPurchase", { unit: u.unitLabel })}
             type="number"
             inputMode="decimal"
             min={0}
@@ -290,14 +298,14 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
             onChange={(e) => patch({ purchaseKm: e.target.value })}
             onFocus={(e) => e.target.select()}
             error={errors.purchaseKm}
-            hint={`Parts count their ${u.unitLabel} from here. Leave 0 if you don't know.`}
+            hint={t("wizard.purchase.odometerAtPurchaseHint", { unit: u.unitLabel })}
           />
         )}
       </fieldset>
 
       <WizardField
         id="bike-price"
-        label={`Price you paid ${u.currencySymbol} (optional)`}
+        label={t("bikeForm.pricePaidOptional", { currency: u.currencySymbol })}
         type="number"
         inputMode="decimal"
         min={0}
@@ -305,13 +313,14 @@ export function StepPurchase({ draft, errors, dispatch, today, headingRef }: Ste
         value={draft.purchasePrice}
         onChange={(e) => patch({ purchasePrice: e.target.value })}
         error={errors.purchasePrice}
-        hint="Counts towards the bike's total cost."
+        hint={t("wizard.purchase.priceHint")}
       />
     </>
   );
 }
 
 export function StepParts({ draft, errors, dispatch, today, headingRef }: StepProps) {
+  const t = useT();
   const u = useUnits();
   const [showIntervals, setShowIntervals] = useState(
     Object.keys(errors).some((k) => /\.(service|replace)(Km|Months)$/.test(k)),
@@ -324,12 +333,12 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
     <>
       <StepHeading
         headingRef={headingRef}
-        title="Which parts does it have?"
-        intro="Untick anything your bike doesn't have. If you've replaced a part since buying the bike, tell us when, so its age is right from day one."
+        title={t("wizard.parts.title")}
+        intro={t("wizard.parts.intro")}
       />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-muted-foreground text-sm" aria-live="polite">
-          {included} of {draft.parts.length} parts
+          {t("wizard.parts.count", { count: draft.parts.length, included })}
         </p>
         <Button
           type="button"
@@ -338,7 +347,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
           aria-expanded={showIntervals}
           onClick={() => setShowIntervals((v) => !v)}
         >
-          Advanced: service and replacement intervals
+          {t("wizard.parts.advanced")}
           <ChevronDown
             aria-hidden
             className={cn("transition-transform", showIntervals && "rotate-180")}
@@ -354,18 +363,18 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
       {partsByCategory(draft.type, draft.brakeType).map(([category, templates]) => (
         <fieldset key={category} className="flex flex-col gap-1.5">
           <legend className="text-muted-foreground mb-1.5 px-1 text-sm font-medium">
-            {categoryLabels[category]}
+            {t(`categories.${category}`)}
           </legend>
           <ul className="divide-y overflow-hidden rounded-xl border">
-            {templates.map((t) => {
-              const i = indexOf.get(t.kind)!;
+            {templates.map((template) => {
+              const i = indexOf.get(template.kind)!;
               const choice = draft.parts[i]!;
               const err = (field: string) => errors[`parts.${i}.${field}`];
               const set = (patch: Partial<typeof choice>) =>
-                dispatch({ type: "part", kind: t.kind, patch });
-              const id = `part-${t.kind}`;
+                dispatch({ type: "part", kind: template.kind, patch });
+              const id = `part-${template.kind}`;
               return (
-                <li key={t.kind} className={cn(!choice.included && "bg-muted/40")}>
+                <li key={template.kind} className={cn(!choice.included && "bg-muted/40")}>
                   <div className="flex items-center gap-3 px-3">
                     <label className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3">
                       <input
@@ -380,7 +389,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                           !choice.included && "text-muted-foreground line-through",
                         )}
                       >
-                        {t.name}
+                        {partName(template, t)}
                       </span>
                     </label>
                     {choice.included && (
@@ -396,7 +405,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                           }
                           className="accent-brand size-4"
                         />
-                        Replaced since purchase?
+                        {t("wizard.parts.replacedSince")}
                       </label>
                     )}
                   </div>
@@ -404,10 +413,10 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                   {choice.included && (choice.replaced || showIntervals) && (
                     <div className="flex flex-col gap-3 px-3 pb-3 sm:pl-11">
                       {choice.replaced && (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
                           <WizardField
                             id={`${id}-replaced-at`}
-                            label="Replaced on"
+                            label={t("wizard.parts.replacedOn")}
                             type="date"
                             min={draft.purchasedAt}
                             max={today}
@@ -417,16 +426,16 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                           />
                           <WizardField
                             id={`${id}-replaced-km`}
-                            label={`At ${u.unitLabel} (optional)`}
+                            label={t("wizard.parts.atDistance", { unit: u.unitLabel })}
                             type="number"
                             inputMode="decimal"
                             min={fromKm}
                             step="any"
                             value={choice.replacedKm}
                             onChange={(e) => set({ replacedKm: e.target.value })}
-                            placeholder="Estimate"
+                            placeholder={t("wizard.parts.estimate")}
                             error={err("replacedKm")}
-                            hint="Leave empty to estimate it from your riding."
+                            hint={t("wizard.parts.estimateHint")}
                           />
                         </div>
                       )}
@@ -434,50 +443,50 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
                         <div className="grid grid-cols-2 gap-3">
                           <WizardField
                             id={`${id}-service-km`}
-                            label={`Service every … ${u.unitLabel}`}
+                            label={t("wizard.parts.serviceEvery", { unit: u.unitLabel })}
                             type="number"
                             inputMode="numeric"
                             min={1}
                             step={1}
                             value={choice.serviceKm}
                             onChange={(e) => set({ serviceKm: e.target.value })}
-                            placeholder="None"
+                            placeholder={t("wizard.parts.none")}
                             error={err("serviceKm")}
                           />
                           <WizardField
                             id={`${id}-service-months`}
-                            label="or every … months"
+                            label={t("part.fields.everyMonths")}
                             type="number"
                             inputMode="numeric"
                             min={1}
                             step={1}
                             value={choice.serviceMonths}
                             onChange={(e) => set({ serviceMonths: e.target.value })}
-                            placeholder="None"
+                            placeholder={t("wizard.parts.none")}
                             error={err("serviceMonths")}
                           />
                           <WizardField
                             id={`${id}-replace-km`}
-                            label={`Replace after … ${u.unitLabel}`}
+                            label={t("wizard.parts.replaceAfter", { unit: u.unitLabel })}
                             type="number"
                             inputMode="numeric"
                             min={1}
                             step={1}
                             value={choice.replaceKm}
                             onChange={(e) => set({ replaceKm: e.target.value })}
-                            placeholder="None"
+                            placeholder={t("wizard.parts.none")}
                             error={err("replaceKm")}
                           />
                           <WizardField
                             id={`${id}-replace-months`}
-                            label="or after … months"
+                            label={t("part.fields.afterMonths")}
                             type="number"
                             inputMode="numeric"
                             min={1}
                             step={1}
                             value={choice.replaceMonths}
                             onChange={(e) => set({ replaceMonths: e.target.value })}
-                            placeholder="None"
+                            placeholder={t("wizard.parts.none")}
                             error={err("replaceMonths")}
                           />
                         </div>
@@ -500,58 +509,78 @@ export function StepReview({
   strava,
   onEdit,
 }: StepProps & { onEdit: (step: WizardStep) => void }) {
+  const t = useT();
   const u = useUnits();
   /** A distance as typed in the draft, in the draft's unit. */
-  const typed = (value: number) => formatDistance(fromUnit(value, draft.unit), draft.unit);
+  const typed = (value: number) =>
+    formatDistance(fromUnit(value, draft.unit), draft.unit, u.locale);
   const stravaBike = strava.bikes.find((b) => b.id === draft.stravaGearId);
   const templates = new Map(defaultPartsFor(draft.type, draft.brakeType).map((t) => [t.kind, t]));
   const chosen = draft.parts.filter((p) => p.included);
   const replaced = chosen.filter((p) => p.replaced).length;
   const makeModel = [draft.brand, draft.model].filter((s) => s.trim()).join(" ");
-  const colorName =
-    frameColors.find((c) => c.value === draft.color.toLowerCase())?.name ?? "Custom";
+  const color = frameColors.find((c) => c.value === draft.color.toLowerCase());
+  const colorName = color ? t(`colors.${color.id}`) : t("colors.custom");
 
   const drawingParts = chosen.map((p, i) => {
-    const t = templates.get(p.kind)!;
+    const template = templates.get(p.kind)!;
     return {
       id: i,
-      name: t.name,
-      zone: t.svgZone,
+      name: partName(template, t),
+      zone: template.svgZone,
       level: "ok" as const,
       hint:
-        p.replaced && p.replacedAt ? `Fitted ${formatAge(p.replacedAt)} ago` : "Came with the bike",
+        p.replaced && p.replacedAt
+          ? t("wizard.review.fittedAgo", { age: formatAge(p.replacedAt, new Date(), t) })
+          : t("events.cameWithBike"),
     };
   });
 
   const rows: { label: string; value: string; step: WizardStep }[] = [
-    { label: "Type", value: bikeTypeLabels[draft.type].name, step: "basics" },
-    { label: "Brakes", value: brakeTypeLabels[draft.brakeType], step: "basics" },
-    ...(makeModel ? [{ label: "Make", value: makeModel, step: "basics" as const }] : []),
-    { label: "Frame colour", value: colorName, step: "basics" },
+    { label: t("bikeForm.type"), value: t(`bikeTypes.${draft.type}.name`), step: "basics" },
+    { label: t("bikeForm.brakes"), value: t(`brakeTypes.${draft.brakeType}`), step: "basics" },
+    ...(makeModel
+      ? [{ label: t("wizard.review.make"), value: makeModel, step: "basics" as const }]
+      : []),
+    { label: t("bikeForm.frameColour"), value: colorName, step: "basics" },
     {
-      label: "Odometer",
+      label: t("odometer.label"),
       value: stravaBike
-        ? `${u.distance(stravaBike.distanceKm)}, from ${stravaBike.name} on Strava`
-        : `${typed(Number(draft.odometerKm) || 0)}, entered by hand`,
+        ? t("wizard.review.fromStrava", {
+            distance: u.distance(stravaBike.distanceKm),
+            bike: stravaBike.name,
+          })
+        : t("wizard.review.byHand", { distance: typed(Number(draft.odometerKm) || 0) }),
       step: "odometer",
     },
     {
-      label: "Got it on",
-      value: `${format(parseISO(draft.purchasedAt), "d MMM yyyy")}, ${draft.condition === "new" ? "new" : `second-hand at ${typed(startKm(draft))}`}`,
+      label: t("bikeForm.gotItOn"),
+      value:
+        draft.condition === "new"
+          ? t("wizard.review.boughtNew", { date: u.date(draft.purchasedAt, "d MMM yyyy") })
+          : t("wizard.review.boughtUsed", {
+              date: u.date(draft.purchasedAt, "d MMM yyyy"),
+              distance: typed(startKm(draft)),
+            }),
       step: "purchase",
     },
     ...(draft.purchasePrice !== ""
       ? [
           {
-            label: "Price",
+            label: t("wizard.review.price"),
             value: u.money(Number(draft.purchasePrice) || 0),
             step: "purchase" as const,
           },
         ]
       : []),
     {
-      label: "Parts",
-      value: `${chosen.length} part${chosen.length === 1 ? "" : "s"}${replaced ? `, ${replaced} replaced since` : ""}`,
+      label: t("bike.tabs.parts"),
+      value: replaced
+        ? t("wizard.review.partsReplaced", {
+            parts: t("settings.data.parts", { count: chosen.length }),
+            count: replaced,
+          })
+        : t("settings.data.parts", { count: chosen.length }),
       step: "parts",
     },
   ];
@@ -560,8 +589,8 @@ export function StepReview({
     <>
       <StepHeading
         headingRef={headingRef}
-        title="Ready to roll?"
-        intro="Check the details, then add your bike."
+        title={t("wizard.review.title")}
+        intro={t("wizard.review.intro")}
       />
       <div className="overflow-hidden rounded-2xl border">
         <div className="bg-muted/40 px-3 pt-4 pb-2">
@@ -581,9 +610,9 @@ export function StepReview({
                   variant="ghost"
                   size="sm"
                   onClick={() => onEdit(row.step)}
-                  aria-label={`Edit ${row.label.toLowerCase()}`}
+                  aria-label={t("wizard.review.editField", { field: row.label.toLowerCase() })}
                 >
-                  Edit
+                  {t("common.edit")}
                 </Button>
               </div>
             ))}

@@ -5,6 +5,7 @@ import type { BrakeType } from "@/db/schema";
 import type { StatusLevel } from "@/lib/status";
 import { summarizeZones, type BikeZone, type ZonePart, type ZoneSummary } from "@/lib/zones";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 import { useZones } from "./zone-context";
 
 // Side view, drive side, front wheel on the right. Coordinates are in drawing units; the
@@ -393,6 +394,7 @@ type Props = {
 };
 
 export function BikeDrawing({ parts, color, brakeType = "disc", className }: Props) {
+  const t = useT();
   const shapes = shapesByBrakes[brakeType];
   const zones = useMemo(() => summarizeZones(parts), [parts]);
   const { activeZone, setActiveZone, revealZone } = useZones();
@@ -405,7 +407,7 @@ export function BikeDrawing({ parts, color, brakeType = "disc", className }: Pro
         viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
         className="h-auto w-full overflow-visible"
         role="group"
-        aria-label="Bike drawing. Select a part to find it in the list."
+        aria-label={t("bike.drawingLabel")}
       >
         <Frame color={color || "var(--brand)"} />
         {(Object.keys(shapes) as BikeZone[]).map((zone) => {

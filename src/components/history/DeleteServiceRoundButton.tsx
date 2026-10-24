@@ -3,17 +3,19 @@
 import { Trash2 } from "lucide-react";
 import { deleteServiceRound } from "@/actions/service-rounds";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/i18n/client";
 
 type Props = { roundId: number; hasReplacements: boolean };
 
 export function DeleteServiceRoundButton({ roundId, hasReplacements }: Props) {
+  const t = useT();
   return (
     <form
       action={deleteServiceRound}
       onSubmit={(e) => {
         const message = hasReplacements
-          ? "Delete this service round and its entries? Parts replaced in it stay replaced."
-          : "Delete this service round and its entries on each part?";
+          ? t("history.confirmDeleteWithReplacements")
+          : t("history.confirmDelete");
         if (!confirm(message)) e.preventDefault();
       }}
     >
@@ -22,7 +24,7 @@ export function DeleteServiceRoundButton({ roundId, hasReplacements }: Props) {
         type="submit"
         variant="ghost"
         size="icon"
-        aria-label="Delete service round"
+        aria-label={t("history.deleteRound")}
         className="text-muted-foreground hover:text-destructive"
       >
         <Trash2 aria-hidden />

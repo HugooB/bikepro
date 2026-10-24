@@ -130,7 +130,7 @@ Each user can also download their own data as JSON under **Settings → Your dat
 ## Good to know
 
 - Each user picks kilometres or miles, and the currency amounts are shown in, under **Settings → Preferences**. Switching never changes your data: BikePro stores kilometres, and amounts aren't converted between currencies.
-- The interface is in English.
+- The interface is in English and Dutch. Each user picks a language under **Settings → Preferences**; before signing in, BikePro follows the browser's language. New languages are welcome: see [Adding a language](CONTRIBUTING.md#adding-a-language).
 - BikePro shows each part's condition in the app. It doesn't send notifications or emails.
 - Strava sync reads your bikes' totals only. It doesn't import rides, and there are no webhooks, so distances update when you open the app.
 
@@ -138,10 +138,10 @@ Each user can also download their own data as JSON under **Settings → Your dat
 
 Planned, roughly in this order:
 
-- **More languages,** starting with Dutch.
 - **Install it as an app** on your phone's home screen.
+- **A ready-made Docker image** for regular servers and the Raspberry Pi, so installing and updating don't need a build.
 
-Ideas for later: a ready-made Docker image, automatic backups, notifications when a part needs attention, and more bike types such as MTB and city bikes. Suggestions are welcome as [feature requests](https://github.com/HugooB/bikepro/issues/new/choose).
+Ideas for later: automatic backups, notifications when a part needs attention, and more bike types such as MTB and city bikes. Suggestions are welcome as [feature requests](https://github.com/HugooB/bikepro/issues/new/choose).
 
 ## Contributing
 

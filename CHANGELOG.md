@@ -4,6 +4,24 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-24
+
+Dutch: every screen in English or Dutch, picked per user, and a setup that makes adding a language a matter of translating one file.
+
+### Added
+
+- Dutch. Each user picks a language under **Settings → Preferences**, and every screen follows it, including dates, numbers, error messages and the names of the standard parts. Before signing in, BikePro uses the browser's language, and a new account starts in it.
+- Contributors can add a language by translating one file: see "Adding a language" in CONTRIBUTING.md.
+
+### Fixed
+
+- On phones, a date field no longer overlaps the field next to it, and on the narrowest screens the two stack.
+- `npm run dev` works when opened from a phone on the same network; before, buttons that need JavaScript did nothing there.
+
+### Upgrading
+
+- A database migration adds the language preference; it runs on start. Existing accounts stay in English.
+
 ## [0.3.0] - 2026-10-23
 
 Miles and other currencies: every user picks how distances and amounts are shown, and nothing changes for existing users.
@@ -57,7 +75,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/HugooB/bikepro/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/HugooB/bikepro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/HugooB/bikepro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/HugooB/bikepro/releases/tag/v0.1.0

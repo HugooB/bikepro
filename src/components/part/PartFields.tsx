@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUnits } from "@/components/UnitsProvider";
+import { useT, useUnits } from "@/i18n/client";
 import { daysToMonths } from "@/lib/format";
 
 function Field({
@@ -9,7 +9,7 @@ function Field({
   ...props
 }: React.ComponentProps<typeof Input> & { label: string; hint?: string }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={props.id}>{label}</Label>
       <Input name={props.id} {...props} />
       {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
@@ -80,44 +80,45 @@ function IntervalFields({
 
 /** Name, make, installation, price and interval inputs shared by the add and edit forms. */
 export function PartFields({ values }: { values: PartFieldValues }) {
+  const t = useT();
   const u = useUnits();
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field
           id="name"
-          label="Name"
+          label={t("part.fields.name")}
           defaultValue={values.name ?? ""}
-          placeholder="e.g. Power meter"
+          placeholder={t("part.fields.namePlaceholder")}
           required
           maxLength={80}
         />
         <Field
           id="brand"
-          label="Brand"
+          label={t("part.fields.brand")}
           defaultValue={values.brand ?? ""}
-          placeholder="e.g. Shimano"
+          placeholder={t("part.fields.brandPlaceholder")}
           maxLength={60}
         />
         <Field
           id="model"
-          label="Model"
+          label={t("part.fields.model")}
           defaultValue={values.model ?? ""}
-          placeholder="e.g. Ultegra CN-R8100"
+          placeholder={t("part.fields.modelPlaceholder")}
           maxLength={80}
         />
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3">
         <Field
           id="installedAt"
-          label="Installed on"
+          label={t("part.fields.installedOn")}
           type="date"
           defaultValue={values.installedAt}
           required
         />
         <Field
           id="installedKm"
-          label={`Odometer at install (${u.unitLabel})`}
+          label={t("part.fields.installOdometer", { unit: u.unitLabel })}
           type="number"
           inputMode="decimal"
           min={0}
@@ -127,7 +128,7 @@ export function PartFields({ values }: { values: PartFieldValues }) {
         />
         <Field
           id="cost"
-          label={`Price ${u.currencySymbol}`}
+          label={t("part.fields.price", { currency: u.currencySymbol })}
           type="number"
           inputMode="decimal"
           min={0}
@@ -136,28 +137,26 @@ export function PartFields({ values }: { values: PartFieldValues }) {
         />
       </div>
       <IntervalFields
-        legend="Service interval"
-        hint="How often it needs servicing (cleaning, lubing, adjusting), whichever comes first."
+        legend={t("part.fields.serviceInterval")}
+        hint={t("part.fields.serviceIntervalHint")}
         kmId="serviceKm"
-        kmLabel={`Every … ${u.unitLabel}`}
+        kmLabel={t("part.fields.everyDistance", { unit: u.unitLabel })}
         monthsId="serviceMonths"
-        monthsLabel="or every … months"
+        monthsLabel={t("part.fields.everyMonths")}
         km={values.serviceIntervalKm}
         days={values.serviceIntervalDays}
       />
       <IntervalFields
-        legend="Replacement interval"
-        hint="Its maximum life, counted from when it was installed, whichever comes first."
+        legend={t("part.fields.replaceInterval")}
+        hint={t("part.fields.replaceIntervalHint")}
         kmId="replaceKm"
-        kmLabel={`After … ${u.unitLabel}`}
+        kmLabel={t("part.fields.afterDistance", { unit: u.unitLabel })}
         monthsId="replaceMonths"
-        monthsLabel="or after … months"
+        monthsLabel={t("part.fields.afterMonths")}
         km={values.replaceIntervalKm}
         days={values.replaceIntervalDays}
       />
-      <p className="text-muted-foreground text-xs">
-        Leave an interval empty if it doesn&apos;t apply.
-      </p>
+      <p className="text-muted-foreground text-xs">{t("part.fields.leaveEmpty")}</p>
     </>
   );
 }

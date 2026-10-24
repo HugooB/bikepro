@@ -1,4 +1,5 @@
 import type { BikeType, BrakeType, PartCategory } from "@/db/schema";
+import { hasKey, type T } from "@/i18n";
 import { monthsToDays } from "./format";
 
 /** Interval values in km and days; whichever comes first. Leave both out for "none". */
@@ -11,17 +12,11 @@ export type Intervals = {
 
 export type PartTemplate = Intervals & {
   kind: string;
+  /** Stored with the part, in English; shown translated (see partName). */
   name: string;
   category: PartCategory;
   /** Zone in the bike illustration (M5) this part highlights. */
   svgZone: string;
-};
-
-export const categoryLabels: Record<PartCategory, string> = {
-  drivetrain: "Drivetrain",
-  wheels: "Wheels & tires",
-  brakes: "Brakes & cables",
-  contact: "Contact points",
 };
 
 const YEAR = 365;
@@ -276,12 +271,31 @@ const templates: Record<BikeType, (PartTemplate | typeof BRAKES)[]> = {
   other: roadParts,
 };
 
-export const brakeTypeLabels: Record<BrakeType, string> = {
-  disc: "Disc brakes",
-  rim: "Rim brakes",
-};
-
 /** Default parts for a new bike of the given type and brakes. */
 export function defaultPartsFor(type: BikeType, brakes: BrakeType = "disc"): PartTemplate[] {
   return templates[type].flatMap((t) => (t === BRAKES ? brakeParts[brakes] : [t]));
+}
+
+/** The English template name of every part kind, as parts store it. */
+const templateNames = new Map(
+  [...roadParts.filter((p) => p !== BRAKES), ...brakeParts.disc, ...brakeParts.rim].map((p) => [
+    p.kind,
+    p.name,
+  ]),
+);
+
+/**
+ * How a part's name is shown. Parts keep the name they were created with, in English for
+ * template parts. While it's still the template name, it's shown in the user's language;
+ * a name the user typed is shown as typed.
+ */
+export function partName(part: { kind: string; name: string }, t: T): string {
+  const key = `partKinds.${part.kind}`;
+  return templateNames.get(part.kind) === part.name && hasKey(key) ? t(key) : part.name;
+}
+
+/** The name to store for a part form: the template name when the shown name wasn't changed. */
+export function partNameToStore(kind: string, name: string, t: T): string {
+  const template = templateNames.get(kind);
+  return template && name === partName({ kind, name: template }, t) ? template : name;
 }

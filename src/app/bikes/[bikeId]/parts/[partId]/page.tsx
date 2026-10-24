@@ -10,8 +10,11 @@ import { PartOverview, RetiredPartOverview } from "@/components/part/PartOvervie
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { getBike, getLastResets, getPart, getPartEvents } from "@/db/queries";
-import { computeStatus } from "@/lib/status";
+import { rich } from "@/i18n/rich";
+import { getT } from "@/i18n/server";
 import { requireUser } from "@/lib/auth/session";
+import { partName } from "@/lib/default-parts";
+import { computeStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +26,10 @@ async function load(params: Params) {
   const user = await requireUser();
   const bike = await getBike(user.id, Number(bikeId));
   const part = bike ? await getPart(bike.id, Number(partId)) : undefined;
-  return bike && part ? { user, bike, part } : null;
+  if (!bike || !part) return null;
+  // A template name is shown, and edited, in the user's language (see partName).
+  const t = await getT();
+  return { user, t, bike, part: { ...part, name: partName(part, t) } };
 }
 
 export default async function PartPage({
@@ -35,7 +41,7 @@ export default async function PartPage({
 }) {
   const data = await load(params);
   if (!data) notFound();
-  const { user, bike, part } = data;
+  const { user, t, bike, part } = data;
   const { log, replaced } = await searchParams;
 
   const retired = part.status === "retired";
@@ -45,6 +51,7 @@ export default async function PartPage({
     ? null
     : computeStatus(part, getLastResets(bike.id).get(part.id) ?? null, bike.odometerKm, {
         unit: user.distanceUnit,
+        locale: user.locale,
       });
   const backHref = retired ? `/bikes/${bike.id}/history` : `/bikes/${bike.id}`;
 
@@ -55,7 +62,7 @@ export default async function PartPage({
         className="text-muted-foreground hover:text-foreground -ml-1 flex w-fit items-center gap-1 text-sm"
       >
         <ChevronLeft className="size-4" aria-hidden />
-        {retired ? "History" : bike.name}
+        {retired ? t("bike.tabs.history") : bike.name}
       </Link>
 
       {replaced && !retired && (
@@ -65,11 +72,13 @@ export default async function PartPage({
         >
           <CircleCheck className="text-status-ok mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
-            New {part.name.toLowerCase()} installed. The old one is in{" "}
-            <Link href={`/bikes/${bike.id}/history`} className="font-medium underline">
-              History
-            </Link>
-            .
+            {rich(t("part.replacedNotice", { part: part.name.toLowerCase() }), {
+              link: (text) => (
+                <Link href={`/bikes/${bike.id}/history`} className="font-medium underline">
+                  {text}
+                </Link>
+              ),
+            })}
           </span>
         </p>
       )}
@@ -80,7 +89,7 @@ export default async function PartPage({
             <h1 className="font-display text-3xl leading-tight sm:text-4xl">{part.name}</h1>
             {!status ? (
               <span className="bg-muted text-muted-foreground rounded-full border px-2.5 py-1 text-xs font-medium">
-                Retired
+                {t("part.retired")}
               </span>
             ) : (
               <StatusBadge level={status.level} label={status.condition} />
@@ -92,7 +101,7 @@ export default async function PartPage({
           <Button asChild variant="outline">
             <Link href="?log=replaced#log-heading">
               <RefreshCw aria-hidden />
-              Replace part
+              {t("part.replace")}
             </Link>
           </Button>
         )}
@@ -108,7 +117,7 @@ export default async function PartPage({
         {!retired && (
           <section aria-labelledby="log-heading" className="flex scroll-mt-20 flex-col gap-3">
             <h2 id="log-heading" className="scroll-mt-20 text-lg font-semibold">
-              Log maintenance
+              {t("part.logMaintenance")}
             </h2>
             <LogEventForm
               // Remount when arriving via "Replace part" so the form switches to replacing.
@@ -124,7 +133,7 @@ export default async function PartPage({
 
         <section aria-labelledby="history-heading" className="flex flex-col gap-3">
           <h2 id="history-heading" className="text-lg font-semibold">
-            History
+            {t("bike.tabs.history")}
           </h2>
           <EventTimeline events={events} readOnly={retired} />
         </section>
@@ -137,11 +146,9 @@ export default async function PartPage({
 
       <section className="flex flex-col gap-3 rounded-xl border border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm">
-          <p className="font-medium">Remove this part</p>
+          <p className="font-medium">{t("part.removeTitle")}</p>
           <p className="text-muted-foreground">
-            {retired
-              ? "Deletes this old part and its history for good."
-              : "For parts your bike doesn't have. Deletes the part and its history for good. To swap in a new one, use Replace part instead."}
+            {retired ? t("part.removeRetired") : t("part.removeActive")}
           </p>
         </div>
         <DeletePartButton partId={part.id} partName={part.name} />
@@ -152,5 +159,10 @@ export default async function PartPage({
 
 export async function generateMetadata({ params }: { params: Params }) {
   const data = await load(params);
-  return { title: data ? `${data.part.name} · ${data.bike.name} · BikePro` : "BikePro" };
+  const t = data?.t ?? (await getT());
+  return {
+    title: data
+      ? t("meta.title", { page: `${data.part.name} · ${data.bike.name}` })
+      : t("common.appName"),
+  };
 }

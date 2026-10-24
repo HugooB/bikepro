@@ -1,17 +1,18 @@
-import { format, parseISO } from "date-fns";
 import { Store } from "lucide-react";
 import type { ServiceRoundWithParts } from "@/db/queries";
-import { eventTypeLabels } from "@/lib/event-types";
-import { getUnits } from "@/lib/auth/session";
+import { rich } from "@/i18n/rich";
+import { getT, getUnits } from "@/i18n/server";
+import { partName } from "@/lib/default-parts";
 import { DeleteServiceRoundButton } from "./DeleteServiceRoundButton";
 
 export async function ServiceRoundList({ rounds }: { rounds: ServiceRoundWithParts[] }) {
-  const u = await getUnits();
+  const [t, u] = await Promise.all([getT(), getUnits()]);
   if (rounds.length === 0) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-        No service rounds yet. Use the <span className="font-medium">Service round</span> button on
-        the Parts tab after a shop visit.
+        {rich(t("history.noRounds"), {
+          b: (text) => <span className="font-medium">{text}</span>,
+        })}
       </p>
     );
   }
@@ -29,10 +30,10 @@ export async function ServiceRoundList({ rounds }: { rounds: ServiceRoundWithPar
                   <Store className="size-4" aria-hidden />
                 </span>
                 <div>
-                  <p className="font-medium">{round.shop ?? "Service round"}</p>
+                  <p className="font-medium">{round.shop ?? t("serviceRound.button")}</p>
                   <p className="text-muted-foreground text-sm tabular-nums">
                     {[
-                      format(parseISO(round.date), "d MMM yyyy"),
+                      u.date(round.date, "d MMM yyyy"),
                       u.distance(round.odometerKm),
                       round.totalCost != null ? u.money(round.totalCost) : null,
                     ]
@@ -52,10 +53,10 @@ export async function ServiceRoundList({ rounds }: { rounds: ServiceRoundWithPar
                     className="bg-background rounded-full border px-2.5 py-1 text-xs"
                     title={e.description ?? undefined}
                   >
-                    {e.part.name}
+                    {partName(e.part, t)}
                     <span className="text-muted-foreground">
                       {" "}
-                      · {eventTypeLabels[e.type].toLowerCase()}
+                      · {t(`events.typesLower.${e.type}`)}
                     </span>
                   </li>
                 ))}

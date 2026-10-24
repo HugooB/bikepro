@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeStatus, NO_INTERVALS } from "./status";
+import { computeStatus } from "./status";
 
 const now = new Date(2026, 9, 19, 12, 0); // 19 Oct 2026
 
@@ -82,7 +82,7 @@ describe("computeStatus", () => {
     };
     expect(computeStatus(saddle, null, 9999, { now })).toMatchObject({
       level: "none",
-      condition: NO_INTERVALS,
+      condition: "No intervals set",
       service: null,
       replace: null,
     });

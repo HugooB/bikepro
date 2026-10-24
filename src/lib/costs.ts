@@ -1,6 +1,5 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { PartCategory } from "@/db/schema";
-import { categoryLabels } from "./default-parts";
 
 // Money spent on a bike comes from four places, and each euro is recorded in exactly one:
 // the bike's purchase price, a part's price (dated when it was installed), the cost of a
@@ -8,20 +7,15 @@ import { categoryLabels } from "./default-parts";
 // cost of their own, and a replacement's price is stored on the new part, so nothing is
 // counted twice. Everything except the purchase is "maintenance": the cost of running it.
 
+/** Labelled under costs.categories in the dictionary. */
 export type CostCategory = PartCategory | "service" | "bike";
-
-export const costCategoryLabels: Record<CostCategory, string> = {
-  ...categoryLabels,
-  service: "Service rounds",
-  bike: "Bike purchase",
-};
 
 export type CostEntry = {
   /** "YYYY-MM-DD" */
   date: string;
   amount: number;
   category: CostCategory;
-  /** What the money went on, e.g. "Chain" or "Service round at Bike Shop". */
+  /** What the money went on, e.g. "Chain" or "Service round at Bike Shop", translated. */
   label: string;
   source: "purchase" | "part" | "event" | "round";
   /** The part it belongs to; service rounds have none. */

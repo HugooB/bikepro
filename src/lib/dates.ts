@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { tEn, type T } from "@/i18n";
 
 /** True for a real calendar date in "YYYY-MM-DD" form, so "2026-02-31" and "2025-13-01" fail. */
 export function isRealDate(value: string): boolean {
@@ -9,4 +10,7 @@ export function isRealDate(value: string): boolean {
 }
 
 /** Form field holding a calendar date ("YYYY-MM-DD"). */
-export const isoDate = z.string().refine(isRealDate, "Pick a date");
+export const dateField = (t: T) => z.string().refine(isRealDate, t("validation.pickDate"));
+
+/** The same, for checks whose message is never shown. */
+export const isoDate = dateField(tEn);

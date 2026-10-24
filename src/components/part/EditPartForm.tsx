@@ -5,10 +5,12 @@ import { ChevronDown } from "lucide-react";
 import { updatePart } from "@/actions/parts";
 import { Button } from "@/components/ui/button";
 import type { Part } from "@/db/schema";
+import { useT } from "@/i18n/client";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 import { PartFields } from "./PartFields";
 
 export function EditPartForm({ part }: { part: Part }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     updatePart,
     initialActionState,
@@ -22,7 +24,7 @@ export function EditPartForm({ part }: { part: Part }) {
   return (
     <details ref={detailsRef} className="group bg-card rounded-xl border">
       <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium [&::-webkit-details-marker]:hidden">
-        Edit part details & intervals
+        {t("part.fields.editTitle")}
         <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
       </summary>
 
@@ -35,7 +37,7 @@ export function EditPartForm({ part }: { part: Part }) {
           </p>
         )}
         <Button type="submit" disabled={pending} className="w-full sm:w-fit">
-          {pending ? "Saving…" : "Save changes"}
+          {pending ? t("common.saving") : t("common.saveChanges")}
         </Button>
       </form>
     </details>

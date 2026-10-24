@@ -1,5 +1,6 @@
 import { and, eq, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
 import type { StravaTokens } from "@/lib/strava/api";
+import { UserError } from "@/lib/user-error";
 import { decryptToken, encryptToken } from "@/lib/strava/crypto";
 import { db } from "./index";
 import { bikes, stravaConnections, type Bike, type StravaGear } from "./schema";
@@ -152,7 +153,7 @@ export function applyStravaGear(userId: number, gear: StravaGear[], now = new Da
 }
 
 /** A user-facing reason a bike can't be linked. */
-export class StravaLinkError extends Error {}
+export class StravaLinkError extends UserError {}
 
 /**
  * Finds a Strava bike from the last sync that `bikeId` may link to: it exists and isn't
@@ -161,7 +162,7 @@ export class StravaLinkError extends Error {}
 export function findLinkableGear(userId: number, gearId: string, bikeId?: number) {
   const connection = getStravaConnection(userId);
   const gear = connection?.gear.find((g) => g.id === gearId);
-  if (!gear) throw new StravaLinkError("That bike isn't in your Strava account");
+  if (!gear) throw new StravaLinkError("errors.stravaBikeMissing");
   const other = db
     .select({ id: bikes.id, name: bikes.name, userId: bikes.userId })
     .from(bikes)
@@ -169,11 +170,9 @@ export function findLinkableGear(userId: number, gearId: string, bikeId?: number
     .get();
   if (other && other.id !== bikeId) {
     // Only name the bike when it's the user's own; never reveal someone else's.
-    throw new StravaLinkError(
-      other.userId === userId
-        ? `That Strava bike is already linked to ${other.name}`
-        : "That Strava bike is already linked",
-    );
+    throw other.userId === userId
+      ? new StravaLinkError("errors.stravaBikeLinkedTo", { bike: other.name })
+      : new StravaLinkError("errors.stravaBikeLinked");
   }
   return gear;
 }

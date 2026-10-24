@@ -1,4 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
+import { tEn, type T } from "@/i18n";
 import { resetsByDefault, type ServiceAction } from "@/lib/event-types";
 import { db } from "./index";
 import { bumpOdometer, recordPartEvent } from "./part-events";
@@ -15,7 +16,7 @@ export type NewServiceRound = {
 };
 
 /** Saves a service round and logs one event on every part it covered, in one transaction. */
-export function createServiceRound(input: NewServiceRound) {
+export function createServiceRound(input: NewServiceRound, t: T = tEn) {
   return db.transaction((tx) => {
     const round = tx
       .insert(serviceRounds)
@@ -44,14 +45,19 @@ export function createServiceRound(input: NewServiceRound) {
       const part = byId.get(item.partId);
       if (!part) throw new Error(`Part ${item.partId} does not belong to bike ${input.bikeId}`);
       // A replacement retires the part and installs a new one (see replacePart).
-      recordPartEvent(tx, part, {
-        type: item.type,
-        description: item.note ?? null,
-        date: input.date,
-        odometerKm: input.odometerKm,
-        resetsInterval: resetsByDefault[item.type],
-        serviceRoundId: round.id,
-      });
+      recordPartEvent(
+        tx,
+        part,
+        {
+          type: item.type,
+          description: item.note ?? null,
+          date: input.date,
+          odometerKm: input.odometerKm,
+          resetsInterval: resetsByDefault[item.type],
+          serviceRoundId: round.id,
+        },
+        t,
+      );
     }
 
     bumpOdometer(tx, input.bikeId, input.odometerKm);

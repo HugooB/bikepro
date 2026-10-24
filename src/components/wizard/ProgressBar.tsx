@@ -1,3 +1,5 @@
+import { useT } from "@/i18n/client";
+
 export function ProgressBar({
   current,
   total,
@@ -7,11 +9,12 @@ export function ProgressBar({
   total: number;
   label: string;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2">
       <p className="text-muted-foreground flex justify-between text-xs font-medium">
         <span aria-live="polite">
-          Step {current} of {total}
+          {t("wizard.step", { current, total })}
           <span className="sr-only">: {label}</span>
         </span>
         <span aria-hidden>{label}</span>
@@ -19,7 +22,7 @@ export function ProgressBar({
       <div
         className="bg-muted h-1.5 overflow-hidden rounded-full"
         role="progressbar"
-        aria-label="Progress"
+        aria-label={t("wizard.progress")}
         aria-valuemin={1}
         aria-valuemax={total}
         aria-valuenow={current}

@@ -6,6 +6,7 @@ import type { StravaConnection } from "@/db/schema";
 import type { SessionUser } from "@/db/sessions";
 import { getStravaConnection } from "@/db/strava";
 import { lastBikeCookie } from "@/lib/last-bike";
+import { getT } from "@/i18n/server";
 import { requireUser } from "@/lib/auth/session";
 import { getGearDetails, stravaConfig, type StravaConfig } from "@/lib/strava/api";
 import { getAccessToken } from "@/lib/strava/sync";
@@ -14,7 +15,10 @@ import type { WizardDraft } from "@/lib/wizard-schema";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Add a bike · BikePro" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("meta.title", { page: t("wizard.pageTitle") }) };
+}
 
 export default async function NewBikePage({
   searchParams,
