@@ -281,3 +281,28 @@ describe("tire types", () => {
     expect(parseSavedDraft(JSON.parse(JSON.stringify(old)))?.tireType).toBe("tubeless");
   });
 });
+
+describe("default tires per bike type", () => {
+  const start = { step: "basics" as const, draft: draft(), errors: {} };
+
+  it("switches to inner tubes for a city bike and back to tubeless for a road bike", () => {
+    const city = wizardReducer(start, { type: "bikeType", bikeType: "city" });
+    expect(city.draft.tireType).toBe("tubes");
+    expect(city.draft.parts.some((p) => p.kind === "sealant")).toBe(false);
+    const road = wizardReducer(city, { type: "bikeType", bikeType: "road" });
+    expect(road.draft.tireType).toBe("tubeless");
+    expect(road.draft.parts.some((p) => p.kind === "sealant")).toBe(true);
+  });
+
+  it("keeps tires the user picked when the bike type changes", () => {
+    const tubes = wizardReducer(start, { type: "tireType", tireType: "tubes" });
+    expect(wizardReducer(tubes, { type: "bikeType", bikeType: "gravel" }).draft.tireType).toBe(
+      "tubes",
+    );
+    const city = wizardReducer(start, { type: "bikeType", bikeType: "city" });
+    const tubeless = wizardReducer(city, { type: "tireType", tireType: "tubeless" });
+    expect(wizardReducer(tubeless, { type: "bikeType", bikeType: "mtb" }).draft.tireType).toBe(
+      "tubeless",
+    );
+  });
+});

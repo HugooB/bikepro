@@ -585,6 +585,7 @@ export const en = {
     drivetrain: "Drivetrain",
     wheels: "Wheels & tires",
     brakes: "Brakes & cables",
+    suspension: "Suspension",
     contact: "Contact points",
   },
   brakeTypes: {
@@ -599,6 +600,8 @@ export const en = {
     road: { name: "Road", hint: "Drop bars, slick tires" },
     gravel: { name: "Gravel", hint: "Drop bars, wide knobby tires" },
     tt: { name: "TT", hint: "Aero bars, built for speed" },
+    mtb: { name: "MTB", hint: "Flat bars, suspension" },
+    city: { name: "City", hint: "Upright, hub gears, fenders" },
     other: { name: "Other", hint: "Anything else with two wheels" },
   },
   colors: {
@@ -637,6 +640,12 @@ export const en = {
     pedals: "Pedals",
     cleats: "Cleats",
     headset: "Headset",
+    fork: "Suspension fork",
+    rear_shock: "Rear shock",
+    dropper_post: "Dropper post",
+    grips: "Grips",
+    sprocket: "Rear sprocket",
+    hub_gear: "Hub gear",
   },
   events: {
     types: {
@@ -673,6 +682,7 @@ export const en = {
       drivetrain: "Drivetrain",
       wheels: "Wheels & tires",
       brakes: "Brakes & cables",
+      suspension: "Suspension",
       contact: "Contact points",
       service: "Service rounds",
       bike: "Bike purchase",

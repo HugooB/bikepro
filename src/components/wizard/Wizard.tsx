@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { createBikeFromWizard } from "@/actions/bikes";
 import { Button } from "@/components/ui/button";
+import { defaultTireType } from "@/lib/default-parts";
 import { cn } from "@/lib/utils";
 import {
   emptyDraft,
@@ -50,7 +51,8 @@ export function Wizard({
   const t = useT();
   const { unit } = useUnits();
   const [state, dispatch] = useReducer(wizardReducer, undefined, () => {
-    const draft = { ...emptyDraft(today, unit), ...prefill };
+    const start = { ...emptyDraft(today, unit), ...prefill };
+    const draft = { ...start, tireType: prefill?.tireType ?? defaultTireType(start.type) };
     return {
       step: "basics" as WizardStep,
       draft: { ...draft, parts: partChoicesFor(draft.type, draft.brakeType, draft.tireType, unit) },

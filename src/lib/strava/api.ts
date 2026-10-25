@@ -163,7 +163,7 @@ const gearSchema = z.object({
 
 // Strava's frame types: 1 mountain, 2 cross, 3 road, 4 time trial, 5 gravel.
 const frameTypes: Record<number, BikeType> = {
-  1: "other",
+  1: "mtb",
   2: "gravel",
   3: "road",
   4: "tt",

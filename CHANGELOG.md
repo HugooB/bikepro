@@ -7,6 +7,7 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 ### Added
 
 - Tubeless tires or inner tubes per bike, in the add-bike wizard and in Settings. The wizard suggests tubeless sealant only for tubeless tires. Existing bikes get tubeless when they have sealant, otherwise inner tubes. Imports of older exports follow the same rule.
+- MTB and city bikes as bike types, each with a part list of its own. MTBs track a suspension fork, rear shock and dropper post (in a new Suspension category), grips instead of bar tape, and no front derailleur, with shorter drivetrain intervals for dirt. City bikes track a hub gear and a single rear sprocket instead of derailleurs and a cassette. The wizard starts city bikes on inner tubes, unless other tires were already picked. Strava's mountain bikes now start as MTB.
 
 ## [0.6.0] - 2026-10-24
 

@@ -4,7 +4,7 @@ import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-or
 // Run `npm run db:generate` after changing this file to create a migration.
 // Calendar dates (purchase, install, event dates) are stored as "YYYY-MM-DD" text.
 
-export const bikeTypes = ["road", "gravel", "tt", "other"] as const;
+export const bikeTypes = ["road", "gravel", "tt", "mtb", "city", "other"] as const;
 export type BikeType = (typeof bikeTypes)[number];
 
 export const brakeTypes = ["disc", "rim"] as const;
@@ -13,7 +13,7 @@ export type BrakeType = (typeof brakeTypes)[number];
 export const tireTypes = ["tubeless", "tubes"] as const;
 export type TireType = (typeof tireTypes)[number];
 
-export const partCategories = ["drivetrain", "wheels", "brakes", "contact"] as const;
+export const partCategories = ["drivetrain", "wheels", "brakes", "suspension", "contact"] as const;
 export type PartCategory = (typeof partCategories)[number];
 
 export const partEventTypes = [

@@ -111,7 +111,7 @@ export const nl: Dictionary = {
     body: "De fiets of het onderdeel dat je zoekt bestaat niet, of is verwijderd.",
   },
   validation: {
-    pickDate: "Kies een datum",
+    pickDate: "Kies datum",
     enterOdometer: "Vul de tellerstand in",
     distanceNegative: "Een afstand kan niet negatief zijn",
     distanceTooLarge: "Dat is wel heel veel gefietst",
@@ -501,7 +501,7 @@ export const nl: Dictionary = {
         "Elk onderdeel begint op deze datum, tenzij je aangeeft dat het sindsdien is vervangen.",
       thisMonth: "Deze maand",
       thisYear: "Dit jaar",
-      pickDate: "Kies een datum",
+      pickDate: "Kies datum",
       date: "Aankoopdatum",
       countedFrom: "Gerekend vanaf {date}.",
       wasItNew: "Was hij nieuw?",
@@ -604,6 +604,7 @@ export const nl: Dictionary = {
     drivetrain: "Aandrijving",
     wheels: "Wielen en banden",
     brakes: "Remmen en kabels",
+    suspension: "Vering",
     contact: "Contactpunten",
   },
   brakeTypes: {
@@ -618,6 +619,8 @@ export const nl: Dictionary = {
     road: { name: "Racefiets", hint: "Racestuur, gladde banden" },
     gravel: { name: "Gravel", hint: "Racestuur, brede noppenbanden" },
     tt: { name: "Tijdrit", hint: "Aerobars, gebouwd voor snelheid" },
+    mtb: { name: "MTB", hint: "Recht stuur, vering" },
+    city: { name: "Stadsfiets", hint: "Rechtop, naafversnelling, spatborden" },
     other: { name: "Anders", hint: "Al het andere met twee wielen" },
   },
   colors: {
@@ -655,6 +658,12 @@ export const nl: Dictionary = {
     pedals: "Pedalen",
     cleats: "Schoenplaatjes",
     headset: "Balhoofd",
+    fork: "Voorvork",
+    rear_shock: "Achterdemper",
+    dropper_post: "Dropperpost",
+    grips: "Handvatten",
+    sprocket: "Achtertandwiel",
+    hub_gear: "Naafversnelling",
   },
   events: {
     types: {
@@ -689,6 +698,7 @@ export const nl: Dictionary = {
       drivetrain: "Aandrijving",
       wheels: "Wielen en banden",
       brakes: "Remmen en kabels",
+      suspension: "Vering",
       contact: "Contactpunten",
       service: "Onderhoudsbeurten",
       bike: "Aankoop fiets",

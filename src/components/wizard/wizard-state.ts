@@ -1,5 +1,6 @@
 import type { DistanceUnit } from "@/db/schema";
 import type { BikeType, BrakeType, TireType } from "@/db/schema";
+import { defaultTireType } from "@/lib/default-parts";
 import {
   parseSavedDraft,
   partChoicesFor,
@@ -35,7 +36,13 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
     case "tireType": {
       const type = action.type === "bikeType" ? action.bikeType : state.draft.type;
       const brakeType = action.type === "brakeType" ? action.brakeType : state.draft.brakeType;
-      const tireType = action.type === "tireType" ? action.tireType : state.draft.tireType;
+      // A new bike type brings its own default tires, unless the user already picked other ones.
+      const tireType =
+        action.type === "tireType"
+          ? action.tireType
+          : action.type === "bikeType" && state.draft.tireType === defaultTireType(state.draft.type)
+            ? defaultTireType(type)
+            : state.draft.tireType;
       // Keep what was already chosen for parts the new template shares.
       const previous = new Map(state.draft.parts.map((p) => [p.kind, p]));
       const parts = partChoicesFor(type, brakeType, tireType, state.draft.unit).map(

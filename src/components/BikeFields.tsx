@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 /** Small side-view glyph per bike type for the type picker. */
 function BikeTypeGlyph({ type }: { type: BikeType }) {
-  const wheel = type === "gravel" ? 4 : 2.2;
+  const wheel = type === "gravel" ? 4 : type === "mtb" ? 3.4 : 2.2;
   return (
     <svg
       viewBox="0 0 64 36"
@@ -31,6 +31,15 @@ function BikeTypeGlyph({ type }: { type: BikeType }) {
       <path d="M20 6 L27 6" strokeWidth={2.4} />
       {type === "tt" ? (
         <path d="M44 9 L56 8" strokeWidth={2.4} />
+      ) : type === "mtb" ? (
+        // Flat bar on a riser stem
+        <path d="M44 9 L46 5 M42 5 L52 5" strokeWidth={2.4} />
+      ) : type === "city" ? (
+        <>
+          {/* Swept-back bar and fenders */}
+          <path d="M44 9 L45 3 Q50 2 48 7" strokeWidth={2.2} />
+          <path d="M2 24 A12 12 0 0 1 20 13.6 M44 13.6 A12 12 0 0 1 62 24" strokeWidth={1.8} />
+        </>
       ) : type === "other" ? (
         <path d="M44 9 L42 4 L48 3" strokeWidth={2.2} />
       ) : (
@@ -54,7 +63,7 @@ export function BikeTypePicker({
     <div
       role="radiogroup"
       aria-label={t("wizard.basics.bikeType")}
-      className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+      className="grid grid-cols-2 gap-2 sm:grid-cols-3"
     >
       {bikeTypes.map((type) => {
         const selected = value === type;
