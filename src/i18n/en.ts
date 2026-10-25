@@ -26,6 +26,7 @@ export const en = {
     name: "Name",
     type: "Type",
     brakes: "Brakes",
+    tires: "Tires",
     brand: "Brand",
     model: "Model",
     gotItOn: "Got it on",
@@ -216,6 +217,7 @@ export const en = {
       typeHint: "Changing the type doesn't change its parts.",
       brakesHint:
         "Changes the drawing. Brake parts stay as they are: add or remove them on the bike page.",
+      tiresHint: "Parts stay as they are: add or remove tubeless sealant on the bike page.",
     },
     data: {
       title: "Your data",
@@ -456,6 +458,8 @@ export const en = {
       bikeType: "Bike type",
       discTracked: "Pads, rotors and brake fluid are tracked.",
       rimTracked: "Pads and brake cables are tracked.",
+      tubelessTracked: "Tubeless sealant is tracked.",
+      tubesTracked: "No sealant to track: inner tubes are replaced when they puncture.",
       brand: "Brand (optional)",
       brandPlaceholder: "e.g. Canyon",
       model: "Model (optional)",
@@ -525,6 +529,7 @@ export const en = {
       nameTooLong: "Keep the name under 40 characters",
       chooseType: "Choose a bike type",
       chooseBrakes: "Choose the brakes",
+      chooseTires: "Choose the tires",
       pickColor: "Pick a color",
       purchaseInFuture: "The purchase date can't be in the future",
       enterPurchaseOdometer: "Enter the odometer when you bought it",
@@ -585,6 +590,10 @@ export const en = {
   brakeTypes: {
     disc: "Disc brakes",
     rim: "Rim brakes",
+  },
+  tireTypes: {
+    tubeless: "Tubeless",
+    tubes: "Inner tubes",
   },
   bikeTypes: {
     road: { name: "Road", hint: "Drop bars, slick tires" },

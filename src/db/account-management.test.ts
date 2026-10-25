@@ -230,6 +230,20 @@ describe("import", () => {
     expect(retired.events.at(-1)?.serviceRoundId).toBe(road.serviceRounds[0]!.id);
   });
 
+  it("gives bikes from older exports tubeless tires only when they have sealant", () => {
+    const exported = JSON.parse(JSON.stringify(buildExport(alice)));
+    const [first, second] = exported.bikes;
+    for (const bike of exported.bikes) delete bike.tireType;
+    first.parts.push({ ...first.parts[0], kind: "sealant", replacedByPartId: null });
+    second.parts = second.parts.filter((p: { kind: string }) => p.kind !== "sealant");
+    exported.bikes = [first, second];
+
+    const ids = new Set(buildExport(bob).bikes.map((b) => b.id));
+    importData(bob, exported);
+    const added = buildExport(bob).bikes.filter((b) => !ids.has(b.id));
+    expect(added.map((b) => b.tireType)).toEqual(["tubeless", "tubes"]);
+  });
+
   it("rejects an invalid file without writing anything", () => {
     const count = () => db.select({ id: bikes.id }).from(bikes).all().length;
     const before = count();

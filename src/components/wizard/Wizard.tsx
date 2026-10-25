@@ -53,7 +53,7 @@ export function Wizard({
     const draft = { ...emptyDraft(today, unit), ...prefill };
     return {
       step: "basics" as WizardStep,
-      draft: { ...draft, parts: partChoicesFor(draft.type, draft.brakeType, unit) },
+      draft: { ...draft, parts: partChoicesFor(draft.type, draft.brakeType, draft.tireType, unit) },
       errors: {},
     };
   });

@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { BikeDrawing } from "@/components/bike/BikeDrawing";
 import { ZoneProvider } from "@/components/bike/zone-context";
 import { BikeTypePicker, FrameColorPicker } from "@/components/BikeFields";
-import { brakeTypes } from "@/db/schema";
+import { brakeTypes, tireTypes } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import { useT, useUnits } from "@/i18n/client";
 import { rich } from "@/i18n/rich";
@@ -83,6 +83,26 @@ export function StepBasics({ draft, errors, dispatch, headingRef }: StepProps) {
           {draft.brakeType === "disc"
             ? t("wizard.basics.discTracked")
             : t("wizard.basics.rimTracked")}
+        </p>
+      </fieldset>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.tires")}</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {tireTypes.map((tireType) => (
+            <ChoiceChip
+              key={tireType}
+              name="tire-type"
+              checked={draft.tireType === tireType}
+              onChange={() => dispatch({ type: "tireType", tireType })}
+            >
+              {t(`tireTypes.${tireType}`)}
+            </ChoiceChip>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">
+          {draft.tireType === "tubeless"
+            ? t("wizard.basics.tubelessTracked")
+            : t("wizard.basics.tubesTracked")}
         </p>
       </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -360,7 +380,7 @@ export function StepParts({ draft, errors, dispatch, today, headingRef }: StepPr
         </p>
       )}
 
-      {partsByCategory(draft.type, draft.brakeType).map(([category, templates]) => (
+      {partsByCategory(draft.type, draft.brakeType, draft.tireType).map(([category, templates]) => (
         <fieldset key={category} className="flex flex-col gap-1.5">
           <legend className="text-muted-foreground mb-1.5 px-1 text-sm font-medium">
             {t(`categories.${category}`)}
@@ -515,7 +535,9 @@ export function StepReview({
   const typed = (value: number) =>
     formatDistance(fromUnit(value, draft.unit), draft.unit, u.locale);
   const stravaBike = strava.bikes.find((b) => b.id === draft.stravaGearId);
-  const templates = new Map(defaultPartsFor(draft.type, draft.brakeType).map((t) => [t.kind, t]));
+  const templates = new Map(
+    defaultPartsFor(draft.type, draft.brakeType, draft.tireType).map((t) => [t.kind, t]),
+  );
   const chosen = draft.parts.filter((p) => p.included);
   const replaced = chosen.filter((p) => p.replaced).length;
   const makeModel = [draft.brand, draft.model].filter((s) => s.trim()).join(" ");
@@ -539,6 +561,7 @@ export function StepReview({
   const rows: { label: string; value: string; step: WizardStep }[] = [
     { label: t("bikeForm.type"), value: t(`bikeTypes.${draft.type}.name`), step: "basics" },
     { label: t("bikeForm.brakes"), value: t(`brakeTypes.${draft.brakeType}`), step: "basics" },
+    { label: t("bikeForm.tires"), value: t(`tireTypes.${draft.tireType}`), step: "basics" },
     ...(makeModel
       ? [{ label: t("wizard.review.make"), value: makeModel, step: "basics" as const }]
       : []),

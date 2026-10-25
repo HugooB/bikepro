@@ -1,4 +1,4 @@
-import type { BikeType, BrakeType, PartCategory } from "@/db/schema";
+import type { BikeType, BrakeType, PartCategory, TireType } from "@/db/schema";
 import { hasKey, type T } from "@/i18n";
 import { monthsToDays } from "./format";
 
@@ -32,8 +32,10 @@ const months = monthsToDays;
 // Where no guide gives a fixed number (derailleurs, wheels, saddle, pedals), there is no
 // replacement interval: those parts are replaced when inspection says so.
 
-/** Where the brake parts go in each template. */
+/** Where the brake and tire parts go in each template. */
 const BRAKES = "brakes" as const;
+const TIRES = "tires" as const;
+type Slot = PartTemplate | typeof BRAKES | typeof TIRES;
 
 const brakeParts: Record<BrakeType, PartTemplate[]> = {
   disc: [
@@ -103,7 +105,23 @@ const brakeParts: Record<BrakeType, PartTemplate[]> = {
   ],
 };
 
-const roadParts: (PartTemplate | typeof BRAKES)[] = [
+const tireParts: Record<TireType, PartTemplate[]> = {
+  tubeless: [
+    // Check and top up every 2 months; it dries out in 2–6 months.
+    {
+      kind: "sealant",
+      name: "Tubeless sealant",
+      category: "wheels",
+      svgZone: "tire_rear",
+      serviceIntervalDays: months(2),
+      replaceIntervalDays: months(6),
+    },
+  ],
+  // Inner tubes are replaced when they puncture, not on a schedule.
+  tubes: [],
+};
+
+const roadParts: Slot[] = [
   // Drivetrain
   // Clean and lube every 200–500 km; replace at 0.5% stretch, 2,000–5,000 km.
   {
@@ -199,15 +217,8 @@ const roadParts: (PartTemplate | typeof BRAKES)[] = [
     replaceIntervalKm: 4000,
     replaceIntervalDays: 5 * YEAR,
   },
-  // Check and top up every 2 months; it dries out in 2–6 months.
-  {
-    kind: "sealant",
-    name: "Tubeless sealant",
-    category: "wheels",
-    svgZone: "tire_rear",
-    serviceIntervalDays: months(2),
-    replaceIntervalDays: months(6),
-  },
+  // Sealant for tubeless tires, see above
+  TIRES,
 
   // Brakes & cables (the brake parts themselves depend on the brake type, see above)
   BRAKES,
@@ -264,24 +275,32 @@ const roadParts: (PartTemplate | typeof BRAKES)[] = [
 ];
 
 // Other bike types reuse the road template until they get their own.
-const templates: Record<BikeType, (PartTemplate | typeof BRAKES)[]> = {
+const templates: Record<BikeType, Slot[]> = {
   road: roadParts,
   gravel: roadParts,
   tt: roadParts,
   other: roadParts,
 };
 
-/** Default parts for a new bike of the given type and brakes. */
-export function defaultPartsFor(type: BikeType, brakes: BrakeType = "disc"): PartTemplate[] {
-  return templates[type].flatMap((t) => (t === BRAKES ? brakeParts[brakes] : [t]));
+/** Default parts for a new bike of the given type, brakes and tires. */
+export function defaultPartsFor(
+  type: BikeType,
+  brakes: BrakeType = "disc",
+  tires: TireType = "tubeless",
+): PartTemplate[] {
+  return templates[type].flatMap((t) =>
+    t === BRAKES ? brakeParts[brakes] : t === TIRES ? tireParts[tires] : [t],
+  );
 }
 
 /** The English template name of every part kind, as parts store it. */
 const templateNames = new Map(
-  [...roadParts.filter((p) => p !== BRAKES), ...brakeParts.disc, ...brakeParts.rim].map((p) => [
-    p.kind,
-    p.name,
-  ]),
+  [
+    ...roadParts.filter((p) => typeof p !== "string"),
+    ...brakeParts.disc,
+    ...brakeParts.rim,
+    ...tireParts.tubeless,
+  ].map((p) => [p.kind, p.name]),
 );
 
 /**

@@ -4,6 +4,10 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+### Added
+
+- Tubeless tires or inner tubes per bike, in the add-bike wizard and in Settings. The wizard suggests tubeless sealant only for tubeless tires. Existing bikes get tubeless when they have sealant, otherwise inner tubes. Imports of older exports follow the same rule.
+
 ## [0.6.0] - 2026-10-24
 
 A ready-made Docker image: install BikePro on a regular computer or a Raspberry Pi from two downloaded files.

@@ -10,6 +10,9 @@ export type BikeType = (typeof bikeTypes)[number];
 export const brakeTypes = ["disc", "rim"] as const;
 export type BrakeType = (typeof brakeTypes)[number];
 
+export const tireTypes = ["tubeless", "tubes"] as const;
+export type TireType = (typeof tireTypes)[number];
+
 export const partCategories = ["drivetrain", "wheels", "brakes", "contact"] as const;
 export type PartCategory = (typeof partCategories)[number];
 
@@ -77,6 +80,8 @@ export const bikes = sqliteTable(
     type: text("type", { enum: bikeTypes }).notNull().default("road"),
     /** Picks the brake parts in the template and how the drawing shows the brakes. */
     brakeType: text("brake_type", { enum: brakeTypes }).notNull().default("disc"),
+    /** Tubeless tires get sealant in the template; tires with inner tubes don't. */
+    tireType: text("tire_type", { enum: tireTypes }).notNull().default("tubeless"),
     brand: text("brand"),
     model: text("model"),
     color: text("color"),

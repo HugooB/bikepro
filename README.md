@@ -61,6 +61,16 @@ The database lives in the `bikepro-data` Docker volume, so it survives restarts 
 
 `docker-compose.yml` uses `ghcr.io/hugoob/bikepro:latest`. For updates only when you choose, pin a version instead, such as `ghcr.io/hugoob/bikepro:0.6` (bug fixes within 0.6) or `:0.6.0` (exactly that release).
 
+### Build it your self
+You can also choose to build BikePro yourself. In that case, clone this repository and let Docker build the application for you through Docker compose. 
+
+```bash
+git clone https://github.com/HugooB/bikepro.git
+cd bikepro
+# set ADMIN_EMAIL and ADMIN_PASSWORD in .env, then:
+docker compose up --build -d
+```
+
 ## Configuration
 
 All settings go in `.env`. Restart after changing them (`docker compose up -d`).
@@ -159,12 +169,6 @@ Each user can also download their own data as JSON under **Settings → Your dat
 - After 10 failed sign-ins for an account, further attempts are refused for 15 minutes.
 - Every page is sent with a strict Content Security Policy and other security headers. HSTS is added when `APP_URL` is `https://`.
 - Found a security problem? Please report it privately, as described in [SECURITY.md](SECURITY.md).
-
-## Good to know
-
-- Units, currency and language are set per user under **Settings → Preferences**. Before signing in, BikePro follows the browser's language.
-- BikePro shows each part's condition in the app. It doesn't send notifications or emails.
-- Strava sync reads your bikes' totals only. It doesn't import rides, and there are no webhooks, so distances update when you open the app.
 
 ## Roadmap
 

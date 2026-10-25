@@ -39,7 +39,7 @@ The schema is defined in `src/db/schema.ts`. Calendar dates (purchase, installat
 | `users`              | email (lowercased), name, scrypt password hash, `isAdmin`, `distanceUnit` (`km` / `mi`), `currency` (ISO 4217)                           | The unit and currency only change how values are shown and entered                                                       |
 | `sessions`           | SHA-256 of the session token, user, expiry                                                                                               | The token itself is only in the user's cookie                                                                            |
 | `app_settings`       | install-wide settings as key/value pairs, such as `registrationOpen`                                                                     | Changed by an admin in Settings → Admin (`src/db/app-settings.ts`)                                                       |
-| `bikes`              | name, type (`road` / `gravel` / `tt` / `other`), brake type, brand, model, color, purchase date and price, odometer                      | Strava link: `stravaGearId` (unique), `stravaDistanceKm`, `stravaOffsetKm`                                               |
+| `bikes`              | name, type (`road` / `gravel` / `tt` / `other`), brake type, tire type, brand, model, color, purchase date and price, odometer           | Strava link: `stravaGearId` (unique), `stravaDistanceKm`, `stravaOffsetKm`                                               |
 | `parts`              | category, `kind` (e.g. `chain`), name, drawing zone, installation date and km, service and replacement intervals (km and/or days), price | `status` is `active` or `retired`. Retired parts keep `retiredAt`, `retiredKm` and `replacedByPartId`                    |
 | `part_events`        | what happened to a part: `installed`, `serviced`, `cleaned`, `adjusted`, `replaced` or `note`, with date, km, description and cost       | `resetsInterval` marks events that restart the service interval. `serviceRoundId` links events logged by a service round |
 | `service_rounds`     | a shop visit covering many parts: date, shop, odometer, total cost, notes                                                                | Its parts are the `part_events` that point to it                                                                         |
@@ -93,7 +93,7 @@ The more urgent of the two intervals decides the part's level. On a tie, replaci
 
 The bike drawing (`src/components/bike/BikeDrawing.tsx`) has a zone for each area, such as the chain, rear tire or headset (`src/lib/zones.ts`). Each part names its zone, and a zone takes the color of its most urgent part.
 
-Default parts and intervals per bike type and brake type are in `src/lib/default-parts.ts`. The sources for the intervals are cited at the top of that file.
+Default parts and intervals per bike type, brake type and tire type are in `src/lib/default-parts.ts`. The sources for the intervals are cited at the top of that file.
 
 ## Replacing a part
 
@@ -156,10 +156,10 @@ The code is in `src/lib/strava/` (the API client, sync and crypto), `src/db/stra
 
 `/bikes/new` is the only way to add a bike. It has five steps (`src/lib/wizard-schema.ts`):
 
-1. **Basics:** name, type, brake type, brand, model, color.
+1. **Basics:** name, type, brake type, tire type (tubeless or inner tubes), brand, model, color.
 2. **Odometer:** link a Strava bike, or enter the km by hand.
 3. **Purchase:** date, new or used, price.
-4. **Parts:** the default parts for the bike's type and brakes. Parts can be unticked, marked as "replaced since purchase" with a date and km, and their intervals changed.
+4. **Parts:** the default parts for the bike's type, brakes and tires: tubeless sealant only for tubeless tires. Parts can be unticked, marked as "replaced since purchase" with a date and km, and their intervals changed.
 5. **Review.**
 
 The draft is kept in a reducer and mirrored to `sessionStorage`, so it survives a refresh and the Strava OAuth redirect. Each step is validated with zod. Nothing is written until the final step: `planBike()` turns the draft into rows, and `createBike()` (`src/db/bikes.ts`) inserts the bike, its parts and their `installed` events in one transaction. A part replaced since purchase but given no km gets an estimate from the average riding per day since purchase.

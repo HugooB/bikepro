@@ -243,3 +243,41 @@ describe("brake types", () => {
     expect(parseSavedDraft(JSON.parse(JSON.stringify(old)))?.brakeType).toBe("disc");
   });
 });
+
+describe("tire types", () => {
+  const kinds = (tires: "tubeless" | "tubes") =>
+    defaultPartsFor("road", "disc", tires)
+      .filter((t) => t.category === "wheels")
+      .map((t) => t.kind);
+
+  it("tracks sealant on tubeless tires only", () => {
+    expect(kinds("tubeless")).toContain("sealant");
+    expect(kinds("tubes")).not.toContain("sealant");
+  });
+
+  it("creates a bike with inner tubes without sealant", () => {
+    const plan = planBike(
+      draft({ tireType: "tubes", parts: partChoicesFor("road", "disc", "tubes") }),
+      TODAY,
+    );
+    expect(plan.bike.tireType).toBe("tubes");
+    expect(plan.parts.some((p) => p.kind === "sealant")).toBe(false);
+    expect(plan.parts.some((p) => p.kind === "tire_rear")).toBe(true);
+  });
+
+  it("drops and brings back sealant when switching tires in the wizard", () => {
+    const start = { step: "basics" as const, draft: draft(), errors: {} };
+    const tubes = wizardReducer(start, { type: "tireType", tireType: "tubes" });
+    expect(tubes.draft.parts.map((p) => p.kind)).toEqual(
+      partChoicesFor("road", "disc", "tubes").map((p) => p.kind),
+    );
+    const tubeless = wizardReducer(tubes, { type: "tireType", tireType: "tubeless" });
+    expect(tubeless.draft.parts.some((p) => p.kind === "sealant")).toBe(true);
+  });
+
+  it("reads drafts saved before tire types existed as tubeless", () => {
+    const old: Partial<WizardDraft> = draft();
+    delete old.tireType;
+    expect(parseSavedDraft(JSON.parse(JSON.stringify(old)))?.tireType).toBe("tubeless");
+  });
+});

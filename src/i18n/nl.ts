@@ -24,6 +24,7 @@ export const nl: Dictionary = {
     name: "Naam",
     type: "Type",
     brakes: "Remmen",
+    tires: "Banden",
     brand: "Merk",
     model: "Model",
     gotItOn: "In bezit sinds",
@@ -226,6 +227,8 @@ export const nl: Dictionary = {
       typeHint: "Het type wijzigen verandert de onderdelen niet.",
       brakesHint:
         "Verandert de tekening. Remonderdelen blijven zoals ze zijn: voeg ze toe of verwijder ze op de fietspagina.",
+      tiresHint:
+        "Onderdelen blijven zoals ze zijn: voeg tubeless-vloeistof toe of verwijder die op de fietspagina.",
     },
     data: {
       title: "Je gegevens",
@@ -469,6 +472,8 @@ export const nl: Dictionary = {
       bikeType: "Type fiets",
       discTracked: "Remblokken, remschijven en remvloeistof worden bijgehouden.",
       rimTracked: "Remblokken en remkabels worden bijgehouden.",
+      tubelessTracked: "Tubeless-vloeistof wordt bijgehouden.",
+      tubesTracked: "Geen vloeistof bij te houden: binnenbanden vervang je bij een lekke band.",
       brand: "Merk (optioneel)",
       brandPlaceholder: "bijv. Canyon",
       model: "Model (optioneel)",
@@ -543,6 +548,7 @@ export const nl: Dictionary = {
       nameTooLong: "Houd de naam korter dan 40 tekens",
       chooseType: "Kies een type fiets",
       chooseBrakes: "Kies de remmen",
+      chooseTires: "Kies de banden",
       pickColor: "Kies een kleur",
       purchaseInFuture: "De aankoopdatum kan niet in de toekomst liggen",
       enterPurchaseOdometer: "Vul de tellerstand bij aankoop in",
@@ -603,6 +609,10 @@ export const nl: Dictionary = {
   brakeTypes: {
     disc: "Schijfremmen",
     rim: "Velgremmen",
+  },
+  tireTypes: {
+    tubeless: "Tubeless",
+    tubes: "Binnenbanden",
   },
   bikeTypes: {
     road: { name: "Racefiets", hint: "Racestuur, gladde banden" },

@@ -97,7 +97,7 @@ describe("default intervals in miles", () => {
 
   it("stay close to the km defaults and use round numbers", () => {
     const templates = defaultPartsFor("road", "disc");
-    const choices = partChoicesFor("road", "disc", "mi");
+    const choices = partChoicesFor("road", "disc", "tubeless", "mi");
     templates.forEach((t, i) => {
       for (const [km, shown] of [
         [t.serviceIntervalKm, choices[i]!.serviceKm],

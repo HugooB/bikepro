@@ -4,10 +4,12 @@ import {
   brakeTypes,
   bikeTypes,
   distanceUnits,
+  tireTypes,
   type BikeType,
   type BrakeType,
   type DistanceUnit,
   type PartCategory,
+  type TireType,
 } from "@/db/schema";
 import { tEn, type T } from "@/i18n";
 import { defaultPartsFor, type PartTemplate } from "./default-parts";
@@ -43,6 +45,7 @@ export type WizardDraft = {
   name: string;
   type: BikeType;
   brakeType: BrakeType;
+  tireType: TireType;
   brand: string;
   model: string;
   /** Frame color for the drawing; empty uses the brand color. */
@@ -65,10 +68,11 @@ export type WizardDraft = {
 export function partChoicesFor(
   type: BikeType,
   brakes: BrakeType = "disc",
+  tires: TireType = "tubeless",
   unit: DistanceUnit = "km",
 ): PartChoice[] {
   const distance = (km: number | undefined) => (km ? String(niceInterval(km, unit)) : "");
-  return defaultPartsFor(type, brakes).map((t) => ({
+  return defaultPartsFor(type, brakes, tires).map((t) => ({
     kind: t.kind,
     included: true,
     replaced: false,
@@ -87,6 +91,8 @@ const savedDraftSchema = z.object({
   type: z.enum(bikeTypes),
   // Drafts saved before brake types existed don't have it.
   brakeType: z.enum(brakeTypes).default("disc"),
+  // Drafts saved before tire types existed had sealant in their parts.
+  tireType: z.enum(tireTypes).default("tubeless"),
   brand: z.string(),
   model: z.string(),
   color: z.string(),
@@ -127,7 +133,9 @@ export function parseSavedDraft(value: unknown, unit: DistanceUnit = "km"): Wiza
   const saved = new Map(draft.parts.map((p) => [p.kind, p]));
   return {
     ...draft,
-    parts: partChoicesFor(draft.type, draft.brakeType, unit).map((p) => saved.get(p.kind) ?? p),
+    parts: partChoicesFor(draft.type, draft.brakeType, draft.tireType, unit).map(
+      (p) => saved.get(p.kind) ?? p,
+    ),
   };
 }
 
@@ -136,6 +144,7 @@ export function emptyDraft(today: string, unit: DistanceUnit = "km"): WizardDraf
     name: "",
     type: "road",
     brakeType: "disc",
+    tireType: "tubeless",
     brand: "",
     model: "",
     color: "",
@@ -144,7 +153,7 @@ export function emptyDraft(today: string, unit: DistanceUnit = "km"): WizardDraf
     condition: "new",
     purchaseKm: "0",
     purchasePrice: "",
-    parts: partChoicesFor("road", "disc", unit),
+    parts: partChoicesFor("road", "disc", "tubeless", unit),
     stravaGearId: "",
     unit,
   };
@@ -190,6 +199,7 @@ export const basicsSchema = (t: T) =>
       .max(40, t("wizard.errors.nameTooLong")),
     type: z.enum(bikeTypes, { error: t("wizard.errors.chooseType") }),
     brakeType: z.enum(brakeTypes, { error: t("wizard.errors.chooseBrakes") }),
+    tireType: z.enum(tireTypes, { error: t("wizard.errors.chooseTires") }),
     brand: z.string().trim().max(60),
     model: z.string().trim().max(80),
     color: z.union([
@@ -328,6 +338,7 @@ export type BikePlan = {
     name: string;
     type: BikeType;
     brakeType: BrakeType;
+    tireType: TireType;
     brand: string | null;
     model: string | null;
     color: string | null;
@@ -372,7 +383,7 @@ export function planBike(draft: WizardDraft, today: string, t: T = tEn): BikePla
   const fromKm = km(startKm(draft));
   const choices = new Map(draft.parts.map((p) => [p.kind, p]));
 
-  const parts = defaultPartsFor(basics.type, basics.brakeType).flatMap(
+  const parts = defaultPartsFor(basics.type, basics.brakeType, basics.tireType).flatMap(
     (template, i): PlannedPart[] => {
       const choice = choices.get(template.kind);
       if (!choice?.included) return [];
@@ -407,6 +418,7 @@ export function planBike(draft: WizardDraft, today: string, t: T = tEn): BikePla
       name: basics.name,
       type: basics.type,
       brakeType: basics.brakeType,
+      tireType: basics.tireType,
       brand: basics.brand || null,
       model: basics.model || null,
       color: basics.color || null,
@@ -435,9 +447,10 @@ export function estimateKm(
 export function partsByCategory(
   type: BikeType,
   brakes: BrakeType,
+  tires: TireType,
 ): [PartCategory, PartTemplate[]][] {
   const groups = new Map<PartCategory, PartTemplate[]>();
-  for (const t of defaultPartsFor(type, brakes))
+  for (const t of defaultPartsFor(type, brakes, tires))
     groups.set(t.category, [...(groups.get(t.category) ?? []), t]);
   return [...groups];
 }

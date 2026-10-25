@@ -85,6 +85,13 @@
       "when": 1792830721809,
       "tag": "0011_user_locale",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1792958496048,
+      "tag": "0012_tire_type",
+      "breakpoints": true
     }
   ]
 }

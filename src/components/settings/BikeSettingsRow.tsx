@@ -10,7 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useT, useUnits } from "@/i18n/client";
-import { brakeTypes, type Bike, type BikeType, type BrakeType } from "@/db/schema";
+import {
+  brakeTypes,
+  tireTypes,
+  type Bike,
+  type BikeType,
+  type BrakeType,
+  type TireType,
+} from "@/db/schema";
 import { initialActionState, type ActionState } from "@/lib/action-state";
 import { ChoiceChip } from "@/components/wizard/fields";
 
@@ -65,6 +72,7 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
   );
   const [type, setType] = useState<BikeType>(bike.type);
   const [brakeType, setBrakeType] = useState<BrakeType>(bike.brakeType);
+  const [tireType, setTireType] = useState<TireType>(bike.tireType);
   const [color, setColor] = useState(bike.color ?? "");
   const id = (field: string) => `bike-${bike.id}-${field}`;
 
@@ -105,6 +113,23 @@ function BikeEditForm({ bike, onDone }: { bike: Bike; onDone: () => void }) {
           ))}
         </div>
         <p className="text-muted-foreground text-xs">{t("settings.bikes.brakesHint")}</p>
+      </fieldset>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-medium">{t("bikeForm.tires")}</legend>
+        <input type="hidden" name="tireType" value={tireType} />
+        <div className="grid grid-cols-2 gap-2">
+          {tireTypes.map((tires) => (
+            <ChoiceChip
+              key={tires}
+              name={id("tires")}
+              checked={tireType === tires}
+              onChange={() => setTireType(tires)}
+            >
+              {t(`tireTypes.${tires}`)}
+            </ChoiceChip>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">{t("settings.bikes.tiresHint")}</p>
       </fieldset>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-1.5">

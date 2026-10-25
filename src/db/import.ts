@@ -12,6 +12,7 @@ import {
   partEventTypes,
   parts,
   serviceRounds,
+  tireTypes,
 } from "./schema";
 
 /** A user-facing reason the file couldn't be imported. Nothing has been written. */
@@ -77,6 +78,8 @@ const bikeSchema = z.object({
   name: text(120).min(1),
   type: z.enum(bikeTypes).default("road"),
   brakeType: z.enum(brakeTypes).default("disc"),
+  // Exports from before tire types existed don't have it; see importData.
+  tireType: z.enum(tireTypes).optional(),
   brand: optionalText(120),
   model: optionalText(120),
   color: optionalText(40),
@@ -126,7 +129,13 @@ export function importData(userId: number, data: unknown): ImportSummary {
     for (const { parts: bikeParts, serviceRounds: rounds, ...bike } of input.bikes) {
       const bikeId = tx
         .insert(bikes)
-        .values({ ...bike, userId })
+        .values({
+          ...bike,
+          // As the migration did: tubeless if the bike has (or had) sealant.
+          tireType:
+            bike.tireType ?? (bikeParts.some((p) => p.kind === "sealant") ? "tubeless" : "tubes"),
+          userId,
+        })
         .returning({ id: bikes.id })
         .get().id;
       summary.bikes++;
