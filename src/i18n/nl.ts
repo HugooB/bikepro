@@ -379,7 +379,7 @@ export const nl: Dictionary = {
     notes: "Notities",
     notesPlaceholder: "bijv. Grote beurt, schoongemaakt en gesmeerd, versnellingen afgesteld",
     partsCovered: "Onderdelen",
-    selectDue: "Selecteer wat aan de beurt is ({count})",
+    selectDue: "Selecteer wat nodig is ({count})",
     clear: "Wissen",
     whatWasDone: "Wat er is gedaan: {part}",
     notePlaceholder: "Notitie (optioneel)",

@@ -62,7 +62,8 @@ The database lives in the `bikepro-data` Docker volume, so it survives restarts 
 `docker-compose.yml` uses `ghcr.io/hugoob/bikepro:latest`. For updates only when you choose, pin a version instead, such as `ghcr.io/hugoob/bikepro:0.6` (bug fixes within 0.6) or `:0.6.0` (exactly that release).
 
 ### Build it your self
-You can also choose to build BikePro yourself. In that case, clone this repository and let Docker build the application for you through Docker compose. 
+
+You can also choose to build BikePro yourself. In that case, clone this repository and let Docker build the application for you through Docker compose.
 
 ```bash
 git clone https://github.com/HugooB/bikepro.git
@@ -134,14 +135,6 @@ docker compose pull
 docker compose up -d
 ```
 
-Running BikePro from a clone of this repository, from before the ready-made image existed? `git pull`, then the two commands above. The new `docker-compose.yml` uses the image, and your data volume stays as it is.
-
-**Build it yourself** instead of using the image, from a clone of this repository:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
-```
-
 **Back up** the database while BikePro runs:
 
 ```bash
@@ -172,7 +165,7 @@ Each user can also download their own data as JSON under **Settings → Your dat
 
 ## Roadmap
 
-Ideas for what comes next: choosing between tubeless tires and inner tubes per bike, automatic backups, notifications when a part needs attention, and more bike types such as MTB and city bikes. Suggestions are welcome as [feature requests](https://github.com/HugooB/bikepro/issues/new/choose).
+Ideas for what comes next: automatic backups, notifications when a part needs attention. Suggestions are welcome as [feature requests](https://github.com/HugooB/bikepro/issues/new/choose).
 
 ## Contributing
 
