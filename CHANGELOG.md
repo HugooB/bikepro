@@ -4,10 +4,22 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-25
+
+Mountain bikes and city bikes, and a deliberate choice between tubeless tires and inner tubes.
+
 ### Added
 
 - Tubeless tires or inner tubes per bike, in the add-bike wizard and in Settings. The wizard suggests tubeless sealant only for tubeless tires. Existing bikes get tubeless when they have sealant, otherwise inner tubes. Imports of older exports follow the same rule.
 - MTB and city bikes as bike types, each with a part list of its own. MTBs track a suspension fork, rear shock and dropper post (in a new Suspension category), grips instead of bar tape, and no front derailleur, with shorter drivetrain intervals for dirt. City bikes track a hub gear and a single rear sprocket instead of derailleurs and a cassette. The wizard starts city bikes on inner tubes, unless other tires were already picked. Strava's mountain bikes now start as MTB.
+
+### Fixed
+
+- On phones, a long bike name no longer cuts off the bike's type in **Settings → Bikes**: the Edit and Archive buttons now sit under the name.
+
+### Upgrading
+
+- The database migrates on start. Existing bikes get tubeless tires when they have tubeless sealant, otherwise inner tubes; change it per bike under **Settings → Bikes**.
 
 ## [0.6.0] - 2026-10-24
 
@@ -119,7 +131,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/HugooB/bikepro/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/HugooB/bikepro/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/HugooB/bikepro/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/HugooB/bikepro/compare/v0.3.0...v0.4.0
