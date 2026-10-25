@@ -25,20 +25,20 @@ const id = z.number().int();
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a date like 2026-10-23");
 const timestamp = z.iso.datetime().transform((s) => new Date(s));
 const text = (max: number) => z.string().max(max);
-const optionalText = (max: number) => z.string().max(max).nullable().default(null);
+const nullableText = (max: number) => z.string().max(max).nullable();
 const km = z.number().nonnegative();
-const money = z.number().nonnegative().nullable().default(null);
-const interval = z.number().int().positive().nullable().default(null);
+const money = z.number().nonnegative().nullable();
+const interval = z.number().int().positive().nullable();
 
 const eventSchema = z.object({
   date: day,
-  odometerKm: km.nullable().default(null),
+  odometerKm: km.nullable(),
   type: z.enum(partEventTypes),
-  description: optionalText(2000),
+  description: nullableText(2000),
   cost: money,
-  resetsInterval: z.boolean().default(false),
-  serviceRoundId: id.nullable().default(null),
-  createdAt: timestamp.optional(),
+  resetsInterval: z.boolean(),
+  serviceRoundId: id.nullable(),
+  createdAt: timestamp,
 });
 
 const partSchema = z.object({
@@ -46,48 +46,47 @@ const partSchema = z.object({
   category: z.enum(partCategories),
   kind: text(60),
   name: text(120),
-  brand: optionalText(120),
-  model: optionalText(120),
-  svgZone: optionalText(60),
+  brand: nullableText(120),
+  model: nullableText(120),
+  svgZone: nullableText(60),
   installedAt: day,
-  installedKm: km.default(0),
+  installedKm: km,
   serviceIntervalKm: interval,
   serviceIntervalDays: interval,
   replaceIntervalKm: interval,
   replaceIntervalDays: interval,
   cost: money,
-  status: z.enum(["active", "retired"]).default("active"),
-  retiredAt: day.nullable().default(null),
-  retiredKm: km.nullable().default(null),
-  replacedByPartId: id.nullable().default(null),
-  sortOrder: z.number().int().default(0),
+  status: z.enum(["active", "retired"]),
+  retiredAt: day.nullable(),
+  retiredKm: km.nullable(),
+  replacedByPartId: id.nullable(),
+  sortOrder: z.number().int(),
   events: z.array(eventSchema).max(10_000),
 });
 
 const roundSchema = z.object({
   id,
   date: day,
-  shop: optionalText(120),
+  shop: nullableText(120),
   odometerKm: km,
   totalCost: money,
-  notes: optionalText(2000),
-  createdAt: timestamp.optional(),
+  notes: nullableText(2000),
+  createdAt: timestamp,
 });
 
 const bikeSchema = z.object({
   name: text(120).min(1),
-  type: z.enum(bikeTypes).default("road"),
-  brakeType: z.enum(brakeTypes).default("disc"),
-  // Exports from before tire types existed don't have it; see importData.
-  tireType: z.enum(tireTypes).optional(),
-  brand: optionalText(120),
-  model: optionalText(120),
-  color: optionalText(40),
-  purchasedAt: day.nullable().default(null),
+  type: z.enum(bikeTypes),
+  brakeType: z.enum(brakeTypes),
+  tireType: z.enum(tireTypes),
+  brand: nullableText(120),
+  model: nullableText(120),
+  color: nullableText(40),
+  purchasedAt: day.nullable(),
   purchasePrice: money,
-  odometerKm: km.default(0),
-  archivedAt: timestamp.nullable().default(null),
-  createdAt: timestamp.optional(),
+  odometerKm: km,
+  archivedAt: timestamp.nullable(),
+  createdAt: timestamp,
   parts: z.array(partSchema).max(1000),
   serviceRounds: z.array(roundSchema).max(10_000),
 });
@@ -129,13 +128,7 @@ export function importData(userId: number, data: unknown): ImportSummary {
     for (const { parts: bikeParts, serviceRounds: rounds, ...bike } of input.bikes) {
       const bikeId = tx
         .insert(bikes)
-        .values({
-          ...bike,
-          // As the migration did: tubeless if the bike has (or had) sealant.
-          tireType:
-            bike.tireType ?? (bikeParts.some((p) => p.kind === "sealant") ? "tubeless" : "tubes"),
-          userId,
-        })
+        .values({ ...bike, userId })
         .returning({ id: bikes.id })
         .get().id;
       summary.bikes++;

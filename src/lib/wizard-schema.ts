@@ -89,10 +89,8 @@ export function partChoicesFor(
 const savedDraftSchema = z.object({
   name: z.string(),
   type: z.enum(bikeTypes),
-  // Drafts saved before brake types existed don't have it.
-  brakeType: z.enum(brakeTypes).default("disc"),
-  // Drafts saved before tire types existed had sealant in their parts.
-  tireType: z.enum(tireTypes).default("tubeless"),
+  brakeType: z.enum(brakeTypes),
+  tireType: z.enum(tireTypes),
   brand: z.string(),
   model: z.string(),
   color: z.string(),
@@ -100,11 +98,9 @@ const savedDraftSchema = z.object({
   purchasedAt: z.string(),
   condition: z.enum(["new", "used"]),
   purchaseKm: z.string(),
-  purchasePrice: z.string().default(""),
-  // Drafts saved before Strava linking existed don't have it.
-  stravaGearId: z.string().default(""),
-  // Drafts saved before distance units existed were in km.
-  unit: z.enum(distanceUnits).default("km"),
+  purchasePrice: z.string(),
+  stravaGearId: z.string(),
+  unit: z.enum(distanceUnits),
   parts: z.array(
     z.object({
       kind: z.string(),

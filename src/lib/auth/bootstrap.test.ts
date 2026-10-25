@@ -1,8 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { db } from "@/db";
-import { getAppSetting, setAppSetting } from "@/db/app-settings";
+import { setAppSetting } from "@/db/app-settings";
 import { runMigrations } from "@/db/migrate";
-import { appSettings } from "@/db/schema";
 import { countUsers, createUser, findUserByEmail, registrationOpen } from "@/db/users";
 import { bootstrapAccounts } from "./bootstrap";
 import { verifyPassword } from "./password";
@@ -62,16 +60,5 @@ describe("bootstrapAccounts", () => {
     await bootstrapAccounts({ ADMIN_EMAIL: "RIDER@example.com" }, l);
     expect(findUserByEmail("rider@example.com")?.isAdmin).toBe(true);
     expect(l.info).toHaveBeenCalledWith(expect.stringContaining("is now an admin"));
-  });
-
-  it("carries ALLOW_REGISTRATION over once and warns that it's no longer used", async () => {
-    db.delete(appSettings).run(); // as on an install from before v0.1.0
-    const l = log();
-    await bootstrapAccounts({ ALLOW_REGISTRATION: "true" }, l);
-    expect(getAppSetting("registrationOpen")).toBe(true);
-    expect(l.warn).toHaveBeenCalledWith(expect.stringContaining("no longer used"));
-    // The admin's later choice wins over the old variable.
-    await bootstrapAccounts({ ALLOW_REGISTRATION: "false" }, log());
-    expect(getAppSetting("registrationOpen")).toBe(true);
   });
 });

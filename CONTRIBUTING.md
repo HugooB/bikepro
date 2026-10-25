@@ -23,7 +23,7 @@ To try it on your phone, open the address `npm run dev` prints under "Network" (
 
 Local data lives in `data/bikepro.db`. Settings go in `.env.local` (copy [`.env.example`](.env.example)). None of them are needed to start.
 
-`npm run db:seed` adds a sample race bike with every default part, and `npm run db:seed -- --reset` starts over. It refuses to run in production.
+`npm run db:seed` adds a sample race bike with every default part to the first account (so sign up first), and `npm run db:seed -- --reset` starts over. It refuses to run in production.
 
 ## Checks
 
@@ -72,7 +72,7 @@ Plurals are objects such as `{ one: "{count} bike", other: "{count} bikes" }`. U
 
 1. Move the changes under "Unreleased" in `CHANGELOG.md` to a new version, and bump `version` in `package.json` (`npm version <x.y.z> --no-git-tag-version`).
 2. Commit, then tag and push: `git tag -a v<x.y.z> -m "BikePro v<x.y.z>" && git push origin main v<x.y.z>`.
-3. The tag starts the **Publish Docker image** workflow (`.github/workflows/docker.yml`). It builds the image for amd64 and arm64 on native runners, checks that each one starts and reports healthy, and only then pushes them to `ghcr.io/hugoob/bikepro` as `x.y.z`, `x.y` and `latest`. A pre-release tag such as `v0.7.0-rc.1` gets its own tag but never `latest`.
+3. The tag starts the **Publish Docker image** workflow (`.github/workflows/docker.yml`). It builds the image for amd64 and arm64 on native runners, checks that each one starts and reports healthy, and only then pushes them to `ghcr.io/hugoob/bikepro` as `x.y.z`, `x.y` and `latest`. A pre-release tag such as `v1.1.0-rc.1` gets its own tag but never `latest`.
 4. Create the GitHub release from the changelog section.
 
 To build an image for an existing tag, for example after a failed run, open **Actions → Publish Docker image → Run workflow** and enter the tag.

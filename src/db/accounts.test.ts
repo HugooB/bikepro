@@ -7,7 +7,7 @@ import { createBike } from "./bikes";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
 import { getBike, getBikes } from "./queries";
-import { bikes, partEvents, parts, serviceRounds, sessions } from "./schema";
+import { partEvents, parts, serviceRounds, sessions } from "./schema";
 import {
   createSession,
   deleteSession,
@@ -29,12 +29,9 @@ const newBike = (userId: number, name: string) =>
   db.transaction((tx) => createBike(tx, planBike({ ...emptyDraft(TODAY), name }, TODAY), userId));
 
 let alice: ReturnType<typeof user>;
-let orphanId: number;
 
 beforeAll(() => {
   runMigrations();
-  // A bike from before accounts existed.
-  orphanId = db.insert(bikes).values({ name: "Old bike" }).returning().get().id;
   alice = user("Alice@Example.com ");
 });
 
@@ -43,9 +40,8 @@ afterEach(() => {
 });
 
 describe("registration", () => {
-  it("lets the first account register and gives it the bikes without an owner", () => {
+  it("lets the first account register", () => {
     expect(alice.email).toBe("alice@example.com");
-    expect(getOwnedBike(alice.id, orphanId)?.name).toBe("Old bike");
   });
 
   it("is closed after the first account until an admin opens it", () => {

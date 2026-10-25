@@ -1,1 +1,0 @@
-ALTER TABLE `part_events` ADD `resets_interval` integer DEFAULT false NOT NULL;

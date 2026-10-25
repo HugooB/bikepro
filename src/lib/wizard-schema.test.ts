@@ -187,6 +187,7 @@ describe("parseSavedDraft", () => {
     expect(parseSavedDraft(null)).toBeNull();
     expect(parseSavedDraft({ ...draft(), parts: "zzz" })).toBeNull();
     expect(parseSavedDraft({ ...draft(), type: "unicycle" })).toBeNull();
+    expect(parseSavedDraft({ ...draft(), tireType: undefined })).toBeNull();
   });
 
   it("lines parts up with the template", () => {
@@ -236,12 +237,6 @@ describe("brake types", () => {
     );
     expect(rim.draft.parts.find((p) => p.kind === "brake_pads_front")?.included).toBe(false);
   });
-
-  it("reads drafts saved before brake types existed as disc", () => {
-    const old: Partial<WizardDraft> = draft();
-    delete old.brakeType;
-    expect(parseSavedDraft(JSON.parse(JSON.stringify(old)))?.brakeType).toBe("disc");
-  });
 });
 
 describe("tire types", () => {
@@ -273,12 +268,6 @@ describe("tire types", () => {
     );
     const tubeless = wizardReducer(tubes, { type: "tireType", tireType: "tubeless" });
     expect(tubeless.draft.parts.some((p) => p.kind === "sealant")).toBe(true);
-  });
-
-  it("reads drafts saved before tire types existed as tubeless", () => {
-    const old: Partial<WizardDraft> = draft();
-    delete old.tireType;
-    expect(parseSavedDraft(JSON.parse(JSON.stringify(old)))?.tireType).toBe("tubeless");
   });
 });
 

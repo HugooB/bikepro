@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
-import { bikes, partEvents, parts, serviceRounds } from "./schema";
+import { bikes, partEvents, parts, serviceRounds, users } from "./schema";
 import { createServiceRound } from "./service-rounds";
 
 let bikeId: number;
@@ -12,7 +12,17 @@ const partIds = {} as Record<(typeof kinds)[number], number>;
 
 beforeAll(() => {
   runMigrations();
-  bikeId = db.insert(bikes).values({ name: "Test bike", odometerKm: 5000 }).returning().get().id;
+  // Every bike has an owner.
+  const userId = db
+    .insert(users)
+    .values({ email: "rider@example.com", name: "Rider", passwordHash: "x" })
+    .returning()
+    .get().id;
+  bikeId = db
+    .insert(bikes)
+    .values({ userId, name: "Test bike", odometerKm: 5000 })
+    .returning()
+    .get().id;
   for (const kind of kinds) {
     partIds[kind] = db
       .insert(parts)
@@ -27,7 +37,7 @@ beforeAll(() => {
       .returning()
       .get().id;
   }
-  const other = db.insert(bikes).values({ name: "Other bike" }).returning().get();
+  const other = db.insert(bikes).values({ userId, name: "Other bike" }).returning().get();
   otherBikePartId = db
     .insert(parts)
     .values({

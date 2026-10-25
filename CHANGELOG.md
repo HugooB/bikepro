@@ -4,6 +4,26 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-25
+
+The first stable release, with a clean database setup for fresh installs.
+
+### Changed
+
+- The database starts from a single migration instead of thirteen, with no backfills for older installs.
+- Every bike belongs to an account, enforced by the database: deleting an account deletes its bikes through a foreign key.
+- Importing checks that every field of an export is there. Exports from 0.7.0 and later import as before.
+- The dev seed script (`npm run db:seed`) adds its sample bike to the first account and asks you to sign up first when there is none.
+
+### Removed
+
+- `ALLOW_REGISTRATION` is no longer read at all. An admin opens and closes registration under **Settings → Admin**.
+- The first account no longer takes over bikes without an owner, since there are none.
+
+### Upgrading
+
+- A 0.x database can't be upgraded. To keep your data, update to 0.7.0, download it under **Settings → Your data**, start 1.0.0 with a fresh database (remove the `bikepro-data` volume or `data/bikepro.db`) and import the file.
+
 ## [0.7.0] - 2026-10-25
 
 Mountain bikes and city bikes, and a deliberate choice between tubeless tires and inner tubes.
@@ -131,7 +151,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/HugooB/bikepro/compare/v0.7.0...v1.0.0
 [0.7.0]: https://github.com/HugooB/bikepro/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/HugooB/bikepro/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/HugooB/bikepro/compare/v0.4.0...v0.5.0

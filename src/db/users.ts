@@ -1,9 +1,9 @@
-import { asc, count, eq, isNull } from "drizzle-orm";
+import { asc, count, eq } from "drizzle-orm";
 import type { Locale } from "@/i18n";
 import { UserError } from "@/lib/user-error";
 import { getAppSetting, setAppSetting } from "./app-settings";
 import { db } from "./index";
-import { bikes, sessions, users, type DistanceUnit, type User } from "./schema";
+import { sessions, users, type DistanceUnit, type User } from "./schema";
 
 /** A user-facing reason the account couldn't be created. */
 export class RegistrationError extends UserError {}
@@ -41,8 +41,7 @@ export function findUserByEmail(email: string): User | undefined {
 }
 
 /**
- * Creates an account. While the install has no admin, the new account becomes one. The first
- * account also takes over the bikes created before accounts existed (those without an owner).
+ * Creates an account. While the install has no admin, the new account becomes one.
  * `bootstrap` creates the admin from ADMIN_EMAIL, whether or not registration is open.
  */
 export function createUser(
@@ -50,7 +49,6 @@ export function createUser(
   { bootstrap = false } = {},
 ): User {
   return db.transaction((tx) => {
-    const existing = tx.select({ n: count() }).from(users).get()!.n;
     if (!bootstrap && !registrationOpen()) {
       throw new RegistrationError("errors.registrationClosed");
     }
@@ -71,9 +69,6 @@ export function createUser(
       })
       .returning()
       .get();
-    if (existing === 0) {
-      tx.update(bikes).set({ userId: user.id }).where(isNull(bikes.userId)).run();
-    }
     return user;
   });
 }
@@ -141,10 +136,9 @@ export function resetPassword(actorId: number, targetId: number, passwordHash: s
 }
 
 /**
- * Deletes the account and everything in it. Bikes have no foreign key to their owner, so
- * they're removed here; their parts, events and service rounds go with them, and the
- * sessions and Strava connection go with the user. An admin can't delete their account,
- * since the install would be left without one.
+ * Deletes the account and everything in it: bikes (with their parts, events and service
+ * rounds), sessions and the Strava connection all go with the user. An admin can't delete
+ * their account, since the install would be left without one.
  */
 export function deleteAccount(userId: number) {
   db.transaction((tx) => {
@@ -155,7 +149,6 @@ export function deleteAccount(userId: number) {
       .get();
     if (!user) return;
     if (user.isAdmin) throw new AccountError("errors.adminCantBeDeleted");
-    tx.delete(bikes).where(eq(bikes.userId, userId)).run();
     tx.delete(users).where(eq(users.id, userId)).run();
   });
 }

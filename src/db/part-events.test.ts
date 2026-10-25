@@ -3,13 +3,23 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
 import { PartEventError, recordPartEvent } from "./part-events";
-import { bikes, partEvents, parts, type Part } from "./schema";
+import { bikes, partEvents, parts, type Part, users } from "./schema";
 
 let bikeId: number;
 
 beforeAll(() => {
   runMigrations();
-  bikeId = db.insert(bikes).values({ name: "Test bike", odometerKm: 6000 }).returning().get().id;
+  // Every bike has an owner.
+  const userId = db
+    .insert(users)
+    .values({ email: "rider@example.com", name: "Rider", passwordHash: "x" })
+    .returning()
+    .get().id;
+  bikeId = db
+    .insert(bikes)
+    .values({ userId, name: "Test bike", odometerKm: 6000 })
+    .returning()
+    .get().id;
 });
 
 function makeTire(): Part {

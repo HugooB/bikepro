@@ -23,13 +23,3 @@ export function setAppSetting<K extends keyof Settings>(key: K, value: Settings[
     .onConflictDoUpdate({ target: appSettings.key, set: { value: stored } })
     .run();
 }
-
-/** Stores `value` only if the setting was never set, e.g. to carry over an old env var once. */
-export function seedAppSetting<K extends keyof Settings>(key: K, value: Settings[K]): boolean {
-  const result = db
-    .insert(appSettings)
-    .values({ key, value: JSON.stringify(value) })
-    .onConflictDoNothing()
-    .run();
-  return result.changes > 0;
-}

@@ -34,15 +34,18 @@ const replaced: Record<string, { monthsAgo: number; km: number }> = {
   bar_tape: { monthsAgo: 11, km: 3100 },
 };
 
-// Belongs to the first account; before anyone signs up it has no owner, and the first
-// account to register takes it over.
+// Belongs to the first account, so start the app and sign in once before seeding.
 const owner = db.select({ id: users.id }).from(users).orderBy(users.id).get();
+if (!owner) {
+  console.error("No account yet: start the app and sign up (or set ADMIN_EMAIL) first.");
+  process.exit(1);
+}
 
 db.transaction((tx) => {
   const bike = tx
     .insert(bikes)
     .values({
-      userId: owner?.id ?? null,
+      userId: owner.id,
       name: "Race bike",
       type: "road",
       brand: "Canyon",

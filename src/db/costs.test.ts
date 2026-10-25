@@ -5,7 +5,7 @@ import { db } from "./index";
 import { runMigrations } from "./migrate";
 import { recordPartEvent } from "./part-events";
 import { getCostEntries } from "./queries";
-import { bikes, parts } from "./schema";
+import { bikes, parts, users } from "./schema";
 import { createServiceRound } from "./service-rounds";
 
 let bikeId: number;
@@ -19,15 +19,27 @@ const addPart = (kind: string, category: "drivetrain" | "wheels", cost: number |
 
 beforeAll(() => {
   runMigrations();
+  // Every bike has an owner.
+  const userId = db
+    .insert(users)
+    .values({ email: "rider@example.com", name: "Rider", passwordHash: "x" })
+    .returning()
+    .get().id;
   bikeId = db
     .insert(bikes)
-    .values({ name: "Costs", odometerKm: 6000, purchasedAt: "2024-01-15", purchasePrice: 2000 })
+    .values({
+      userId,
+      name: "Costs",
+      odometerKm: 6000,
+      purchasedAt: "2024-01-15",
+      purchasePrice: 2000,
+    })
     .returning()
     .get().id;
   const chain = addPart("Chain", "drivetrain", 40);
   const tire = addPart("Tire", "wheels", null);
   // A bike that isn't this one: its costs must not show up.
-  const other = db.insert(bikes).values({ name: "Other" }).returning().get().id;
+  const other = db.insert(bikes).values({ userId, name: "Other" }).returning().get().id;
   db.insert(parts)
     .values({
       bikeId: other,

@@ -4,9 +4,18 @@ import { emptyDraft, partChoicesFor, planBike } from "@/lib/wizard-schema";
 import { createBike } from "./bikes";
 import { db } from "./index";
 import { runMigrations } from "./migrate";
-import { partEvents, parts } from "./schema";
+import { partEvents, parts, users } from "./schema";
 
-beforeAll(() => runMigrations());
+let userId: number;
+
+beforeAll(() => {
+  runMigrations();
+  userId = db
+    .insert(users)
+    .values({ email: "rider@example.com", name: "Rider", passwordHash: "x" })
+    .returning()
+    .get().id;
+});
 
 describe("createBike", () => {
   it("creates the bike, its chosen parts and an installed event for each", () => {
@@ -28,7 +37,7 @@ describe("createBike", () => {
       "2026-10-20",
     );
 
-    const bike = db.transaction((tx) => createBike(tx, plan, 1));
+    const bike = db.transaction((tx) => createBike(tx, plan, userId));
 
     const rows = db.select().from(parts).where(eq(parts.bikeId, bike.id)).all();
     expect(bike).toMatchObject({ name: "Gravel", type: "gravel", odometerKm: 2600 });

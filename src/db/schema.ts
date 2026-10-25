@@ -41,7 +41,7 @@ export const users = sqliteTable("users", {
   distanceUnit: text("distance_unit", { enum: distanceUnits }).notNull().default("km"),
   /** ISO 4217 code amounts are shown in. Amounts are stored as plain numbers, never converted. */
   currency: text("currency").notNull().default("EUR"),
-  /** Interface language (see src/i18n). Accounts from before languages existed stay English. */
+  /** Interface language (see src/i18n). */
   locale: text("locale").notNull().default("en"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
@@ -74,8 +74,9 @@ export const bikes = sqliteTable(
   "bikes",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    /** Owner. Bikes from before accounts existed have none until the first user signs up. */
-    userId: integer("user_id"),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     type: text("type", { enum: bikeTypes }).notNull().default("road"),
     /** Picks the brake parts in the template and how the drawing shows the brakes. */

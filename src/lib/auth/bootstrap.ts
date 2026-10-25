@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { seedAppSetting } from "@/db/app-settings";
 import { countUsers, createUser, findUserByEmail, makeAdmin } from "@/db/users";
 import { hashPassword, PASSWORD_MAX, PASSWORD_MIN } from "./password";
 
@@ -13,15 +12,6 @@ type Log = Pick<Console, "info" | "warn">;
  * doesn't change the admin's password.
  */
 export async function bootstrapAccounts(env: Env = process.env, log: Log = console) {
-  // Before v0.1.0, ALLOW_REGISTRATION opened registration. Carry its value over once.
-  if (env.ALLOW_REGISTRATION !== undefined) {
-    seedAppSetting("registrationOpen", env.ALLOW_REGISTRATION === "true");
-    log.warn(
-      "ALLOW_REGISTRATION is no longer used: an admin opens and closes registration in " +
-        "Settings → Admin. You can remove it from your environment.",
-    );
-  }
-
   const email = env.ADMIN_EMAIL?.trim();
   if (!email) {
     if (countUsers() === 0) {

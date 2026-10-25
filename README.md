@@ -59,7 +59,7 @@ BikePro creates your admin account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` on it
 
 The database lives in the `bikepro-data` Docker volume, so it survives restarts and updates. `GET /api/health` reports whether the app and database are up.
 
-`docker-compose.yml` uses `ghcr.io/hugoob/bikepro:latest`. For updates only when you choose, pin a version instead, such as `ghcr.io/hugoob/bikepro:0.6` (bug fixes within 0.6) or `:0.6.0` (exactly that release).
+`docker-compose.yml` uses `ghcr.io/hugoob/bikepro:latest`. For updates only when you choose, pin a version instead, such as `ghcr.io/hugoob/bikepro:1.0` (bug fixes within 1.0) or `:1.0.0` (exactly that release).
 
 ### Build it your self
 
