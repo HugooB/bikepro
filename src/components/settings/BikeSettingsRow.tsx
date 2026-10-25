@@ -28,35 +28,41 @@ export function BikeSettingsRow({ bike }: { bike: Bike }) {
 
   return (
     <li className="bg-card rounded-xl border">
-      <div className="flex items-center gap-3 px-4 py-3">
-        <span
-          aria-hidden
-          className="size-3.5 shrink-0 rounded-full"
-          style={{ background: bike.color || "var(--brand)" }}
-        />
-        <div className="min-w-0 flex-1">
-          <Link href={`/bikes/${bike.id}`} className="font-semibold hover:underline">
-            {bike.name}
-          </Link>
-          <p className="text-muted-foreground truncate text-sm">
-            {t(`bikeTypes.${bike.type}.name`)}
-            {makeModel && ` · ${makeModel}`}
-          </p>
+      {/* On phones the buttons go under the name, so a long name doesn't squeeze out the type. */}
+      <div className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span
+            aria-hidden
+            className="size-3.5 shrink-0 rounded-full"
+            style={{ background: bike.color || "var(--brand)" }}
+          />
+          <div className="min-w-0 flex-1">
+            <Link href={`/bikes/${bike.id}`} className="font-semibold hover:underline">
+              {bike.name}
+            </Link>
+            <p className="text-muted-foreground text-sm sm:truncate">
+              {t(`bikeTypes.${bike.type}.name`)}
+              {makeModel && ` · ${makeModel}`}
+            </p>
+          </div>
         </div>
-        {!editing && (
-          <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-            <Pencil aria-hidden />
-            {t("common.edit")}
-          </Button>
-        )}
-        <form action={setBikeArchived}>
-          <input type="hidden" name="bikeId" value={bike.id} />
-          <input type="hidden" name="archived" value={String(!bike.archivedAt)} />
-          <Button type="submit" variant="ghost" size="sm">
-            {bike.archivedAt ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
-            {bike.archivedAt ? t("settings.bikes.restore") : t("settings.bikes.archive")}
-          </Button>
-        </form>
+        {/* Lines the button icons up with the name on phones. */}
+        <div className="ml-4 flex items-center gap-3 sm:ml-0">
+          {!editing && (
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+              <Pencil aria-hidden />
+              {t("common.edit")}
+            </Button>
+          )}
+          <form action={setBikeArchived}>
+            <input type="hidden" name="bikeId" value={bike.id} />
+            <input type="hidden" name="archived" value={String(!bike.archivedAt)} />
+            <Button type="submit" variant="ghost" size="sm">
+              {bike.archivedAt ? <ArchiveRestore aria-hidden /> : <Archive aria-hidden />}
+              {bike.archivedAt ? t("settings.bikes.restore") : t("settings.bikes.archive")}
+            </Button>
+          </form>
+        </div>
       </div>
       {editing && <BikeEditForm bike={bike} onDone={() => setEditing(false)} />}
     </li>
