@@ -4,6 +4,19 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-28
+
+Clearer feedback in the parts list and in service rounds.
+
+### Changed
+
+- When a service round can't be saved because of one part, the message names that part and its row in the list turns red.
+- `.env.example` sets `ADMIN_NAME=Admin` instead of leaving it commented out.
+
+### Fixed
+
+- Hovering a part in the parts list highlights only that row. Parts that share a spot on the drawing, such as pedals and cleats, no longer light up together. Picking a spot in the drawing highlights just its first part.
+
 ## [1.0.0] - 2026-10-25
 
 The first stable release, with a clean database setup for fresh installs.
@@ -151,7 +164,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/HugooB/bikepro/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/HugooB/bikepro/compare/v0.7.0...v1.0.0
 [0.7.0]: https://github.com/HugooB/bikepro/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/HugooB/bikepro/compare/v0.5.0...v0.6.0
