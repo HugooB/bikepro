@@ -14,6 +14,16 @@ type Props = {
 
 export async function PartList({ bikeId, rows, odometerKm }: Props) {
   const t = await getT();
+  // The first row of each zone, in the order the list shows them.
+  const seenZones = new Set<string>();
+  const firstOfZone = new Set<number>();
+  for (const category of partCategories) {
+    for (const { part } of rows) {
+      if (part.category !== category || !part.svgZone || seenZones.has(part.svgZone)) continue;
+      seenZones.add(part.svgZone);
+      firstOfZone.add(part.id);
+    }
+  }
   return (
     <div className="flex flex-col gap-6">
       {partCategories.map((category) => {
@@ -31,7 +41,13 @@ export async function PartList({ bikeId, rows, odometerKm }: Props) {
             </h2>
             <ul className="bg-card divide-y overflow-hidden rounded-xl border">
               {items.map(({ part, status }) => (
-                <PartRow key={part.id} part={part} status={status} odometerKm={odometerKm} />
+                <PartRow
+                  key={part.id}
+                  part={part}
+                  status={status}
+                  odometerKm={odometerKm}
+                  firstOfZone={firstOfZone.has(part.id)}
+                />
               ))}
             </ul>
           </section>
