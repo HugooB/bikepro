@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { getOwnedBike, getOwnedServiceRound } from "@/db/access";
 import { serviceRounds } from "@/db/schema";
+import { PartEventError } from "@/db/part-events";
 import { createServiceRound } from "@/db/service-rounds";
 import type { T } from "@/i18n";
 import { getT } from "@/i18n/server";
@@ -86,7 +87,10 @@ export async function saveServiceRound(
   try {
     createServiceRound(input, t);
   } catch (e) {
-    if (e instanceof UserError) return { ok: false, error: t(e.key, e.vars) };
+    if (e instanceof UserError) {
+      const errorPartId = e instanceof PartEventError ? e.partId : undefined;
+      return { ok: false, error: t(e.key, e.vars), errorPartId };
+    }
     return { ok: false, error: t("serviceRound.errors.saveFailed") };
   }
 

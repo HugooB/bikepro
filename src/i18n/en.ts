@@ -556,8 +556,8 @@ export const en = {
     importDamaged: "The export is damaged or incomplete (at {path}).",
     importChooseFile: "Choose a BikePro export (.json) first",
     importTooLarge: "That file is too large",
-    partAlreadyReplaced: "This part has already been replaced",
-    replacementBeforeInstall: "The replacement date is before this part was installed",
+    partAlreadyReplaced: "{part}: this part has already been replaced",
+    replacementBeforeInstall: "{part}: the replacement date is before this part was installed",
   },
   units: {
     kilometers: "kilometers",

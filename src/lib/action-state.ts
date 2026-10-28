@@ -2,7 +2,14 @@ import type { ZodError } from "zod";
 import { tEn, type T } from "@/i18n";
 
 /** Result returned by form server actions and consumed with useActionState. */
-export type ActionState = { ok: boolean; error?: string; message?: string; savedAt?: number };
+export type ActionState = {
+  ok: boolean;
+  error?: string;
+  /** The part the error is about, when a form covers several. */
+  errorPartId?: number;
+  message?: string;
+  savedAt?: number;
+};
 
 export const initialActionState: ActionState = { ok: false };
 

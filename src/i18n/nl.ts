@@ -575,8 +575,8 @@ export const nl: Dictionary = {
     importDamaged: "De export is beschadigd of onvolledig (bij {path}).",
     importChooseFile: "Kies eerst een BikePro-export (.json)",
     importTooLarge: "Dat bestand is te groot",
-    partAlreadyReplaced: "Dit onderdeel is al vervangen",
-    replacementBeforeInstall: "De vervangdatum ligt vóór de montage van dit onderdeel",
+    partAlreadyReplaced: "{part}: dit onderdeel is al vervangen",
+    replacementBeforeInstall: "{part}: de vervangdatum ligt vóór de montage van dit onderdeel",
   },
   units: {
     kilometers: "kilometers",

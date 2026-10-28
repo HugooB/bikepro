@@ -113,6 +113,26 @@ describe("recordPartEvent: replaced", () => {
     expect(getPart(tire.id).status).toBe("active");
   });
 
+  it("names the part it refuses, so a service round can point it out", () => {
+    const tire = makeTire();
+    let error: unknown;
+    try {
+      db.transaction((tx) =>
+        recordPartEvent(tx, tire, {
+          type: "replaced",
+          date: "2025-01-01",
+          odometerKm: 500,
+          resetsInterval: true,
+        }),
+      );
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(PartEventError);
+    expect((error as PartEventError).partId).toBe(tire.id);
+    expect((error as PartEventError).message).toContain(tire.name);
+  });
+
   it("doesn't log anything on a part that was already replaced", () => {
     const tire = makeTire();
     db.transaction((tx) =>

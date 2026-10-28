@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { tEn, type T } from "@/i18n";
+import { tEn, type MessageKey, type T, type Vars } from "@/i18n";
 import { partName } from "@/lib/default-parts";
 import { UserError } from "@/lib/user-error";
 import type { PartEventType } from "./schema";
@@ -10,7 +10,16 @@ import type { db } from "./index";
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** A user-facing problem with the requested change (shown as a form error). */
-export class PartEventError extends UserError {}
+export class PartEventError extends UserError {
+  constructor(
+    key: MessageKey,
+    vars: Vars,
+    /** The part the problem is about, so a form covering several parts can point it out. */
+    readonly partId: number,
+  ) {
+    super(key, vars);
+  }
+}
 
 export type NewPartEvent = {
   type: Exclude<PartEventType, "installed">;
@@ -34,7 +43,10 @@ export function recordPartEvent(
   event: NewPartEvent,
   t: T = tEn,
 ): Part | undefined {
-  if (part.status === "retired") throw new PartEventError("errors.partAlreadyReplaced");
+  // Name the part: a service round covers several, so the message has to say which one.
+  if (part.status === "retired") {
+    throw new PartEventError("errors.partAlreadyReplaced", { part: partName(part, t) }, part.id);
+  }
 
   if (event.type === "replaced") {
     return replacePart(
@@ -84,7 +96,11 @@ type Replacement = {
 /** `t` writes the new part's "replaces the previous …" entry in the user's language. */
 export function replacePart(tx: Tx, part: Part, r: Replacement, t: T = tEn): Part {
   if (r.date < part.installedAt) {
-    throw new PartEventError("errors.replacementBeforeInstall");
+    throw new PartEventError(
+      "errors.replacementBeforeInstall",
+      { part: partName(part, t) },
+      part.id,
+    );
   }
 
   const fresh = tx

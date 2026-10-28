@@ -260,8 +260,12 @@ function ServiceRoundForm({
                 <ul className="divide-y overflow-hidden rounded-xl border">
                   {items.map((part) => {
                     const sel = selected.get(part.id);
+                    const failed = showError && state.errorPartId === part.id;
                     return (
-                      <li key={part.id} className={cn(sel && "bg-muted/50")}>
+                      <li
+                        key={part.id}
+                        className={cn(sel && "bg-muted/50", failed && "bg-destructive/10")}
+                      >
                         <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5">
                           <input
                             type="checkbox"
