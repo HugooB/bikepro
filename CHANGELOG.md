@@ -4,6 +4,20 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-01
+
+BikePro now runs on Node.js 26, with updated dependencies.
+
+### Changed
+
+- The Docker image is built on Node.js 26. Running from source needs Node.js 26 or later.
+- Updated Next.js to 16.4.3, plus other dependency updates.
+- With Swiss francs as your currency, price labels show `Fr.` instead of `CHF`, following newer locale data.
+
+### Security
+
+- Removed a dependency of a development tool that had a denial-of-service advisory (`body-parser`). It was never part of the app or the Docker image.
+
 ## [1.1.0] - 2026-10-28
 
 Clearer feedback in the parts list and in service rounds.
@@ -164,7 +178,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/HugooB/bikepro/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/HugooB/bikepro/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/HugooB/bikepro/compare/v0.7.0...v1.0.0
 [0.7.0]: https://github.com/HugooB/bikepro/compare/v0.6.0...v0.7.0
