@@ -12,7 +12,6 @@ BikePro now runs on Node.js 26, with updated dependencies.
 
 - The Docker image is built on Node.js 26. Running from source needs Node.js 26 or later.
 - Updated Next.js to 16.4.3, plus other dependency updates.
-- With Swiss francs as your currency, price labels show `Fr.` instead of `CHF`, following newer locale data.
 
 ### Security
 
