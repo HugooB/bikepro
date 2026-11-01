@@ -63,7 +63,7 @@ describe("formatting", () => {
     expect(formatMoneyShort(80, "EUR")).toBe("€80");
     expect(formatMoneyShort(12_345, "USD")).toBe("$12.3K");
     expect(currencySymbol("EUR")).toBe("€");
-    expect(currencySymbol("CHF")).toBe("CHF");
+    expect(currencySymbol("CHF")).toBe("Fr.");
   });
 
   it("accepts every ISO currency code and nothing else", () => {

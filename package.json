@@ -5,7 +5,7 @@
   "description": "Self-hosted maintenance tracker for your bikes: part wear, service history and costs.",
   "license": "MIT",
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "scripts": {
     "dev": "next dev",
@@ -40,7 +40,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^9.6.0",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitest/coverage-v8": "^5.0.5",

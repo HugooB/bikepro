@@ -10,7 +10,7 @@ Thanks for helping out! Bug reports, ideas and pull requests are all welcome. Pl
 
 ## Development setup
 
-You need Node.js 24 (see [`.nvmrc`](.nvmrc); with nvm, run `nvm use`).
+You need Node.js 26 (see [`.nvmrc`](.nvmrc); with nvm, run `nvm use`).
 
 ```bash
 git clone https://github.com/HugooB/bikepro.git
