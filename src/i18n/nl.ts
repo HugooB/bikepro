@@ -18,6 +18,7 @@ export const nl: Dictionary = {
     backToBikes: "Terug naar je fietsen",
     loading: "Laden",
     close: "Sluiten",
+    skipToContent: "Naar de inhoud",
     notifications: "Meldingen",
   },
   bikeForm: {

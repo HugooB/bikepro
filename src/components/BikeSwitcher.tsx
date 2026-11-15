@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export type SwitcherBike = { id: number; name: string; color: string | null };
 
 const itemClass =
-  "flex min-h-10 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm outline-none select-none data-highlighted:bg-muted";
+  "flex min-h-10 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm outline-none select-none data-highlighted:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset";
 
 function Swatch({ color }: { color: string | null }) {
   return (

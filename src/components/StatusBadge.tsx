@@ -9,7 +9,7 @@ const dotColors: Record<StatusLevel, string> = {
 };
 
 const textColors: Record<StatusLevel, string> = {
-  ok: "text-status-ok",
+  ok: "text-[oklch(0.52_0.12_155)]", // darker green for readable text on light backgrounds
   due: "text-[oklch(0.55_0.13_65)]", // darker amber for readable text on light backgrounds
   overdue: "text-status-overdue",
   none: "text-muted-foreground",

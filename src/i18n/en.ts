@@ -19,6 +19,7 @@ export const en = {
     backToBikes: "Back to your bikes",
     loading: "Loading",
     close: "Close",
+    skipToContent: "Skip to content",
     notifications: "Notifications",
   },
   /** Fields shared by the add-bike wizard and Settings → Bikes. */

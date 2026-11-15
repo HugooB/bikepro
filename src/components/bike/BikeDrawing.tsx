@@ -26,7 +26,7 @@ const RIM_INNER_R = 116; // deep-section rim
 const zoneColor: Record<StatusLevel, string> = {
   ok: "var(--foreground)",
   none: "color-mix(in oklab, var(--foreground) 55%, transparent)",
-  due: "var(--status-due)",
+  due: "var(--status-due-strong)",
   overdue: "var(--status-overdue)",
 };
 

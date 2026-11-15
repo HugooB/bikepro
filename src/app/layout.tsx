@@ -35,12 +35,25 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const prefs = await getPrefs();
+  const t = await getT();
   return (
     <html lang={prefs.locale} className={archivo.variable}>
       <body className="antialiased">
         <PrefsProvider prefs={prefs}>
+          <a
+            href="#main"
+            className="bg-brand text-brand-foreground focus-visible:ring-ring/50 sr-only z-50 rounded-lg px-3 py-2 text-sm font-semibold outline-none focus:not-sr-only focus:fixed focus:top-2 focus:left-4 focus-visible:ring-3"
+          >
+            {t("common.skipToContent")}
+          </a>
           <AppHeader />
-          <main className="mx-auto w-full max-w-5xl px-4 pt-6 pb-28 sm:px-6">{children}</main>
+          <main
+            id="main"
+            tabIndex={-1}
+            className="mx-auto w-full max-w-5xl px-4 pt-6 pb-28 outline-none sm:px-6"
+          >
+            {children}
+          </main>
           <Toaster position="top-center" />
         </PrefsProvider>
       </body>

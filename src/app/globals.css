@@ -61,6 +61,8 @@
   --strava: #fc4c02;
   --status-ok: oklch(0.6 0.13 155);
   --status-due: oklch(0.74 0.15 70);
+  /* Deeper amber for drawn lines: --status-due is too light for 3:1 against the background. */
+  --status-due-strong: oklch(0.64 0.15 62);
   --status-overdue: oklch(0.58 0.2 27);
 
   --background: #f8f9fb;
@@ -74,7 +76,7 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.54 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);

@@ -47,6 +47,7 @@ export function CostsByYearChart({ data }: { data: CostSummary["byYear"] }) {
         {data.map((d, i) => (
           <div
             key={d.year}
+            role="img"
             tabIndex={0}
             aria-label={`${d.year}: ${u.money(d.amount)}`}
             onPointerEnter={() => setActive(i)}

@@ -20,7 +20,7 @@ export function DeleteEventButton({ eventId }: { eventId: number }) {
         variant="ghost"
         size="icon"
         aria-label={t("part.timeline.deleteEntry")}
-        className="text-muted-foreground hover:text-destructive opacity-60 group-hover:opacity-100"
+        className="text-muted-foreground hover:text-destructive"
       >
         <Trash2 aria-hidden />
       </Button>
