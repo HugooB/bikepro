@@ -42,7 +42,7 @@ export default async function RootLayout({
         <PrefsProvider prefs={prefs}>
           <a
             href="#main"
-            className="bg-brand text-brand-foreground focus-visible:ring-ring/50 sr-only z-50 rounded-lg px-3 py-2 text-sm font-semibold outline-none focus:not-sr-only focus:fixed focus:top-2 focus:left-4 focus-visible:ring-3"
+            className="bg-brand text-brand-foreground focus-visible:ring-ring/50 sr-only z-50 rounded-lg text-sm font-semibold whitespace-nowrap outline-none focus:not-sr-only focus:fixed focus:top-2 focus:left-4 focus:px-3 focus:py-2 focus-visible:ring-3"
           >
             {t("common.skipToContent")}
           </a>

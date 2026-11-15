@@ -32,7 +32,9 @@ export function BikeSwitcher({ bikes, userName }: { bikes: SwitcherBike[]; userN
   const current = bikes.find((b) => b.id === currentId);
 
   return (
-    <DropdownMenu.Root>
+    // Non-modal: a modal menu locks page scroll, which hides the scrollbar and shifts fixed
+    // elements such as the service round button.
+    <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger
         className="hover:bg-muted focus-visible:ring-ring/50 data-[state=open]:bg-muted flex h-9 max-w-[55vw] items-center gap-2 rounded-lg px-2.5 text-sm font-medium outline-none focus-visible:ring-3 sm:max-w-xs"
         aria-label={current ? t("nav.switchBike", { bike: current.name }) : t("nav.yourBikes")}
