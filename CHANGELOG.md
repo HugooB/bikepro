@@ -4,6 +4,27 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-15
+
+Better accessibility: clearer colours, visible keyboard focus and a skip link.
+
+### Added
+
+- A "Skip to content" link. Press Tab on any page to jump past the header straight to the content.
+
+### Changed
+
+- Secondary text (dates, odometer readings, hints) is slightly darker, so it is easier to read.
+- "Good condition" labels use a darker green, and parts that are due are drawn in a deeper amber in the bike drawing.
+- The delete button on timeline entries is no longer faded.
+- Screen readers now announce each bar in the yearly costs chart with its year and amount.
+- Updated Next.js to 16.4.6, plus other dependency updates.
+
+### Fixed
+
+- Opening the bike menu in the header no longer makes the page jump or moves the service round button.
+- The highlighted bike in the bike menu now has a clear focus ring when you use the arrow keys.
+
 ## [1.2.0] - 2026-11-01
 
 BikePro now runs on Node.js 26, with updated dependencies.
@@ -177,7 +198,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/HugooB/bikepro/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/HugooB/bikepro/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/HugooB/bikepro/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/HugooB/bikepro/compare/v0.7.0...v1.0.0
