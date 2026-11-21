@@ -4,6 +4,35 @@ All notable changes to BikePro are listed here. The format follows [Keep a Chang
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-21
+
+Security fixes and hardening from a full security audit.
+
+### Security
+
+- Fixed an open redirect: a crafted sign-in link could send someone who was already signed in to another website.
+- Connecting Strava is tied to the account that started it, and can only be started from BikePro's own pages.
+- Connecting a different Strava account no longer keeps the old account's bikes, and a refresh or sync that was still running for the old account no longer overwrites the new connection.
+- `ADMIN_EMAIL` makes an existing account the admin only while the install has no admin, since registering doesn't prove someone owns an email address.
+- Admins can no longer reset another admin's password. A locked-out admin uses `scripts/reset-password.js` on the server.
+- Stored password hashes that ask for more work than BikePro uses are refused instead of computed.
+- When registration is closed, sign-up attempts are refused before any password hashing, and the sign-in throttle's memory use is capped.
+- Text you enter, such as a part name, can no longer add formatting to messages.
+- Changes to bikes, parts and service rounds also check the owner in the database query itself.
+- The CI actions are pinned to exact commits, and the Docker base images are pinned by digest.
+
+### Changed
+
+- BikePro warns on start when `APP_URL` isn't set in production, and connecting Strava asks you to set it first.
+- Signing out clears a half-filled new bike on that browser tab.
+- When disconnecting Strava or deleting your account can't reach Strava, BikePro tells you to remove it under My Apps in your Strava settings.
+- Dependency updates.
+
+### Upgrading
+
+- Set `APP_URL` in `.env` if you haven't, especially if you use Strava.
+- If you relied on `ADMIN_EMAIL` to make a second account an admin, that no longer happens while another admin exists.
+
 ## [1.3.0] - 2026-11-15
 
 Better accessibility: clearer colours, visible keyboard focus and a skip link.
@@ -198,7 +227,8 @@ The first public release.
 - `ALLOW_REGISTRATION` is no longer used. Its value is carried over once as the registration setting, and from then on the admin opens and closes registration in the app. You can remove it from `.env`.
 - The first account on an existing install becomes the admin.
 
-[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/HugooB/bikepro/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/HugooB/bikepro/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/HugooB/bikepro/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/HugooB/bikepro/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/HugooB/bikepro/compare/v1.0.0...v1.1.0
