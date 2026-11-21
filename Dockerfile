@@ -1,6 +1,7 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
 
-FROM node:26-bookworm-slim AS base
+# Pinned by digest so a rebuild uses the image that was reviewed; Dependabot bumps it.
+FROM node:26-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS base
 WORKDIR /app
 
 # Install dependencies (better-sqlite3 ships prebuilt binaries; build tools are a fallback)
