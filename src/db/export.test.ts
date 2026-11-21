@@ -25,6 +25,7 @@ beforeAll(() => {
   const road = db.transaction((tx) => createBike(tx, plan("Road"), alice));
   db.transaction((tx) => createBike(tx, plan("Bob's bike"), bob));
   createServiceRound({
+    userId: alice,
     bikeId: road.id,
     date: TODAY,
     odometerKm: 0,

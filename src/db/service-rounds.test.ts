@@ -10,10 +10,12 @@ let otherBikePartId: number;
 const kinds = ["chain", "cassette", "bar_tape", "saddle"] as const;
 const partIds = {} as Record<(typeof kinds)[number], number>;
 
+let userId: number;
+
 beforeAll(() => {
   runMigrations();
   // Every bike has an owner.
-  const userId = db
+  userId = db
     .insert(users)
     .values({ email: "rider@example.com", name: "Rider", passwordHash: "x" })
     .returning()
@@ -57,6 +59,7 @@ const eventsFor = (partId: number) =>
 describe("createServiceRound", () => {
   it("logs one linked event per covered part with the round's date and km", () => {
     const round = createServiceRound({
+      userId,
       bikeId,
       date: "2026-10-10",
       shop: "Wielerwerkplaats",
@@ -113,7 +116,22 @@ describe("createServiceRound", () => {
   });
 
   it("never moves the odometer backwards", () => {
-    createServiceRound({ bikeId, date: "2026-10-11", odometerKm: 100, parts: [] });
+    createServiceRound({ userId, bikeId, date: "2026-10-11", odometerKm: 100, parts: [] });
+    expect(db.select().from(bikes).where(eq(bikes.id, bikeId)).get()?.odometerKm).toBe(5400);
+  });
+
+  it("refuses a round on a bike that isn't the given owner's, and saves nothing", () => {
+    const before = db.select().from(serviceRounds).all().length;
+    expect(() =>
+      createServiceRound({
+        userId: userId + 1000,
+        bikeId,
+        date: "2026-10-12",
+        odometerKm: 9999,
+        parts: [],
+      }),
+    ).toThrow();
+    expect(db.select().from(serviceRounds).all().length).toBe(before);
     expect(db.select().from(bikes).where(eq(bikes.id, bikeId)).get()?.odometerKm).toBe(5400);
   });
 
@@ -121,6 +139,7 @@ describe("createServiceRound", () => {
     const before = db.select().from(serviceRounds).all().length;
     expect(() =>
       createServiceRound({
+        userId,
         bikeId,
         date: "2026-10-12",
         odometerKm: 5500,
@@ -136,6 +155,7 @@ describe("createServiceRound", () => {
 
   it("removes its part events when the round is deleted", () => {
     const round = createServiceRound({
+      userId,
       bikeId,
       date: "2026-10-13",
       odometerKm: 5500,

@@ -24,7 +24,8 @@ function contentSecurityPolicy(nonce: string, https: boolean) {
     `connect-src 'self'${dev ? " ws:" : ""}`,
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    // Without JavaScript, connecting Strava is a form post that redirects to strava.com.
+    "form-action 'self' https://www.strava.com",
     "frame-ancestors 'none'",
     ...(https ? ["upgrade-insecure-requests"] : []),
   ].join("; ");

@@ -22,11 +22,15 @@ export function ResetPasswordButton({ userId, name }: { userId: number; name: st
     return (
       <div className="flex w-full flex-col gap-1 text-sm">
         <p>
-          {rich(t("settings.admin.tempPassword", { name, password: state.message }), {
-            code: (text) => (
-              <code className="bg-muted rounded px-1.5 py-0.5 font-mono select-all">{text}</code>
-            ),
-          })}
+          {rich(
+            t("settings.admin.tempPassword"),
+            {
+              code: (text) => (
+                <code className="bg-muted rounded px-1.5 py-0.5 font-mono select-all">{text}</code>
+              ),
+            },
+            { name, password: state.message },
+          )}
         </p>
         <p className="text-muted-foreground text-xs">{t("settings.admin.tempPasswordHint")}</p>
       </div>

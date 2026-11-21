@@ -136,6 +136,8 @@ export const en = {
     signingIn: "Signing in…",
     welcomeBack: "Welcome back. Your bikes are waiting.",
     accountDeleted: "Your account and all its data have been deleted.",
+    stravaNotRevoked:
+      "Strava couldn't be told, so BikePro may still be listed there. To be sure, remove it under My Apps in your Strava settings.",
     newHere: "New here?",
     createAccount: "Create an account",
     createAccountButton: "Create account",
@@ -428,6 +430,10 @@ export const en = {
         "BikePro needs to see your bikes on Strava to read their distances. Connect again and leave every permission ticked.",
       taken: "That Strava account is already connected to another BikePro account.",
       failed: "Couldn't connect to Strava. Try again.",
+      appUrl:
+        "To connect Strava, set APP_URL in .env to the address you open BikePro on, and restart BikePro.",
+      revokeFailed:
+        "Strava is disconnected from BikePro, but Strava couldn't be told. To be sure, remove BikePro under My Apps in your Strava settings.",
     },
     errors: {
       revoked: "Strava no longer gives BikePro access. Connect it again.",
@@ -547,6 +553,8 @@ export const en = {
     registrationClosed: "Registration is closed. Ask the owner of this BikePro.",
     emailTaken: "There's already an account with this email. Sign in instead.",
     resetOwnPassword: "Change your own password under Account.",
+    resetAdminPassword:
+      "Another admin's password can't be reset here. They can use the reset script on the server; see the README.",
     accountGone: "That account no longer exists.",
     adminCantBeDeleted: "The admin account can't be deleted.",
     stravaBikeMissing: "That bike isn't in your Strava account",

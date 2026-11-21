@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
 import { deleteUserSessions } from "@/db/sessions";
-import { createUser, findUserByEmail, normalizeEmail } from "@/db/users";
+import { createUser, findUserByEmail, normalizeEmail, registrationOpen } from "@/db/users";
 import type { T } from "@/i18n";
 import { browserLocale, getT } from "@/i18n/server";
 import { firstError, type ActionState } from "@/lib/action-state";
@@ -64,6 +64,9 @@ export async function register(_prev: ActionState, formData: FormData): Promise<
   const parsed = registerSchema(t).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error, t) };
   const input = parsed.data;
+  // Refuse before hashing, so a closed install doesn't spend scrypt work on anyone who posts here.
+  // createUser checks again inside its transaction.
+  if (!registrationOpen()) return { ok: false, error: t("errors.registrationClosed") };
 
   let user;
   try {

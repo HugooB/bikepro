@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const user = await requireUser();
   const params = request.nextUrl.searchParams;
-  const { back, ok } = await finishOAuth(params.get("state"));
+  const { back, ok } = await finishOAuth(user.id, params.get("state"));
   const config = stravaConfig(request.nextUrl.origin);
   const code = params.get("code");
 

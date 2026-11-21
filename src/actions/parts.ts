@@ -86,7 +86,7 @@ export async function addPartEvent(_prev: ActionState, formData: FormData): Prom
         t,
       );
       newPartId = fresh?.id;
-      bumpOdometer(tx, part.bikeId, odometerKm);
+      bumpOdometer(tx, bike, odometerKm);
     });
   } catch (e) {
     if (e instanceof UserError) return { ok: false, error: t(e.key, e.vars) };
@@ -117,7 +117,9 @@ export async function deletePartEvent(formData: FormData) {
     return;
   }
 
-  db.delete(partEvents).where(eq(partEvents.id, id)).run();
+  db.delete(partEvents)
+    .where(and(eq(partEvents.id, id), eq(partEvents.partId, event.part.id)))
+    .run();
   revalidateBike(event.part.bikeId);
 }
 
@@ -178,7 +180,7 @@ export async function updatePart(_prev: ActionState, formData: FormData): Promis
 
   db.update(parts)
     .set(partValues(input, user.distanceUnit, t, part))
-    .where(eq(parts.id, part.id))
+    .where(and(eq(parts.id, part.id), eq(parts.bikeId, part.bikeId)))
     .run();
 
   revalidateBike(part.bikeId);
@@ -232,7 +234,7 @@ export async function createPart(_prev: ActionState, formData: FormData): Promis
         resetsInterval: true,
       })
       .run();
-    bumpOdometer(tx, bike.id, created.installedKm);
+    bumpOdometer(tx, bike, created.installedKm);
     return created;
   });
 
@@ -255,7 +257,9 @@ export async function deletePart(formData: FormData) {
       .set({ replacedByPartId: null })
       .where(eq(parts.replacedByPartId, part.id))
       .run();
-    tx.delete(parts).where(eq(parts.id, part.id)).run();
+    tx.delete(parts)
+      .where(and(eq(parts.id, part.id), eq(parts.bikeId, part.bikeId)))
+      .run();
   });
 
   revalidateBike(part.bikeId);

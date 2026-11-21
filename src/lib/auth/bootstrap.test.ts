@@ -1,8 +1,11 @@
+import { eq } from "drizzle-orm";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { setAppSetting } from "@/db/app-settings";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { runMigrations } from "@/db/migrate";
 import { countUsers, createUser, findUserByEmail, registrationOpen } from "@/db/users";
-import { bootstrapAccounts } from "./bootstrap";
+import { bootstrapAccounts, checkAppUrl } from "./bootstrap";
 import { verifyPassword } from "./password";
 
 const log = () => ({ info: vi.fn(), warn: vi.fn() });
@@ -51,14 +54,35 @@ describe("bootstrapAccounts", () => {
     expect(countUsers()).toBe(1);
   });
 
-  it("makes an existing account with ADMIN_EMAIL an admin", async () => {
+  it("doesn't promote an account with ADMIN_EMAIL while the install has an admin", async () => {
+    // Registration doesn't prove the email is theirs: someone could have registered it first.
     setAppSetting("registrationOpen", true);
     const rider = createUser({ email: "rider@example.com", name: "Rider", passwordHash: "x" });
     setAppSetting("registrationOpen", false);
     expect(rider.isAdmin).toBe(false);
     const l = log();
     await bootstrapAccounts({ ADMIN_EMAIL: "RIDER@example.com" }, l);
+    expect(findUserByEmail("rider@example.com")?.isAdmin).toBe(false);
+    expect(l.warn).toHaveBeenCalledWith(expect.stringContaining("already has an admin"));
+  });
+
+  it("makes an existing account with ADMIN_EMAIL the admin when there is none", async () => {
+    db.update(users).set({ isAdmin: false }).where(eq(users.email, "admin@example.com")).run();
+    const l = log();
+    await bootstrapAccounts({ ADMIN_EMAIL: "RIDER@example.com" }, l);
     expect(findUserByEmail("rider@example.com")?.isAdmin).toBe(true);
     expect(l.info).toHaveBeenCalledWith(expect.stringContaining("is now an admin"));
+  });
+});
+
+describe("checkAppUrl", () => {
+  it("warns in production without APP_URL only", () => {
+    const l = log();
+    checkAppUrl({ NODE_ENV: "production" }, l);
+    expect(l.warn).toHaveBeenCalledWith(expect.stringContaining("APP_URL isn't set"));
+    const quiet = log();
+    checkAppUrl({ NODE_ENV: "production", APP_URL: "https://bikes.example.com" }, quiet);
+    checkAppUrl({ NODE_ENV: "development" }, quiet);
+    expect(quiet.warn).not.toHaveBeenCalled();
   });
 });

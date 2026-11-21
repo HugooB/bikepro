@@ -44,7 +44,7 @@ export async function getAccessToken(userId: number, config: StravaConfig): Prom
   if (tokens.expiresAt.getTime() - Date.now() > 5 * MINUTE) return tokens.accessToken;
 
   const fresh = await refreshTokens(config, tokens.refreshToken);
-  updateStravaTokens(userId, fresh);
+  updateStravaTokens(userId, connection.athleteId, fresh);
   return fresh.accessToken;
 }
 
@@ -54,14 +54,16 @@ export async function getAccessToken(userId: number, config: StravaConfig): Prom
  */
 export async function syncStrava(userId: number, { manual = false } = {}): Promise<SyncResult> {
   const config = stravaConfig();
-  if (!config || !getStravaConnection(userId)) return { status: "skipped" };
+  const connection = getStravaConnection(userId);
+  if (!config || !connection) return { status: "skipped" };
   if (!claimStravaSync(userId, manual ? MANUAL_SYNC_INTERVAL : AUTO_SYNC_INTERVAL)) {
     return { status: "skipped" };
   }
 
   try {
     const gear = await getAthleteBikes(await getAccessToken(userId, config));
-    return { status: "ok", changed: applyStravaGear(userId, gear) };
+    const changed = applyStravaGear(userId, gear, { athleteId: connection.athleteId });
+    return { status: "ok", changed };
   } catch (e) {
     const error = e instanceof StravaRevokedError ? "revoked" : "failed";
     if (error === "failed") console.error("Strava sync failed", e);

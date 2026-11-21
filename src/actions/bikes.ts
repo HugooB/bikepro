@@ -128,7 +128,7 @@ export async function updateBike(_prev: ActionState, formData: FormData): Promis
       purchasedAt: purchasedAt || null,
       purchasePrice: purchasePrice ?? null,
     })
-    .where(eq(bikes.id, bikeId))
+    .where(and(eq(bikes.id, bikeId), eq(bikes.userId, user.id)))
     .run();
   revalidatePath("/", "layout");
   return { ok: true, savedAt: Date.now() };

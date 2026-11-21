@@ -19,6 +19,9 @@ import { partsByCategory, startKm, type WizardDraft, type WizardStep } from "@/l
 import { ChoiceChip, StepHeading, WizardField } from "./fields";
 import type { WizardAction } from "./wizard-state";
 
+/** The id of the form that starts connecting Strava; Wizard renders it outside its own form. */
+export const STRAVA_CONNECT_FORM = "strava-connect";
+
 /** What the wizard knows about the user's Strava account. */
 export type WizardStrava = {
   configured: boolean;
@@ -204,13 +207,15 @@ export function StepStrava({ draft, errors, dispatch, headingRef, strava }: Step
       {strava.configured && !strava.connected && !connectFailed && (
         <p className="text-muted-foreground text-sm">
           {rich(t("wizard.distance.offerConnect"), {
+            // Submits the separate connect form next to the wizard's own (see Wizard).
             link: (text) => (
-              <a
-                href={`/api/strava/connect?next=${encodeURIComponent("/bikes/new")}`}
-                className="text-foreground font-medium underline"
+              <button
+                type="submit"
+                form={STRAVA_CONNECT_FORM}
+                className="text-foreground cursor-pointer font-medium underline"
               >
                 {text}
-              </a>
+              </button>
             ),
           })}
         </p>

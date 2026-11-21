@@ -78,7 +78,7 @@ export default async function SettingsPage({
         <PreferencesForm prefs={prefs} />
       </section>
 
-      {user.isAdmin && <AdminSettings adminId={user.id} t={t} />}
+      {user.isAdmin && <AdminSettings t={t} />}
 
       <section aria-labelledby="bikes-heading" className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-4">
@@ -157,7 +157,7 @@ export default async function SettingsPage({
 }
 
 /** Install-wide settings, shown to admins only. */
-function AdminSettings({ adminId, t }: { adminId: number; t: T }) {
+function AdminSettings({ t }: { t: T }) {
   const open = registrationOpen();
   const users = listUsers();
   return (
@@ -203,7 +203,7 @@ function AdminSettings({ adminId, t }: { adminId: number; t: T }) {
               </p>
               <p className="text-muted-foreground truncate text-sm">{u.email}</p>
             </div>
-            {u.id !== adminId && <ResetPasswordButton userId={u.id} name={u.name} />}
+            {!u.isAdmin && <ResetPasswordButton userId={u.id} name={u.name} />}
           </li>
         ))}
       </ul>

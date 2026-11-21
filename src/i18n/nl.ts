@@ -145,6 +145,8 @@ export const nl: Dictionary = {
     signingIn: "Inloggen…",
     welcomeBack: "Welkom terug. Je fietsen staan klaar.",
     accountDeleted: "Je account en al je gegevens zijn verwijderd.",
+    stravaNotRevoked:
+      "Strava kon niet worden ingelicht, dus BikePro staat daar mogelijk nog. Verwijder het voor de zekerheid onder Mijn apps in je Strava-instellingen.",
     newHere: "Nieuw hier?",
     createAccount: "Account aanmaken",
     createAccountButton: "Account aanmaken",
@@ -442,6 +444,10 @@ export const nl: Dictionary = {
         "BikePro moet je fietsen op Strava kunnen zien om hun afstand te lezen. Koppel opnieuw en laat alle toestemmingen aangevinkt.",
       taken: "Dat Strava-account is al gekoppeld aan een ander BikePro-account.",
       failed: "Koppelen met Strava lukte niet. Probeer het opnieuw.",
+      appUrl:
+        "Om Strava te koppelen zet je APP_URL in .env op het adres waarop je BikePro opent, en start je BikePro opnieuw.",
+      revokeFailed:
+        "Strava is losgekoppeld van BikePro, maar Strava kon niet worden ingelicht. Verwijder BikePro voor de zekerheid onder Mijn apps in je Strava-instellingen.",
     },
     errors: {
       revoked: "Strava geeft BikePro geen toegang meer. Koppel het opnieuw.",
@@ -566,6 +572,8 @@ export const nl: Dictionary = {
     registrationClosed: "Registreren is gesloten. Vraag het de eigenaar van deze BikePro.",
     emailTaken: "Er is al een account met dit e-mailadres. Log in plaats daarvan in.",
     resetOwnPassword: "Wijzig je eigen wachtwoord onder Account.",
+    resetAdminPassword:
+      "Het wachtwoord van een andere beheerder kun je hier niet resetten. Die kan het resetscript op de server gebruiken; zie de README.",
     accountGone: "Dat account bestaat niet meer.",
     adminCantBeDeleted: "Het beheerdersaccount kan niet worden verwijderd.",
     stravaBikeMissing: "Die fiets staat niet in je Strava-account",

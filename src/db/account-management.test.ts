@@ -60,6 +60,7 @@ function seedBikes(userId: number) {
     .all()
     .find((p) => p.kind === "chain")!;
   createServiceRound({
+    userId,
     bikeId: road.id,
     date: TODAY,
     shop: "Local shop",
@@ -137,6 +138,15 @@ describe("admin password reset", () => {
     expect(() => resetPassword(alice, bob, "h")).toThrow(NotAdminError);
     expect(() => resetPassword(admin, admin, "h")).toThrow(AccountError);
     expect(() => resetPassword(admin, 9999, "h")).toThrow(AccountError);
+  });
+
+  it("is refused for another admin's account", () => {
+    const other = createUser(
+      { email: "admin2@example.com", name: "Admin 2", passwordHash: "x" },
+      { bootstrap: true },
+    );
+    expect(() => resetPassword(admin, other.id, "h")).toThrow(AccountError);
+    expect(findUserByEmail("admin2@example.com")?.passwordHash).toBe("x");
   });
 
   it("works from the command line with a hash the app accepts", async () => {

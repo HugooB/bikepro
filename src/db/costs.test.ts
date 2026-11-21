@@ -17,10 +17,12 @@ const addPart = (kind: string, category: "drivetrain" | "wheels", cost: number |
     .returning()
     .get().id;
 
+let userId: number;
+
 beforeAll(() => {
   runMigrations();
   // Every bike has an owner.
-  const userId = db
+  userId = db
     .insert(users)
     .values({ email: "rider@example.com", name: "Rider", passwordHash: "x" })
     .returning()
@@ -71,6 +73,7 @@ beforeAll(() => {
   });
   // The round's total covers its parts; their events carry no cost of their own.
   createServiceRound({
+    userId,
     bikeId,
     date: "2026-04-10",
     shop: "Fietsmaker",

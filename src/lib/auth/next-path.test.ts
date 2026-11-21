@@ -7,6 +7,17 @@ describe("safeNextPath", () => {
     expect(safeNextPath("/bikes/3/parts/9?log=1")).toBe("/bikes/3/parts/9?log=1");
   });
 
+  it("refuses paths that only become another site after dot segments are resolved", () => {
+    for (const next of [
+      "/.//evil.example",
+      "/%2e//evil.example",
+      "/a/..//evil.example",
+      "/..//evil.example",
+    ]) {
+      expect(safeNextPath(next)).toBe("/");
+    }
+  });
+
   it("keeps encoded characters as part of a local path", () => {
     expect(safeNextPath("/%0a/evil.example")).toBe("/%0a/evil.example");
   });
@@ -19,6 +30,10 @@ describe("safeNextPath", () => {
       "/\\/evil.example",
       "javascript:alert(1)",
       "\t//evil.example",
+      "/.//evil.example",
+      "/%2e//evil.example",
+      "/a/..//evil.example",
+      "/..//evil.example",
       "",
       undefined,
       ["/bikes/1"],

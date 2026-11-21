@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatDistanceToNowStrict } from "date-fns";
 import { Plus } from "lucide-react";
-import { disconnectStrava } from "@/actions/strava";
+import { connectStrava, disconnectStrava } from "@/actions/strava";
 import { Button } from "@/components/ui/button";
 import type { Bike, StravaConnection } from "@/db/schema";
 import type { MessageKey } from "@/i18n";
@@ -15,18 +15,19 @@ const outcomes: Record<string, { key: MessageKey; error?: boolean }> = {
   scope: { key: "strava.outcomes.scope", error: true },
   taken: { key: "strava.outcomes.taken", error: true },
   failed: { key: "strava.outcomes.failed", error: true },
+  appUrl: { key: "strava.outcomes.appUrl", error: true },
+  revokeFailed: { key: "strava.outcomes.revokeFailed", error: true },
 };
 
-export async function ConnectStravaButton({ next }: { next?: string }) {
+export async function ConnectStravaButton({ next = "/settings" }: { next?: string }) {
   const t = await getT();
-  const href = next
-    ? `/api/strava/connect?next=${encodeURIComponent(next)}`
-    : "/api/strava/connect";
   return (
-    <Button asChild className="bg-strava hover:bg-strava/90 text-white">
-      {/* A plain link: the connect route redirects to strava.com. */}
-      <a href={href}>{t("strava.connect")}</a>
-    </Button>
+    <form action={connectStrava}>
+      <input type="hidden" name="next" value={next} />
+      <Button type="submit" className="bg-strava hover:bg-strava/90 text-white">
+        {t("strava.connect")}
+      </Button>
+    </form>
   );
 }
 

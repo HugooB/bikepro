@@ -73,6 +73,10 @@ export function createUser(
   });
 }
 
+export function hasAdmin(): boolean {
+  return !!db.select({ id: users.id }).from(users).where(eq(users.isAdmin, true)).get();
+}
+
 export function makeAdmin(userId: number) {
   db.update(users).set({ isAdmin: true }).where(eq(users.id, userId)).run();
 }
@@ -123,13 +127,20 @@ export function resetPassword(actorId: number, targetId: number, passwordHash: s
   if (!isAdmin(actorId)) throw new NotAdminError();
   if (actorId === targetId) throw new AccountError("errors.resetOwnPassword");
   return db.transaction((tx) => {
+    const found = tx
+      .select({ isAdmin: users.isAdmin })
+      .from(users)
+      .where(eq(users.id, targetId))
+      .get();
+    if (!found) throw new AccountError("errors.accountGone");
+    // Resetting another admin would take over their account; they use the reset script instead.
+    if (found.isAdmin) throw new AccountError("errors.resetAdminPassword");
     const target = tx
       .update(users)
       .set({ passwordHash })
       .where(eq(users.id, targetId))
       .returning()
-      .get();
-    if (!target) throw new AccountError("errors.accountGone");
+      .get()!;
     tx.delete(sessions).where(eq(sessions.userId, targetId)).run();
     return target;
   });

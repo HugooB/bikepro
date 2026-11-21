@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
+import { ClearWizardDraft } from "@/components/wizard/ClearWizardDraft";
 import { registrationOpen } from "@/db/users";
 import { getT } from "@/i18n/server";
 import { safeNextPath } from "@/lib/auth/next-path";
@@ -16,7 +17,7 @@ export async function generateMetadata() {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; deleted?: string }>;
+  searchParams: Promise<{ next?: string; deleted?: string; strava?: string }>;
 }) {
   const params = await searchParams;
   const next = safeNextPath(params.next);
@@ -29,9 +30,11 @@ export default async function LoginPage({
         <h1 className="font-display text-3xl leading-tight">{t("auth.signIn")}</h1>
         <p className="text-muted-foreground">{t("auth.welcomeBack")}</p>
       </div>
+      <ClearWizardDraft />
       {params.deleted && (
         <p role="status" className="bg-card rounded-xl border px-4 py-3 text-sm">
           {t("auth.accountDeleted")}
+          {params.strava === "notRevoked" && <> {t("auth.stravaNotRevoked")}</>}
         </p>
       )}
       <AuthForm mode="login" next={next === "/" ? undefined : next} />

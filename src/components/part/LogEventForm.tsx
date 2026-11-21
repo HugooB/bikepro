@@ -88,9 +88,11 @@ export function LogEventForm({ partId, partName, odometerKm, today, initialType 
       {replacing && (
         <div className="bg-muted/60 flex flex-col gap-3 rounded-lg p-3">
           <p className="text-sm">
-            {rich(t("part.log.replaceExplainer", { part: lowerName }), {
-              b: (text) => <span className="font-medium">{text}</span>,
-            })}
+            {rich(
+              t("part.log.replaceExplainer"),
+              { b: (text) => <span className="font-medium">{text}</span> },
+              { part: lowerName },
+            )}
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex min-w-0 flex-col gap-1.5">

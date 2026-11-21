@@ -40,15 +40,24 @@ export async function hashPassword(password: string): Promise<string> {
   );
 }
 
+// The scrypt cost a stored hash may ask for. A hash with a higher (or nonsense) cost is refused
+// rather than computed, so a tampered or corrupt row can't tie up the server. Raise these when
+// COST goes up.
+const MAX_N = COST.N;
+const MAX_R = COST.r;
+const MAX_P = COST.p;
+
+const inRange = (value: number, max: number) =>
+  Number.isSafeInteger(value) && value >= 1 && value <= max;
+
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const [algo, N, r, p, salt, key] = stored.split("$");
   if (algo !== "scrypt" || !salt || !key) return false;
+  const cost = { N: Number(N), r: Number(r), p: Number(p) };
+  if (!inRange(cost.N, MAX_N) || !inRange(cost.r, MAX_R) || !inRange(cost.p, MAX_P)) return false;
   const expected = Buffer.from(key, "base64");
-  const actual = await derive(password, Buffer.from(salt, "base64"), {
-    N: Number(N),
-    r: Number(r),
-    p: Number(p),
-  });
+  if (expected.length !== KEY_LENGTH) return false;
+  const actual = await derive(password, Buffer.from(salt, "base64"), cost);
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 

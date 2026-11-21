@@ -52,7 +52,8 @@ export function hasKey(key: string): key is MessageKey {
 
 const pluralRules = new Map<Locale, Intl.PluralRules>();
 
-function fill(text: string, vars?: Vars) {
+/** Fills in `{name}` placeholders from `vars`; unknown names stay as they are. */
+export function fill(text: string, vars?: Vars) {
   if (!vars) return text;
   return text.replace(/\{(\w+)\}/g, (match, name: string) =>
     name in vars ? String(vars[name]) : match,

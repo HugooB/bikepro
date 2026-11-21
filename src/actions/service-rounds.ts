@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
@@ -78,6 +78,7 @@ export async function saveServiceRound(
   // The form starts at the bike's odometer; left as it is, that reading is kept exactly.
   const input = {
     ...parsed.data,
+    userId: user.id,
     odometerKm: inputToKm(parsed.data.odometerKm, user.distanceUnit, bike.odometerKm),
   };
   if (input.parts.length === 0 && !input.notes && !input.shop) {
@@ -107,6 +108,8 @@ export async function deleteServiceRound(formData: FormData) {
   const round = getOwnedServiceRound(user.id, id);
   if (!round) return;
 
-  db.delete(serviceRounds).where(eq(serviceRounds.id, id)).run();
+  db.delete(serviceRounds)
+    .where(and(eq(serviceRounds.id, id), eq(serviceRounds.bikeId, round.bikeId)))
+    .run();
   revalidatePath(`/bikes/${round.bikeId}`, "layout");
 }

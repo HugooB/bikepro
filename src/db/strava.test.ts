@@ -18,6 +18,7 @@ import {
   saveStravaConnection,
   StravaAccountTakenError,
   StravaLinkError,
+  updateStravaTokens,
 } from "./strava";
 import { createUser } from "./users";
 
@@ -89,6 +90,33 @@ describe("connecting", () => {
     saveStravaConnection(userId, { athleteId: 7, athleteName: "New", scope: "read", tokens });
     expect(bike(b.id).stravaGearId).toBeNull();
   });
+
+  it("forgets the old Strava account's bikes when the user connects a different one", () => {
+    claimStravaSync(userId, 0);
+    saveStravaConnection(userId, { athleteId: 7, athleteName: "New", scope: "read", tokens });
+    const c = getStravaConnection(userId)!;
+    expect(c.gear).toEqual([]);
+    expect(c.syncedAt).toBeNull();
+    expect(c.syncAttemptAt).toBeNull();
+    // The old account's bike can no longer be picked.
+    expect(() => linkBikeToStrava(newBike("Road", 1000), "b1", false)).toThrow(StravaLinkError);
+  });
+
+  it("ignores a token refresh or sync for the Strava account the user just replaced", () => {
+    saveStravaConnection(userId, { athleteId: 7, athleteName: "New", scope: "read", tokens });
+    updateStravaTokens(userId, 42, { ...tokens, accessToken: "old-athlete" });
+    expect(readTokens(getStravaConnection(userId)!).accessToken).toBe("access-1");
+    expect(applyStravaGear(userId, [gear("b1", 1000)], { athleteId: 42 })).toBe(false);
+    expect(getStravaConnection(userId)!.gear).toEqual([]);
+
+    updateStravaTokens(userId, 7, { ...tokens, accessToken: "new-athlete" });
+    expect(readTokens(getStravaConnection(userId)!).accessToken).toBe("new-athlete");
+  });
+
+  it("keeps the cached bikes when the same Strava account reconnects", () => {
+    saveStravaConnection(userId, { athleteId: 42, athleteName: "Rider", scope: "read", tokens });
+    expect(getStravaConnection(userId)!.gear.map((g) => g.id)).toEqual(["b1", "b2"]);
+  });
 });
 
 describe("linking", () => {
@@ -139,7 +167,7 @@ describe("syncing", () => {
     applyStravaGear(userId, [gear("b2", 5100)]);
     expect(bike(b.id).odometerKm).toBe(5300);
 
-    db.transaction((tx) => bumpOdometer(tx, b.id, 5400));
+    db.transaction((tx) => bumpOdometer(tx, b, 5400));
     applyStravaGear(userId, [gear("b2", 5150)]);
     expect(bike(b.id).odometerKm).toBe(5450);
   });

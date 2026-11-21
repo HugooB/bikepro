@@ -35,8 +35,10 @@ export function saveStravaConnection(
       .from(stravaConnections)
       .where(eq(stravaConnections.userId, userId))
       .get();
-    // Links to another Strava account's bikes mean nothing for the new one.
-    if (previous && previous.athleteId !== c.athleteId) unlinkAllBikes(tx, userId);
+    // Links to another Strava account's bikes mean nothing for the new one, and neither do
+    // the bikes cached from its last sync: drop them so the next sync starts fresh.
+    const switched = !!previous && previous.athleteId !== c.athleteId;
+    if (switched) unlinkAllBikes(tx, userId);
 
     const values = {
       athleteId: c.athleteId,
@@ -44,6 +46,7 @@ export function saveStravaConnection(
       scope: c.scope,
       ...encryptedTokens(c.tokens),
       syncError: null,
+      ...(switched && { gear: [], syncedAt: null, syncAttemptAt: null }),
     };
     tx.insert(stravaConnections)
       .values({ userId, ...values })
@@ -66,10 +69,14 @@ export function readTokens(c: { accessToken: string; refreshToken: string; expir
   };
 }
 
-export function updateStravaTokens(userId: number, tokens: StravaTokens) {
+/**
+ * Stores refreshed tokens, but only while the connection is still to `athleteId`: a refresh
+ * that finishes after the user connected another Strava account must not overwrite it.
+ */
+export function updateStravaTokens(userId: number, athleteId: number, tokens: StravaTokens) {
   db.update(stravaConnections)
     .set(encryptedTokens(tokens))
-    .where(eq(stravaConnections.userId, userId))
+    .where(and(eq(stravaConnections.userId, userId), eq(stravaConnections.athleteId, athleteId)))
     .run();
 }
 
@@ -120,14 +127,27 @@ export function markStravaSyncFailed(userId: number, error: "revoked" | "failed"
 /**
  * Stores the Strava bikes from a sync and moves each linked bike's odometer to its Strava
  * total plus offset. A linked bike missing from Strava is left alone. Returns whether any
- * odometer changed.
+ * odometer changed. With `athleteId`, nothing happens unless the connection is still to that
+ * Strava account (the user may have connected another one while the sync ran).
  */
-export function applyStravaGear(userId: number, gear: StravaGear[], now = new Date()): boolean {
+export function applyStravaGear(
+  userId: number,
+  gear: StravaGear[],
+  { athleteId, now = new Date() }: { athleteId?: number; now?: Date } = {},
+): boolean {
   return db.transaction((tx) => {
-    tx.update(stravaConnections)
+    const updated = tx
+      .update(stravaConnections)
       .set({ gear, syncedAt: now, syncError: null })
-      .where(eq(stravaConnections.userId, userId))
-      .run();
+      .where(
+        and(
+          eq(stravaConnections.userId, userId),
+          athleteId === undefined ? undefined : eq(stravaConnections.athleteId, athleteId),
+        ),
+      )
+      .returning({ userId: stravaConnections.userId })
+      .all();
+    if (updated.length === 0) return false;
 
     const byId = new Map(gear.map((g) => [g.id, g]));
     const linked = tx
@@ -182,7 +202,7 @@ export function findLinkableGear(userId: number, gearId: string, bikeId?: number
  * new Strava km from now on; otherwise the odometer becomes Strava's total.
  */
 export function linkBikeToStrava(bike: Bike, gearId: string, keepOdometer: boolean) {
-  const gear = findLinkableGear(bike.userId!, gearId, bike.id);
+  const gear = findLinkableGear(bike.userId, gearId, bike.id);
   db.update(bikes)
     .set({
       stravaGearId: gear.id,
@@ -190,13 +210,13 @@ export function linkBikeToStrava(bike: Bike, gearId: string, keepOdometer: boole
       stravaOffsetKm: keepOdometer ? bike.odometerKm - gear.distanceKm : 0,
       odometerKm: keepOdometer ? bike.odometerKm : gear.distanceKm,
     })
-    .where(eq(bikes.id, bike.id))
+    .where(and(eq(bikes.id, bike.id), eq(bikes.userId, bike.userId)))
     .run();
 }
 
-export function unlinkBikeFromStrava(bikeId: number) {
+export function unlinkBikeFromStrava(bike: Pick<Bike, "id" | "userId">) {
   db.update(bikes)
     .set({ stravaGearId: null, stravaDistanceKm: null, stravaOffsetKm: 0 })
-    .where(eq(bikes.id, bikeId))
+    .where(and(eq(bikes.id, bike.id), eq(bikes.userId, bike.userId)))
     .run();
 }

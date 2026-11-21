@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { createBikeFromWizard } from "@/actions/bikes";
+import { connectStrava } from "@/actions/strava";
 import { Button } from "@/components/ui/button";
 import { defaultTireType } from "@/lib/default-parts";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ import {
   StepPurchase,
   StepReview,
   StepStrava,
+  STRAVA_CONNECT_FORM,
   type StepProps,
   type WizardStrava,
 } from "./steps";
@@ -140,82 +142,90 @@ export function Wizard({
   };
 
   return (
-    <form
-      noValidate
-      onSubmit={(e) => {
-        e.preventDefault();
-        next();
-      }}
-      className="sm:bg-card mx-auto flex w-full max-w-2xl flex-col sm:rounded-2xl sm:border sm:shadow-sm"
-    >
-      <div className="flex flex-col gap-6 sm:p-8">
-        <div className="flex items-start gap-4">
-          <div className="flex-1">
-            <ProgressBar
-              current={index + 1}
-              total={wizardSteps.length}
-              label={t(`wizard.steps.${state.step}`)}
-            />
-          </div>
-          {cancelHref && (
-            <Link
-              href={cancelHref}
-              onClick={clearSavedWizard}
-              className="text-muted-foreground hover:text-foreground -mt-1 text-sm"
-            >
-              {t("common.cancel")}
-            </Link>
-          )}
-        </div>
-
-        <div
-          key={state.step}
-          className="animate-in fade-in-0 flex flex-col gap-6 duration-200 motion-reduce:animate-none"
-        >
-          {state.step === "basics" && <StepBasics {...props} />}
-          {state.step === "odometer" && <StepStrava {...props} />}
-          {state.step === "purchase" && <StepPurchase {...props} />}
-          {state.step === "parts" && <StepParts {...props} />}
-          {state.step === "review" && <StepReview {...props} onEdit={goto} />}
-        </div>
-      </div>
-
-      {/* Stays at the bottom of the screen on phones, so Next is always in reach. */}
-      <div className="bg-background/95 sm:bg-card sticky bottom-0 z-10 -mx-4 mt-6 flex flex-col gap-2 border-t px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:static sm:mx-0 sm:mt-0 sm:rounded-b-2xl sm:px-8 sm:py-4">
-        {submitError && (
-          <p role="alert" tabIndex={-1} className="text-destructive text-sm outline-none">
-            {submitError}
-          </p>
-        )}
-        <div className="flex gap-2">
-          {index > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="h-12 px-4"
-              onClick={() => goto(wizardSteps[index - 1]!)}
-              disabled={pending}
-            >
-              <ArrowLeft aria-hidden />
-              {t("common.back")}
-            </Button>
-          )}
-          <Button
-            type="submit"
-            size="lg"
-            disabled={pending}
-            className={cn(
-              "bg-brand text-brand-foreground hover:bg-brand/90 h-12 flex-1 text-base",
-              index === 0 && "sm:ml-auto sm:max-w-56",
+    <>
+      <form
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          next();
+        }}
+        className="sm:bg-card mx-auto flex w-full max-w-2xl flex-col sm:rounded-2xl sm:border sm:shadow-sm"
+      >
+        <div className="flex flex-col gap-6 sm:p-8">
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <ProgressBar
+                current={index + 1}
+                total={wizardSteps.length}
+                label={t(`wizard.steps.${state.step}`)}
+              />
+            </div>
+            {cancelHref && (
+              <Link
+                href={cancelHref}
+                onClick={clearSavedWizard}
+                className="text-muted-foreground hover:text-foreground -mt-1 text-sm"
+              >
+                {t("common.cancel")}
+              </Link>
             )}
+          </div>
+
+          <div
+            key={state.step}
+            className="animate-in fade-in-0 flex flex-col gap-6 duration-200 motion-reduce:animate-none"
           >
-            {isLast ? (pending ? t("wizard.addingBike") : t("nav.addBike")) : t("wizard.next")}
-            {!isLast && <ArrowRight aria-hidden />}
-          </Button>
+            {state.step === "basics" && <StepBasics {...props} />}
+            {state.step === "odometer" && <StepStrava {...props} />}
+            {state.step === "purchase" && <StepPurchase {...props} />}
+            {state.step === "parts" && <StepParts {...props} />}
+            {state.step === "review" && <StepReview {...props} onEdit={goto} />}
+          </div>
         </div>
-      </div>
-    </form>
+
+        {/* Stays at the bottom of the screen on phones, so Next is always in reach. */}
+        <div className="bg-background/95 sm:bg-card sticky bottom-0 z-10 -mx-4 mt-6 flex flex-col gap-2 border-t px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:static sm:mx-0 sm:mt-0 sm:rounded-b-2xl sm:px-8 sm:py-4">
+          {submitError && (
+            <p role="alert" tabIndex={-1} className="text-destructive text-sm outline-none">
+              {submitError}
+            </p>
+          )}
+          <div className="flex gap-2">
+            {index > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="h-12 px-4"
+                onClick={() => goto(wizardSteps[index - 1]!)}
+                disabled={pending}
+              >
+                <ArrowLeft aria-hidden />
+                {t("common.back")}
+              </Button>
+            )}
+            <Button
+              type="submit"
+              size="lg"
+              disabled={pending}
+              className={cn(
+                "bg-brand text-brand-foreground hover:bg-brand/90 h-12 flex-1 text-base",
+                index === 0 && "sm:ml-auto sm:max-w-56",
+              )}
+            >
+              {isLast ? (pending ? t("wizard.addingBike") : t("nav.addBike")) : t("wizard.next")}
+              {!isLast && <ArrowRight aria-hidden />}
+            </Button>
+          </div>
+        </div>
+      </form>
+      {/* Forms can't nest, so the "connect Strava" link in a step submits this one by its id. */}
+      {strava.configured && !strava.connected && (
+        <form id={STRAVA_CONNECT_FORM} action={connectStrava} hidden>
+          <input type="hidden" name="next" value="/bikes/new" />
+        </form>
+      )}
+    </>
   );
 }
 

@@ -71,11 +71,17 @@ export async function deleteMyAccount(
   const wrong = await checkPassword(user, parsed.data, t);
   if (wrong) return { ok: false, error: wrong };
 
-  const config = stravaConfig();
-  if (config && getStravaConnection(user.id)) {
-    // Best effort, as when disconnecting: the account is deleted even if Strava can't be reached.
+  let stravaRevoked = true;
+  if (getStravaConnection(user.id)) {
+    // Best effort, as when disconnecting: the account is deleted even if Strava can't be
+    // reached, and the sign-in page then says to revoke BikePro on Strava by hand.
+    stravaRevoked = false;
+    const config = stravaConfig();
     try {
-      await deauthorize(await getAccessToken(user.id, config));
+      if (config) {
+        await deauthorize(await getAccessToken(user.id, config));
+        stravaRevoked = true;
+      }
     } catch {}
   }
 
@@ -86,7 +92,7 @@ export async function deleteMyAccount(
     throw e;
   }
   await endSession();
-  redirect("/login?deleted=1");
+  redirect(stravaRevoked ? "/login?deleted=1" : "/login?deleted=1&strava=notRevoked");
 }
 
 /** Larger than any real export; the server action body limit in next.config.ts is just above. */

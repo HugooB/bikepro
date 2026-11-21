@@ -141,7 +141,7 @@ Everything except the purchase counts as maintenance. The Costs tab shows totals
 
 ## Strava
 
-The code is in `src/lib/strava/` (the API client, sync and crypto), `src/db/strava.ts` and the routes `app/api/strava/connect` and `app/api/strava/callback`.
+The code is in `src/lib/strava/` (the API client, sync and crypto), `src/db/strava.ts` the `connectStrava` server action in `src/actions/strava.ts`, and the route `app/api/strava/callback`.
 
 - **Connecting:** standard OAuth with the `read,profile:read_all` scope. A random `state` value is kept in a short-lived httpOnly cookie and checked on the callback (`src/lib/strava/oauth-state.ts`), so a forged callback link can't connect the wrong Strava account. The same cookie remembers where to return to, so the add-bike wizard can resume after the redirect.
 - **Tokens:** stored encrypted with AES-256-GCM. The key is derived from `STRAVA_CLIENT_SECRET`, which lives in `.env`, not in the database, so a copy of the database file alone can't act for the user. Changing the secret makes stored tokens unreadable, and users then reconnect. Tokens are refreshed when they have less than 5 minutes left.

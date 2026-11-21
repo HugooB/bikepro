@@ -3,9 +3,11 @@ import { tEn, type T } from "@/i18n";
 import { resetsByDefault, type ServiceAction } from "@/lib/event-types";
 import { db } from "./index";
 import { bumpOdometer, recordPartEvent } from "./part-events";
-import { parts, serviceRounds } from "./schema";
+import { bikes, parts, serviceRounds } from "./schema";
 
 export type NewServiceRound = {
+  /** The bike's owner; the round is refused unless the bike belongs to them. */
+  userId: number;
   bikeId: number;
   date: string;
   shop?: string | null;
@@ -18,6 +20,12 @@ export type NewServiceRound = {
 /** Saves a service round and logs one event on every part it covered, in one transaction. */
 export function createServiceRound(input: NewServiceRound, t: T = tEn) {
   return db.transaction((tx) => {
+    const bike = tx
+      .select({ id: bikes.id })
+      .from(bikes)
+      .where(and(eq(bikes.id, input.bikeId), eq(bikes.userId, input.userId)))
+      .get();
+    if (!bike) throw new Error(`Bike ${input.bikeId} does not belong to user ${input.userId}`);
     const round = tx
       .insert(serviceRounds)
       .values({
@@ -60,7 +68,7 @@ export function createServiceRound(input: NewServiceRound, t: T = tEn) {
       );
     }
 
-    bumpOdometer(tx, input.bikeId, input.odometerKm);
+    bumpOdometer(tx, { id: input.bikeId, userId: input.userId }, input.odometerKm);
     return round;
   });
 }

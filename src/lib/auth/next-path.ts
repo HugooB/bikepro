@@ -9,7 +9,11 @@ export function safeNextPath(next: unknown): string {
   try {
     const url = new URL(next, "http://bikepro.invalid");
     if (url.origin !== "http://bikepro.invalid") return "/";
-    return url.pathname + url.search;
+    // Resolving dot segments can turn "/.//evil.example" into "//evil.example", so check the result too.
+    const path = url.pathname + url.search;
+    if (path.startsWith("//") || path.startsWith("/\\")) return "/";
+    if (new URL(path, "http://bikepro.invalid").origin !== "http://bikepro.invalid") return "/";
+    return path;
   } catch {
     return "/";
   }

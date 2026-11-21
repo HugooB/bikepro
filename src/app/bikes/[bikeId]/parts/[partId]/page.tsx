@@ -72,13 +72,17 @@ export default async function PartPage({
         >
           <CircleCheck className="text-status-ok mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
-            {rich(t("part.replacedNotice", { part: part.name.toLowerCase() }), {
-              link: (text) => (
-                <Link href={`/bikes/${bike.id}/history`} className="font-medium underline">
-                  {text}
-                </Link>
-              ),
-            })}
+            {rich(
+              t("part.replacedNotice"),
+              {
+                link: (text) => (
+                  <Link href={`/bikes/${bike.id}/history`} className="font-medium underline">
+                    {text}
+                  </Link>
+                ),
+              },
+              { part: part.name.toLowerCase() },
+            )}
           </span>
         </p>
       )}

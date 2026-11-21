@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { tEn, type MessageKey, type T, type Vars } from "@/i18n";
 import { partName } from "@/lib/default-parts";
 import { UserError } from "@/lib/user-error";
@@ -161,8 +161,15 @@ export function replacePart(tx: Tx, part: Part, r: Replacement, t: T = tEn): Par
   return fresh;
 }
 
-/** Moves the bike's odometer forward when a higher reading is logged; never backwards. */
-export function bumpOdometer(tx: Tx, bikeId: number, odometerKm: number) {
-  const bike = tx.select().from(bikes).where(eq(bikes.id, bikeId)).get();
+/**
+ * Moves the bike's odometer forward when a higher reading is logged; never backwards. Only
+ * touches the bike while it belongs to `owner.userId`.
+ */
+export function bumpOdometer(tx: Tx, owner: { id: number; userId: number }, odometerKm: number) {
+  const bike = tx
+    .select()
+    .from(bikes)
+    .where(and(eq(bikes.id, owner.id), eq(bikes.userId, owner.userId)))
+    .get();
   if (bike && odometerKm > bike.odometerKm) setOdometer(tx, bike, odometerKm);
 }

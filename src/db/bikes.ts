@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { tEn, type T } from "@/i18n";
 import { partName } from "@/lib/default-parts";
 import type { BikePlan } from "@/lib/wizard-schema";
@@ -16,7 +16,7 @@ export function setOdometer(tx: Tx, bike: Bike, odometerKm: number) {
       odometerKm,
       ...(linked && { stravaOffsetKm: odometerKm - bike.stravaDistanceKm! }),
     })
-    .where(eq(bikes.id, bike.id))
+    .where(and(eq(bikes.id, bike.id), eq(bikes.userId, bike.userId)))
     .run();
 }
 

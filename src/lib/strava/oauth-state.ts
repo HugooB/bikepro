@@ -2,15 +2,18 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { safeNextPath } from "@/lib/auth/next-path";
 
-// The OAuth `state` ties Strava's callback to the browser that started connecting: without
-// it, someone could send a signed-in user a callback link that connects the wrong account.
+// The OAuth `state` ties Strava's callback to the browser and the BikePro account that started
+// connecting: without it, someone could send a signed-in user a callback link that connects
+// the wrong account. Binding it to the account too means that signing in as someone else
+// halfway through doesn't hand the connection to that other account.
 
 const STATE_COOKIE = "bikepro_strava_state";
 
 /** Starts a connect attempt; returns the state to send to Strava. */
-export async function startOAuth(back: string): Promise<string> {
+export async function startOAuth(userId: number, back: string): Promise<string> {
   const state = randomBytes(24).toString("base64url");
-  (await cookies()).set(STATE_COOKIE, JSON.stringify({ state, back: safeNextPath(back) }), {
+  const value = JSON.stringify({ state, userId, back: safeNextPath(back) });
+  (await cookies()).set(STATE_COOKIE, value, {
     httpOnly: true,
     // Lax still sends it on the top-level redirect back from strava.com.
     sameSite: "lax",
@@ -21,8 +24,14 @@ export async function startOAuth(back: string): Promise<string> {
   return state;
 }
 
-/** Ends a connect attempt: where to send the user back to, and whether `state` matched. */
-export async function finishOAuth(state: string | null): Promise<{ back: string; ok: boolean }> {
+/**
+ * Ends a connect attempt: where to send the user back to, and whether `state` matched and the
+ * attempt was started by `userId`.
+ */
+export async function finishOAuth(
+  userId: number,
+  state: string | null,
+): Promise<{ back: string; ok: boolean }> {
   const jar = await cookies();
   const raw = jar.get(STATE_COOKIE)?.value;
   jar.delete({ name: STATE_COOKIE, path: "/api/strava" });
@@ -31,7 +40,8 @@ export async function finishOAuth(state: string | null): Promise<{ back: string;
     const back = safeNextPath(saved.back);
     const a = Buffer.from(String(saved.state));
     const b = Buffer.from(state ?? "");
-    return { back, ok: a.length === b.length && timingSafeEqual(a, b) };
+    const sameUser = saved.userId === userId;
+    return { back, ok: sameUser && a.length === b.length && timingSafeEqual(a, b) };
   } catch {
     return { back: "/settings", ok: false };
   }
